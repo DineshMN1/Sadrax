@@ -9,7 +9,18 @@ export const metadata: Metadata = {
   title: { default: "Sadrax Grocery", template: "%s — Sadrax" },
   description: "Fresh groceries delivered fast in Sadras & Kalpakam",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Sadrax" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sadrax",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+    icon:  [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
   formatDetection: { telephone: false },
 };
 

@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, Plus, Truck, CreditCard, Banknote, Check, Navigation } from "lucide-react";
+import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { formatPrice, isDeliverable } from "@/lib/utils";
 import { toast } from "sonner";
@@ -102,12 +102,13 @@ export default function CheckoutPage() {
         return;
       }
 
-      if (paymentMethod === "upi" && data.razorpayOrderId) {
-        await handleRazorpayPayment(data.razorpayOrderId, data.orderId, data.orderNumber, tot);
-      } else {
-        clearCart();
-        router.push(`/orders/${data.orderId}?placed=1`);
-      }
+      // TODO: Razorpay UPI/card flow disabled until webhook is implemented.
+      // All orders treated as COD for now.
+      // if (paymentMethod === "upi" && data.razorpayOrderId) {
+      //   await handleRazorpayPayment(data.razorpayOrderId, data.orderId, data.orderNumber, tot);
+      // }
+      clearCart();
+      router.push(`/orders/${data.orderId}?placed=1`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -115,43 +116,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleRazorpayPayment = async (
-    razorpayOrderId: string,
-    orderId: number,
-    orderNumber: string,
-    amount: number
-  ) => {
-    const Razorpay = (window as unknown as { Razorpay: new (opts: object) => { open: () => void } }).Razorpay;
-    const rzp = new Razorpay({
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      amount,
-      currency: "INR",
-      name: "Sadrax Grocery",
-      description: `Order #${orderNumber}`,
-      order_id: razorpayOrderId,
-      handler: async (response: { razorpay_payment_id: string; razorpay_signature: string }) => {
-        const verifyRes = await fetch("/api/orders/verify-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId,
-            razorpayOrderId,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-          }),
-        });
-        if (verifyRes.ok) {
-          clearCart();
-          router.push(`/orders/${orderId}?placed=1`);
-        } else {
-          toast.error("Payment verification failed. Contact support.");
-        }
-      },
-      prefill: { contact: addresses.find((a) => a.id === selectedAddress)?.phone },
-      theme: { color: "#16a34a" },
-    });
-    rzp.open();
-  };
+  // TODO: Razorpay UPI/card — implement after webhook handler is ready.
+  // const handleRazorpayPayment = async (...) => { ... };
 
   // Guard is in useEffect to avoid calling router during SSR
   useEffect(() => {
@@ -261,11 +227,12 @@ export default function CheckoutPage() {
         {/* Payment */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <CreditCard size={16} className="text-green-600" />
+            <Banknote size={16} className="text-green-600" />
             <h2 className="text-sm font-bold text-gray-900">Payment Method</h2>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {([ { id: "cod", label: "Cash on Delivery", icon: Banknote }, { id: "upi", label: "UPI / Card", icon: CreditCard }] as const).map(({ id, label, icon: Icon }) => (
+            {/* UPI/Card disabled until Razorpay webhook is implemented — COD only for now */}
+            {([ { id: "cod", label: "Cash on Delivery", icon: Banknote }] as const).map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setPaymentMethod(id)}
