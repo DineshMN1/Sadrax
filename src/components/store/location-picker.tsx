@@ -24,18 +24,18 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
   const [locating, setLocating] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // Initialise Leaflet after mount
+  // Initialise Leaflet after mount.
+  // We use mapInstanceRef (a stable ref) in the cleanup so the
+  // async initialiser and the cleanup always share the same value —
+  // fixing the StrictMode double-invoke "already initialized" error.
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let L: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let map: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let marker: any;
+    let destroyed = false; // guard: don't set state after cleanup
 
     (async () => {
-      L = (await import("leaflet")).default;
-      // Fix default icon paths broken by webpack bundling
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const L: any = (await import("leaflet")).default;
+
+      // Fix default icon paths broken by webpack/turbopack bundling
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -44,13 +44,21 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      if (!mapRef.current) return;
-      map = L.map(mapRef.current).setView([position.lat, position.lng], 16);
+      if (!mapRef.current || destroyed) return;
+
+      // If the container already has a map from a previous StrictMode run, remove it first
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((mapRef.current as any)._leaflet_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (L.map as any)(mapRef.current).remove?.();
+      }
+
+      const map = L.map(mapRef.current).setView([position.lat, position.lng], 16);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
-      marker = L.marker([position.lat, position.lng], { draggable: true }).addTo(map);
+      const marker = L.marker([position.lat, position.lng], { draggable: true }).addTo(map);
       marker.on("dragend", () => {
         const { lat, lng } = marker.getLatLng();
         setPosition({ lat, lng });
@@ -63,16 +71,27 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
         reverseGeocode(lat, lng);
       });
 
-      leafletRef.current = L;
+      // Store in refs so cleanup and sibling handlers always see the live instance
+      leafletRef.current   = L;
       mapInstanceRef.current = map;
-      markerRef.current = marker;
-      setReady(true);
+      markerRef.current    = marker;
 
-      reverseGeocode(position.lat, position.lng);
+      if (!destroyed) {
+        setReady(true);
+        reverseGeocode(position.lat, position.lng);
+      }
     })();
 
     return () => {
-      map?.remove();
+      destroyed = true;
+      // Destroy via ref — local vars in the IIFE may not be set yet when StrictMode
+      // unmounts the first render, so the ref is the only reliable handle.
+      if (mapInstanceRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mapInstanceRef.current as any).remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
