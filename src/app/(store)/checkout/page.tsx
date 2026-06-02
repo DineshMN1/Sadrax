@@ -4,10 +4,16 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, Plus, Truck, CreditCard, Banknote, Check } from "lucide-react";
+import { ChevronLeft, MapPin, Plus, Truck, CreditCard, Banknote, Check, Navigation } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { formatPrice, isDeliverable } from "@/lib/utils";
 import { toast } from "sonner";
+import loadDynamic from "next/dynamic";
+
+const LocationPicker = loadDynamic(
+  () => import("@/components/store/location-picker").then(m => ({ default: m.LocationPicker })),
+  { ssr: false }
+);
 
 interface Address {
   id: number;
@@ -31,6 +37,9 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [placing, setPlacing] = useState(false);
   const [showAddAddress, setShowAddAddress] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [pinLat, setPinLat] = useState<number | null>(null);
+  const [pinLng, setPinLng] = useState<number | null>(null);
   const [newAddress, setNewAddress] = useState({ name: "", phone: "", line1: "", line2: "", city: "Sadras", pincode: "", label: "home" });
 
   const sub = subtotal();
@@ -57,7 +66,7 @@ export default function CheckoutPage() {
     const res = await fetch("/api/addresses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newAddress),
+      body: JSON.stringify({ ...newAddress, lat: pinLat, lng: pinLng }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -151,6 +160,36 @@ export default function CheckoutPage() {
 
   if (items.length === 0) return null;
 
+  // Full-screen map overlay for address pin-drop
+  if (showMap) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="px-4 pt-4 pb-2 bg-white border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowMap(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100">
+              <ChevronLeft size={20} />
+            </button>
+            <h2 className="font-bold text-gray-900">Pin delivery location</h2>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0">
+          <LocationPicker
+            onConfirm={(pos, display) => {
+              setPinLat(pos.lat);
+              setPinLng(pos.lng);
+              setShowMap(false);
+              const pincodeMatch = display?.match(/\b6\d{5}\b/);
+              if (pincodeMatch) setNewAddress(p => ({ ...p, pincode: pincodeMatch[0] }));
+              const parts = display?.split(",") ?? [];
+              if (parts.length >= 2) setNewAddress(p => ({ ...p, line1: parts.slice(0, 2).join(",").trim().slice(0, 80) }));
+            }}
+            onClose={() => setShowMap(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
@@ -194,6 +233,12 @@ export default function CheckoutPage() {
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
                 <h3 className="text-sm font-bold text-gray-900">New Address</h3>
+                {/* Pin on map */}
+                <button onClick={() => setShowMap(true)}
+                  className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 text-sm font-medium transition-all ${pinLat ? "border-green-400 bg-green-50 text-green-700" : "border-dashed border-gray-200 text-gray-500 hover:border-green-400"}`}>
+                  <Navigation size={15} className={pinLat ? "text-green-600" : "text-gray-400"} />
+                  {pinLat ? `Pinned ✓ (${pinLat.toFixed(3)}, ${pinLng?.toFixed(3)})` : "Pin location on map (optional)"}
+                </button>
                 {(["name", "phone", "line1", "line2", "city", "pincode"] as const).map((field) => (
                   <input
                     key={field}

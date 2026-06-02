@@ -61,7 +61,7 @@ export default async function HomePage() {
             <div className="relative z-10">
               <p className="text-green-200 text-xs font-semibold uppercase tracking-wide mb-1">Deals today</p>
               <h2 className="text-white text-2xl font-extrabold leading-tight">Fresh picks,<br />fresh prices</h2>
-              <Link href="/category/deals" className="inline-flex mt-3 bg-white text-green-700 text-xs font-bold px-4 py-2 rounded-xl">
+              <Link href="/categories" className="inline-flex mt-3 bg-white text-green-700 text-xs font-bold px-4 py-2 rounded-xl">
                 Shop Deals →
               </Link>
             </div>

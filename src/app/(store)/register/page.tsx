@@ -1,14 +1,20 @@
 "use client";
 
-import { Suspense, useState, useRef, useEffect, useCallback } from "react";
+import { Suspense, useState, useRef, useEffect, useCallback, lazy } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import {
   User, Phone, Mail, ArrowRight, CheckCircle2,
-  RefreshCw, ChevronLeft, ShoppingBag,
+  RefreshCw, ChevronLeft, ShoppingBag, MapPin, Navigation,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import loadDynamic from "next/dynamic";
+
+const LocationPicker = loadDynamic(
+  () => import("@/components/store/location-picker").then(m => ({ default: m.LocationPicker })),
+  { ssr: false }
+);
 
 // ─── OTP digit-box input ────────────────────────────────────────────────────
 
@@ -112,11 +118,192 @@ function Field({
   );
 }
 
+// ─── Address step ────────────────────────────────────────────────────────────
+
+interface AddressStepProps {
+  userName: string;
+  userPhone: string;
+  onDone: () => void;
+}
+
+function AddressStep({ userName, userPhone, onDone }: AddressStepProps) {
+  const [showMap, setShowMap] = useState(false);
+  const [pinLat, setPinLat] = useState<number | null>(null);
+  const [pinLng, setPinLng] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    label: "home",
+    line1: "",
+    line2: "",
+    city: "Sadras",
+    pincode: "",
+  });
+
+  const handlePinConfirm = (pos: { lat: number; lng: number }, display?: string) => {
+    setPinLat(pos.lat);
+    setPinLng(pos.lng);
+    setShowMap(false);
+    // Pre-fill pincode from display address if detectable
+    const pincodeMatch = display?.match(/\b6\d{5}\b/);
+    if (pincodeMatch) setForm(p => ({ ...p, pincode: pincodeMatch[0] }));
+    // Try to extract area name
+    const parts = display?.split(",") ?? [];
+    if (parts.length >= 2) {
+      const area = parts.slice(0, 2).join(",").trim().slice(0, 80);
+      setForm(p => ({ ...p, line1: area }));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.line1 || !form.pincode) { toast.error("Enter street / area and pincode"); return; }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          name: userName,
+          phone: userPhone,
+          lat: pinLat,
+          lng: pinLng,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Could not save address"); return; }
+      toast.success("Address saved!");
+      onDone();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (showMap) {
+    return (
+      <div className="-mx-5 -mt-4 h-[calc(100vh-160px)] flex flex-col">
+        <div className="px-5 pt-4 pb-2">
+          <h2 className="text-base font-bold text-gray-900">Drop pin on your home</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Drag the marker or tap on the map to set your location</p>
+        </div>
+        <div className="flex-1 min-h-0">
+          <LocationPicker
+            onConfirm={handlePinConfirm}
+            onClose={() => setShowMap(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center mb-4">
+          <MapPin size={22} className="text-green-600" />
+        </div>
+        <h1 className="text-2xl font-extrabold text-gray-900">Add your address</h1>
+        <p className="text-gray-500 text-sm mt-1">So we know where to deliver. Takes 30 seconds.</p>
+      </div>
+
+      {/* Pin location button */}
+      <button
+        onClick={() => setShowMap(true)}
+        className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+          pinLat ? "border-green-500 bg-green-50" : "border-dashed border-gray-300 hover:border-green-400"
+        }`}
+      >
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${pinLat ? "bg-green-600" : "bg-gray-100"}`}>
+          <Navigation size={18} className={pinLat ? "text-white" : "text-gray-500"} />
+        </div>
+        <div className="text-left">
+          <p className={`text-sm font-semibold ${pinLat ? "text-green-700" : "text-gray-700"}`}>
+            {pinLat ? "Location pinned ✓" : "Pin on map (optional)"}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {pinLat ? `${pinLat.toFixed(4)}, ${pinLng?.toFixed(4)}` : "Helps with accurate delivery"}
+          </p>
+        </div>
+      </button>
+
+      {/* Address form */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          {["home", "work", "other"].map((lbl) => (
+            <button
+              key={lbl}
+              onClick={() => setForm(p => ({ ...p, label: lbl }))}
+              className={`h-9 rounded-xl text-sm font-semibold capitalize transition-all ${
+                form.label === lbl ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {[
+          { key: "line1", placeholder: "Street / Area / Colony *", required: true },
+          { key: "line2", placeholder: "Landmark (optional)" },
+          { key: "city",  placeholder: "City" },
+          { key: "pincode", placeholder: "Pincode *", inputMode: "numeric" as const },
+        ].map(({ key, placeholder, inputMode }) => (
+          <input
+            key={key}
+            placeholder={placeholder}
+            inputMode={inputMode}
+            value={(form as Record<string, string>)[key]}
+            onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+            className="w-full h-11 px-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition-all"
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={onDone}
+          className="h-12 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-500"
+        >
+          Skip for now
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="h-12 rounded-2xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save Address"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DoneStep({ name, redirect, router }: { name: string; redirect: string; router: ReturnType<typeof useRouter> }) {
+  useEffect(() => {
+    const t = setTimeout(() => { router.push(redirect); router.refresh(); }, 1800);
+    return () => clearTimeout(t);
+  }, [redirect, router]);
+
+  return (
+    <div className="flex flex-col items-center text-center py-8 space-y-5">
+      <div className="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center">
+        <CheckCircle2 size={42} className="text-green-600" />
+      </div>
+      <div>
+        <h1 className="text-2xl font-extrabold text-gray-900">All set, {name.split(" ")[0]}!</h1>
+        <p className="text-gray-500 text-sm mt-2">Taking you to the store…</p>
+      </div>
+      <div className="w-8 h-1 bg-green-200 rounded-full overflow-hidden">
+        <div className="h-full bg-green-600 rounded-full animate-[grow_1.8s_ease-in-out_forwards]" />
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
-type Step = "details" | "otp" | "done";
+type Step = "details" | "otp" | "done" | "address";
 
 function RegisterContent() {
   const router = useRouter();
@@ -183,8 +370,7 @@ function RegisterContent() {
         body: JSON.stringify({ name: name.trim(), phone: `+91${phone.replace(/\D/g, "")}` }),
       });
 
-      setStep("done");
-      setTimeout(() => { router.push(redirect); router.refresh(); }, 1800);
+      setStep("address");
     } catch {
       toast.error("Verification failed. Try again.");
     } finally {
@@ -237,13 +423,13 @@ function RegisterContent() {
 
       {/* Step dots */}
       <div className="flex justify-center gap-2 py-3">
-        {(["details", "otp", "done"] as Step[]).map((s, i) => (
+        {(["details", "otp", "address", "done"] as Step[]).map((s, i) => (
           <div
             key={s}
             className={`rounded-full transition-all duration-300 ${
               step === s
                 ? "w-6 h-2 bg-green-600"
-                : i < (["details","otp","done"] as Step[]).indexOf(step)
+                : i < (["details","otp","address","done"] as Step[]).indexOf(step)
                   ? "w-2 h-2 bg-green-400"
                   : "w-2 h-2 bg-gray-200"
             }`}
@@ -379,20 +565,18 @@ function RegisterContent() {
             </div>
           )}
 
-          {/* ── Step 3: Done ─────────────────────────────────── */}
+          {/* ── Step 3: Address (location picker) ─────────────── */}
+          {step === "address" && (
+            <AddressStep
+              userName={name.split(" ")[0]}
+              userPhone={`+91${phone.replace(/\D/g, "")}`}
+              onDone={() => setStep("done")}
+            />
+          )}
+
+          {/* ── Step 4: Done ─────────────────────────────────── */}
           {step === "done" && (
-            <div className="flex flex-col items-center text-center py-8 space-y-5">
-              <div className="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center">
-                <CheckCircle2 size={42} className="text-green-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-gray-900">Welcome, {name.split(" ")[0]}!</h1>
-                <p className="text-gray-500 text-sm mt-2">Your account is ready. Taking you to the store…</p>
-              </div>
-              <div className="w-8 h-1 bg-green-200 rounded-full overflow-hidden">
-                <div className="h-full bg-green-600 rounded-full animate-[grow_1.8s_ease-in-out_forwards]" />
-              </div>
-            </div>
+            <DoneStep name={name} redirect={redirect} router={router} />
           )}
 
         </div>

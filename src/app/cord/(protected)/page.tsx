@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw } from "lucide-react";
+import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { signOut } from "@/lib/auth-client";
 
 interface OrderItem {
   id: number;
@@ -197,6 +199,7 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
 }
 
 export default function CordPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<"active" | "all">("active");
   const [loading, setLoading] = useState(true);
@@ -257,6 +260,13 @@ export default function CordPage() {
               className="w-9 h-9 flex items-center justify-center bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors"
             >
               <RefreshCw size={16} />
+            </button>
+            <button
+              onClick={async () => { await signOut(); router.replace("/cord/login"); }}
+              className="w-9 h-9 flex items-center justify-center bg-gray-800 rounded-xl text-gray-400 hover:text-red-400 transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={16} />
             </button>
             <div className="flex bg-gray-800 rounded-xl p-0.5">
               <button
