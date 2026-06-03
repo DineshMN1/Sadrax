@@ -5,18 +5,22 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders, orderItems, addresses } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { formatPrice, STATUS_LABELS, STATUS_COLORS, ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
-import { CheckCircle2, Package, Truck, MapPin, Clock } from "lucide-react";
+import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
+import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-const TRACKING_STEPS: { status: OrderStatus; label: string; icon: React.ElementType }[] = [
-  { status: "pending", label: "Order Placed", icon: Clock },
-  { status: "accepted", label: "Accepted", icon: CheckCircle2 },
-  { status: "packed", label: "Packed", icon: Package },
-  { status: "out_for_delivery", label: "Out for Delivery", icon: Truck },
-  { status: "delivered", label: "Delivered", icon: CheckCircle2 },
-];
+const TRACKING_STEPS = [
+  { status: "pending",          label: "Order Placed",      icon: Clock,         desc: "We've received your order" },
+  { status: "accepted",         label: "Accepted",          icon: CheckCircle2,  desc: "Store is preparing your items" },
+  { status: "packed",           label: "Packed",            icon: Package,       desc: "Order is packed and ready" },
+  { status: "out_for_delivery", label: "Out for Delivery",  icon: Truck,         desc: "On the way to you!" },
+  { status: "delivered",        label: "Delivered",         icon: CheckCircle2,  desc: "Enjoy your groceries!" },
+] as const;
 
-export default async function OrderDetailPage({ params, searchParams }: {
+export default async function OrderDetailPage({
+  params,
+  searchParams,
+}: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ placed?: string }>;
 }) {
@@ -33,96 +37,149 @@ export default async function OrderDetailPage({ params, searchParams }: {
 
   if (!order) notFound();
 
-  const [items, address] = await Promise.all([
+  const [items, addressRows] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, order.id)),
-    order.addressId ? db.select().from(addresses).where(eq(addresses.id, order.addressId)).limit(1) : Promise.resolve([]),
+    order.addressId
+      ? db.select().from(addresses).where(eq(addresses.id, order.addressId)).limit(1)
+      : Promise.resolve([]),
   ]);
 
-  const currentStatusIdx = TRACKING_STEPS.findIndex((s) => s.status === order.status);
-  const isTerminal = order.status === "rejected" || order.status === "cancelled";
+  const currentIdx = TRACKING_STEPS.findIndex(s => s.status === order.status);
+  const isTerminal = ["rejected", "cancelled"].includes(order.status);
 
   return (
-    <div className="pb-6">
+    <div className="pb-8">
+      {/* Placed success banner */}
       {placed && (
         <div className="mx-4 mt-4 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-          <CheckCircle2 className="text-green-600" size={24} />
+          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
+            <CheckCircle2 className="text-green-600" size={20} />
+          </div>
           <div>
-            <p className="font-bold text-green-800">Order placed!</p>
-            <p className="text-xs text-green-600">We&apos;ll send you an SMS when it&apos;s accepted.</p>
+            <p className="font-extrabold text-green-800 text-sm">Order placed successfully!</p>
+            <p className="text-xs text-green-600 mt-0.5">We&apos;ll SMS you when it&apos;s accepted.</p>
           </div>
         </div>
       )}
 
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
-        <Link href="/orders" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100">←</Link>
-        <div>
-          <h1 className="text-base font-bold text-gray-900">Order #{order.orderNumber}</h1>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status as OrderStatus]}`}>
-            {STATUS_LABELS[order.status as OrderStatus]}
-          </span>
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3">
+        <Link href="/orders" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+          <ChevronLeft size={20} className="text-gray-700" />
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-extrabold text-gray-900">Order #{order.orderNumber}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}</p>
         </div>
+        <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 ${STATUS_COLORS[order.status as OrderStatus]}`}>
+          {STATUS_LABELS[order.status as OrderStatus]}
+        </span>
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Tracking */}
-        {!isTerminal && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <h2 className="text-sm font-bold text-gray-900 mb-4">Order Tracking</h2>
-            <div className="relative">
+        {/* Tracking timeline */}
+        {!isTerminal ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <h2 className="text-sm font-extrabold text-gray-900 mb-4">Order Tracking</h2>
+            <div className="space-y-0">
               {TRACKING_STEPS.map((step, idx) => {
-                const done = idx <= currentStatusIdx;
-                const Icon = step.icon;
+                const done    = idx <= currentIdx;
+                const current = idx === currentIdx;
+                const Icon    = step.icon;
                 return (
-                  <div key={step.status} className="flex items-start gap-3 relative">
+                  <div key={step.status} className="flex gap-3">
+                    {/* Timeline line + dot */}
                     <div className="flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center z-10 ${done ? "bg-green-500" : "bg-gray-100"}`}>
-                        <Icon size={14} className={done ? "text-white" : "text-gray-400"} />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
+                        current ? "bg-green-500 ring-4 ring-green-100" :
+                        done    ? "bg-green-500" : "bg-gray-100"
+                      }`}>
+                        <Icon size={15} className={done ? "text-white" : "text-gray-400"} />
                       </div>
                       {idx < TRACKING_STEPS.length - 1 && (
-                        <div className={`w-0.5 h-8 ${idx < currentStatusIdx ? "bg-green-400" : "bg-gray-200"}`} />
+                        <div className={`w-0.5 h-8 mt-0.5 ${idx < currentIdx ? "bg-green-400" : "bg-gray-100"}`} />
                       )}
                     </div>
-                    <p className={`text-sm font-medium pt-1 ${done ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                    {/* Text */}
+                    <div className="pb-6 pt-1">
+                      <p className={`text-sm font-bold ${done ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                      {current && <p className="text-xs text-green-600 mt-0.5">{step.desc}</p>}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
+        ) : (
+          <div className={`rounded-2xl border p-4 flex items-center gap-3 ${order.status === "rejected" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"}`}>
+            <XCircle size={20} className={order.status === "rejected" ? "text-red-500 shrink-0" : "text-gray-500 shrink-0"} />
+            <div>
+              <p className={`text-sm font-bold ${order.status === "rejected" ? "text-red-700" : "text-gray-700"}`}>
+                Order {order.status}
+              </p>
+              {order.rejectionReason && <p className="text-xs text-gray-500 mt-0.5">{order.rejectionReason}</p>}
+            </div>
+          </div>
         )}
 
         {/* Items */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <h2 className="text-sm font-bold text-gray-900 mb-3">Items</h2>
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-700">{item.productName} × {item.quantity}</span>
-                <span className="font-medium">{formatPrice(item.total)}</span>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <h2 className="text-sm font-extrabold text-gray-900 mb-3">Items ({items.length})</h2>
+          <div className="space-y-2.5">
+            {items.map(item => (
+              <div key={item.id} className="flex justify-between items-center text-sm">
+                <div className="flex-1 min-w-0">
+                  <span className="text-gray-800 font-medium">{item.productName}</span>
+                  {item.productUnit && <span className="text-gray-400 text-xs ml-1">({item.productUnit})</span>}
+                  <span className="text-gray-400"> × {item.quantity}</span>
+                </div>
+                <span className="font-bold text-gray-900 shrink-0 ml-2">{formatPrice(item.total)}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Bill */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
-          <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-gray-600">Delivery</span><span>{order.deliveryFee === 0 ? <span className="text-green-600 font-semibold">FREE</span> : formatPrice(order.deliveryFee)}</span></div>
-          {order.discount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{formatPrice(order.discount)}</span></div>}
-          <div className="border-t border-gray-100 pt-2 flex justify-between font-bold"><span>Total</span><span>{formatPrice(order.total)}</span></div>
-          <div className="flex justify-between text-xs text-gray-400 pt-1"><span>Payment</span><span className="uppercase">{order.paymentMethod}</span></div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">
+          <h2 className="text-sm font-extrabold text-gray-900 mb-1">Bill Summary</h2>
+          <div className="flex justify-between text-sm text-gray-500"><span>Subtotal</span><span className="font-medium text-gray-900">{formatPrice(order.subtotal)}</span></div>
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>Delivery</span>
+            {order.deliveryFee === 0
+              ? <span className="text-green-600 font-bold">FREE</span>
+              : <span className="font-medium text-gray-900">{formatPrice(order.deliveryFee)}</span>}
+          </div>
+          {order.discount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+              <span className="text-green-600 font-bold">−{formatPrice(order.discount)}</span>
+            </div>
+          )}
+          <div className="border-t border-gray-100 pt-2 flex justify-between font-extrabold text-base">
+            <span>Total</span>
+            <span className="text-green-600">{formatPrice(order.total)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-400 pt-0.5">
+            <span>Payment</span>
+            <span className="uppercase font-semibold">{order.paymentMethod}</span>
+          </div>
         </div>
 
         {/* Address */}
-        {address[0] && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin size={14} className="text-green-600" />
-              <h2 className="text-sm font-bold text-gray-900">Delivery Address</h2>
+        {addressRows[0] && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 bg-green-50 rounded-lg flex items-center justify-center">
+                <MapPin size={13} className="text-green-600" />
+              </div>
+              <h2 className="text-sm font-extrabold text-gray-900">Delivery Address</h2>
             </div>
-            <p className="text-sm font-semibold text-gray-800">{address[0].name}</p>
-            <p className="text-sm text-gray-600">{address[0].line1}{address[0].line2 ? `, ${address[0].line2}` : ""}</p>
-            <p className="text-sm text-gray-500">{address[0].city} — {address[0].pincode}</p>
-            <p className="text-sm text-gray-500 mt-0.5">{address[0].phone}</p>
+            <p className="text-sm font-bold text-gray-900">{addressRows[0].name}</p>
+            <p className="text-sm text-gray-600 mt-0.5">
+              {addressRows[0].line1}{addressRows[0].line2 ? `, ${addressRows[0].line2}` : ""}
+            </p>
+            <p className="text-sm text-gray-500 mt-0.5">{addressRows[0].city} — {addressRows[0].pincode}</p>
+            <p className="text-xs text-gray-400 mt-1">{addressRows[0].phone}</p>
           </div>
         )}
       </div>

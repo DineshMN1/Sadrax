@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Trash2, Plus, Minus, Tag } from "lucide-react";
+import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
@@ -21,6 +21,7 @@ export default function CartPage() {
   const sub = subtotal();
   const fee = deliveryFee();
   const tot = total();
+  const savings = discount + (fee === 0 && sub > 0 ? DELIVERY_FEE : 0);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -36,7 +37,7 @@ export default function CartPage() {
         toast.error(data.error ?? "Invalid coupon");
       } else {
         applyCoupon(data.code, data.discount);
-        toast.success(`Coupon applied! You save ${formatPrice(data.discount)}`);
+        toast.success(`${data.code} applied — you save ${formatPrice(data.discount)}!`);
         setCouponInput("");
       }
     } catch {
@@ -49,11 +50,11 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <span className="text-7xl mb-4">🛒</span>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-        <p className="text-gray-500 mb-6">Add some groceries to get started</p>
-        <Link href="/" className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold">
-          Start Shopping
+        <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mb-5 text-5xl">🛒</div>
+        <h2 className="text-xl font-extrabold text-gray-900 mb-2">Your cart is empty</h2>
+        <p className="text-gray-500 text-sm mb-6">Add some groceries to get started</p>
+        <Link href="/" className="flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-colors">
+          <ShoppingBag size={16} /> Start Shopping
         </Link>
       </div>
     );
@@ -61,46 +62,40 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100">
-          <ChevronLeft size={20} />
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+          <ChevronLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">My Cart</h1>
-        <span className="ml-auto text-sm text-gray-400">{items.reduce((s, i) => s + i.quantity, 0)} items</span>
+        <h1 className="text-lg font-extrabold text-gray-900">My Cart</h1>
+        <span className="ml-auto text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+          {items.reduce((s, i) => s + i.quantity, 0)} items
+        </span>
       </div>
 
       <div className="px-4 py-4 space-y-4 flex-1">
         <FreeDeliveryBar />
 
-        {/* Cart items */}
-        <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
-          {items.map((item) => (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+          {items.map(item => (
             <div key={item.id} className="flex items-center gap-3 p-3">
               <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0">
-                {item.image ? (
-                  <Image src={item.image} alt={item.name} width={56} height={56} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">🛒</div>
-                )}
+                {item.image
+                  ? <Image src={item.image} alt={item.name} width={56} height={56} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-2xl">🛒</div>}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
-                {item.unit && <p className="text-xs text-gray-400">{item.unit}</p>}
-                <p className="text-sm font-bold text-gray-900 mt-0.5">{formatPrice(item.price)}</p>
+                {item.unit && <p className="text-xs text-gray-400 mt-0.5">{item.unit}</p>}
+                <p className="text-sm font-extrabold text-gray-900 mt-1">{formatPrice(item.price)}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => item.quantity === 1 ? removeItem(item.id) : updateQuantity(item.id, item.quantity - 1)}
-                  className="w-7 h-7 flex items-center justify-center bg-green-50 border border-green-200 text-green-600 rounded-lg"
-                >
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => item.quantity === 1 ? removeItem(item.id) : updateQuantity(item.id, item.quantity - 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-green-50 border border-green-200 text-green-700 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 active:scale-90 transition-all">
                   {item.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} strokeWidth={3} />}
                 </button>
-                <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  className="w-7 h-7 flex items-center justify-center bg-green-500 text-white rounded-lg"
-                >
+                <span className="w-7 text-center text-sm font-extrabold tabular-nums">{item.quantity}</span>
+                <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all">
                   <Plus size={12} strokeWidth={3} />
                 </button>
               </div>
@@ -108,71 +103,51 @@ export default function CartPage() {
           ))}
         </div>
 
-        {/* Coupon */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Tag size={16} className="text-green-600" />
-            <span className="text-sm font-semibold text-gray-900">Apply Coupon</span>
+            <div className="w-7 h-7 bg-green-50 rounded-lg flex items-center justify-center">
+              <Tag size={14} className="text-green-600" />
+            </div>
+            <span className="text-sm font-bold text-gray-900">Apply Coupon</span>
           </div>
           {couponCode ? (
-            <div className="flex items-center justify-between bg-green-50 rounded-xl px-3 py-2">
-              <span className="text-sm font-bold text-green-700">{couponCode} applied</span>
-              <button onClick={removeCoupon} className="text-xs text-red-500 font-semibold">Remove</button>
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+              <div>
+                <p className="text-sm font-extrabold text-green-700 font-mono">{couponCode}</p>
+                <p className="text-xs text-green-600 mt-0.5">You save {formatPrice(discount)}</p>
+              </div>
+              <button onClick={removeCoupon} className="text-xs font-bold text-red-500">Remove</button>
             </div>
           ) : (
             <div className="flex gap-2">
-              <input
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                placeholder="Enter coupon code"
-                className="flex-1 h-10 px-3 rounded-xl bg-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-green-400/30"
-                onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
-              />
-              <button
-                onClick={handleApplyCoupon}
-                disabled={applying || !couponInput.trim()}
-                className="px-4 h-10 bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
-              >
+              <input value={couponInput} onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                placeholder="Enter coupon code" onKeyDown={e => e.key === "Enter" && handleApplyCoupon()}
+                className="flex-1 h-11 px-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-mono uppercase tracking-wider focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-all" />
+              <button onClick={handleApplyCoupon} disabled={applying || !couponInput.trim()}
+                className="px-4 h-11 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 disabled:opacity-40 transition-colors">
                 {applying ? "..." : "Apply"}
               </button>
             </div>
           )}
         </div>
 
-        {/* Bill summary */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">Bill Summary</h3>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal</span>
-            <span>{formatPrice(sub)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Delivery</span>
-            <span className={fee === 0 ? "text-green-600 font-semibold" : ""}>
-              {fee === 0 ? "FREE" : formatPrice(fee)}
-            </span>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-green-600">Coupon discount</span>
-              <span className="text-green-600 font-semibold">-{formatPrice(discount)}</span>
-            </div>
-          )}
-          <div className="border-t border-gray-100 pt-2 flex justify-between font-bold">
-            <span>Total</span>
-            <span>{formatPrice(tot)}</span>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <h3 className="text-sm font-extrabold text-gray-900 mb-3">Bill Summary</h3>
+          <div className="space-y-2.5">
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-semibold">{formatPrice(sub)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Delivery fee</span>{fee === 0 ? <span className="text-green-600 font-bold">FREE</span> : <span className="font-semibold">{formatPrice(fee)}</span>}</div>
+            {discount > 0 && <div className="flex justify-between text-sm"><span className="text-green-600">Coupon ({couponCode})</span><span className="text-green-600 font-bold">−{formatPrice(discount)}</span></div>}
+            <div className="border-t border-gray-100 pt-2.5 flex justify-between font-extrabold text-base"><span>Total</span><span className="text-green-600">{formatPrice(tot)}</span></div>
+            {savings > 0 && <p className="text-center text-xs font-semibold text-green-700 bg-green-50 rounded-lg py-2">🎉 You save {formatPrice(savings)} on this order!</p>}
           </div>
         </div>
       </div>
 
-      {/* Checkout CTA */}
-      <div className="sticky bottom-16 px-4 pb-3 bg-linear-to-t from-gray-50 pt-2">
-        <Link
-          href="/checkout"
-          className="flex items-center justify-between w-full bg-green-600 text-white px-5 py-3.5 rounded-2xl font-semibold shadow-lg shadow-green-600/30"
-        >
-          <span>Proceed to Checkout</span>
-          <span>{formatPrice(tot)}</span>
+      <div className="sticky bottom-16 md:bottom-0 px-4 pb-3 pt-2 bg-linear-to-t from-gray-50 to-transparent">
+        <Link href="/checkout"
+          className="flex items-center justify-between w-full bg-green-600 hover:bg-green-700 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all">
+          <span className="text-base">Proceed to Checkout</span>
+          <div className="flex items-center gap-2"><span className="text-base">{formatPrice(tot)}</span><ArrowRight size={18} /></div>
         </Link>
       </div>
     </div>
