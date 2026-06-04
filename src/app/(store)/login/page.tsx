@@ -77,6 +77,19 @@ function LoginContent() {
     }
     setLoading(true);
     try {
+      // Check if user exists — if not, send them to register
+      const check = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const { exists } = await check.json();
+
+      if (!exists) {
+        router.push(`/register?email=${encodeURIComponent(email.trim().toLowerCase())}${redirect !== "/" ? `&redirect=${encodeURIComponent(redirect)}` : ""}`);
+        return;
+      }
+
       const res = await authClient.emailOtp.sendVerificationOtp({ email: email.trim().toLowerCase(), type: "sign-in" });
       if (res.error) { toast.error(res.error.message ?? "Failed to send OTP"); return; }
       setStep("otp");
