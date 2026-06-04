@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Sadrax order management for store staff",
     start_url: "/cord",
     display: "standalone",
-    background_color: "#0a0a0a",
+    background_color: "#f9fafb",
     theme_color: "#ea580c",
     orientation: "portrait-primary",
     categories: ["business", "productivity"],

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut } from "lucide-react";
+import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { PanelSwitcher } from "@/components/panel-switcher";
@@ -45,20 +45,21 @@ interface Order {
 
 const ACTION_BUTTONS: Record<string, { next: OrderStatus; label: string; icon: React.ElementType; color: string }[]> = {
   pending: [
-    { next: "accepted", label: "Accept", icon: Check, color: "bg-green-600 hover:bg-green-500" },
-    { next: "rejected", label: "Reject", icon: X, color: "bg-red-600 hover:bg-red-500" },
+    { next: "accepted",  label: "Accept", icon: Check, color: "bg-green-600 hover:bg-green-500" },
+    { next: "rejected",  label: "Reject", icon: X,     color: "bg-red-500 hover:bg-red-400"   },
   ],
-  accepted: [{ next: "packed", label: "Mark Packed", icon: Package, color: "bg-blue-600 hover:bg-blue-500" }],
-  packed: [{ next: "out_for_delivery", label: "Out for Delivery", icon: Truck, color: "bg-orange-600 hover:bg-orange-500" }],
-  out_for_delivery: [{ next: "delivered", label: "Mark Delivered", icon: Check, color: "bg-green-600 hover:bg-green-500" }],
+  accepted:         [{ next: "packed",           label: "Mark Packed",       icon: Package, color: "bg-blue-600 hover:bg-blue-500"   }],
+  packed:           [{ next: "out_for_delivery", label: "Out for Delivery",  icon: Truck,   color: "bg-orange-500 hover:bg-orange-400"}],
+  out_for_delivery: [{ next: "delivered",        label: "Mark Delivered",    icon: Check,   color: "bg-green-600 hover:bg-green-500"  }],
 };
 
 function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, status: OrderStatus) => void }) {
-  const [updating, setUpdating] = useState(false);
+  const [updating, setUpdating]         = useState(false);
   const [showRejectReason, setShowRejectReason] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
   const actions = ACTION_BUTTONS[order.status] ?? [];
+  const isPending = order.status === "pending";
 
   const handleAction = async (next: OrderStatus) => {
     if (next === "rejected") { setShowRejectReason(true); return; }
@@ -92,52 +93,63 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${
+      isPending ? "border-orange-200 shadow-orange-100 ring-1 ring-orange-200" : "border-gray-100"
+    }`}>
       {/* Card Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div className={`flex items-center justify-between px-4 py-3 border-b ${
+        isPending ? "bg-orange-50 border-orange-100" : "bg-gray-50 border-gray-100"
+      }`}>
         <div>
-          <span className="text-xs font-bold text-gray-400">#{order.orderNumber}</span>
-          <p className="text-xs text-gray-500 mt-0.5">{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}</p>
+          <span className="text-sm font-extrabold text-gray-900">#{order.orderNumber}</span>
+          <p className="text-xs text-gray-400 mt-0.5">{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status as OrderStatus]}`}>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[order.status as OrderStatus]}`}>
             {STATUS_LABELS[order.status as OrderStatus]}
           </span>
-          <span className="text-xs text-gray-400 uppercase">{order.paymentMethod}</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-100 px-2 py-0.5 rounded-lg">{order.paymentMethod}</span>
         </div>
       </div>
 
       <div className="p-4 space-y-3">
-        {/* Customer + Address */}
+        {/* Address */}
         {order.address && (
-          <div className="flex items-start gap-2 text-sm">
-            <MapPin size={14} className="text-gray-500 mt-0.5 shrink-0" />
+          <div className="flex items-start gap-2">
+            <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-white">{order.address.name}</p>
-              <p className="text-gray-400 text-xs">{order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ""}</p>
-              <p className="text-gray-400 text-xs">{order.address.pincode}</p>
+              <p className="text-sm font-semibold text-gray-900">{order.address.name}</p>
+              <p className="text-xs text-gray-500">{order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ""}</p>
+              <p className="text-xs text-gray-400">{order.address.pincode}</p>
             </div>
           </div>
         )}
 
         {/* Items */}
-        <div className="space-y-1">
+        <div className="bg-gray-50 rounded-xl px-3 py-2.5 space-y-1.5">
           {order.items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-gray-300">{item.productName} {item.productUnit ? `(${item.productUnit})` : ""} × {item.quantity}</span>
-              <span className="text-gray-400">{formatPrice(item.total)}</span>
+              <span className="text-gray-700">
+                {item.productName}
+                {item.productUnit ? <span className="text-gray-400 text-xs ml-1">({item.productUnit})</span> : ""}
+                <span className="text-gray-400"> × {item.quantity}</span>
+              </span>
+              <span className="font-semibold text-gray-800">{formatPrice(item.total)}</span>
             </div>
           ))}
         </div>
 
+        {/* Notes */}
         {order.notes && (
-          <p className="text-xs text-yellow-400 bg-yellow-400/10 rounded-lg px-3 py-2">Note: {order.notes}</p>
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+            📝 {order.notes}
+          </p>
         )}
 
         {/* Total */}
-        <div className="flex justify-between font-bold border-t border-gray-800 pt-2">
-          <span className="text-white">Total</span>
-          <span className="text-green-400">{formatPrice(order.total)}</span>
+        <div className="flex justify-between font-extrabold text-base border-t border-gray-100 pt-2.5">
+          <span className="text-gray-900">Total</span>
+          <span className="text-green-600">{formatPrice(order.total)}</span>
         </div>
 
         {/* Contact buttons */}
@@ -145,7 +157,7 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           <div className="flex gap-2">
             <a
               href={`tel:${order.customerPhone}`}
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-semibold text-gray-300 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
             >
               <Phone size={13} /> Call
             </a>
@@ -153,13 +165,13 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
               href={`https://wa.me/91${order.customerPhone.replace(/^\+91/, "")}?text=Hi! Your Sadrax order %23${order.orderNumber}`}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-green-900 hover:bg-green-800 rounded-xl text-xs font-semibold text-green-300 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-green-50 hover:bg-green-100 rounded-xl text-xs font-semibold text-green-700 transition-colors"
             >
               <MessageSquare size={13} /> WhatsApp
             </a>
             <button
               onClick={() => window.print()}
-              className="w-9 h-9 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-400 transition-colors"
+              className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 transition-colors"
             >
               <Printer size={14} />
             </button>
@@ -173,11 +185,11 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Reason for rejection (optional)"
-              className="w-full h-9 px-3 bg-gray-800 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/30"
+              className="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300"
             />
             <div className="flex gap-2">
-              <button onClick={() => setShowRejectReason(false)} className="flex-1 h-9 bg-gray-800 rounded-xl text-sm text-gray-400">Cancel</button>
-              <button onClick={handleReject} disabled={updating} className="flex-1 h-9 bg-red-600 hover:bg-red-500 rounded-xl text-sm font-semibold text-white">Reject</button>
+              <button onClick={() => setShowRejectReason(false)} className="flex-1 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm text-gray-600 font-medium transition-colors">Cancel</button>
+              <button onClick={handleReject} disabled={updating} className="flex-1 h-9 bg-red-500 hover:bg-red-600 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50">Reject</button>
             </div>
           </div>
         ) : actions.length > 0 ? (
@@ -187,9 +199,13 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
                 key={next}
                 onClick={() => handleAction(next)}
                 disabled={updating}
-                className={`flex-1 flex items-center justify-center gap-1.5 h-9 ${color} rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50`}
+                className={`flex-1 flex items-center justify-center gap-1.5 h-10 ${color} rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50`}
               >
-                <Icon size={14} /> {label}
+                {updating ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><Icon size={14} /> {label}</>
+                )}
               </button>
             ))}
           </div>
@@ -201,26 +217,24 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
 
 export default function CordPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filter, setFilter] = useState<"active" | "all">("active");
+  const [orders, setOrders]   = useState<Order[]>([]);
+  const [filter, setFilter]   = useState<"active" | "all">("active");
   const [loading, setLoading] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastOrderCount = useRef(0);
+  const audioRef              = useRef<HTMLAudioElement | null>(null);
+  const lastOrderCount        = useRef(0);
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch(`/api/cord/orders?filter=${filter}`);
+      const res  = await fetch(`/api/cord/orders?filter=${filter}`);
       const data = await res.json();
       const incoming = data.orders as Order[];
 
-      // Play alert sound for new pending orders
       const pendingCount = incoming.filter((o) => o.status === "pending").length;
       if (pendingCount > lastOrderCount.current && lastOrderCount.current >= 0) {
         audioRef.current?.play().catch(() => {});
         toast.success(`${pendingCount} new order${pendingCount > 1 ? "s" : ""}!`, { duration: 5000 });
       }
       lastOrderCount.current = pendingCount;
-      // Update browser tab title
       document.title = pendingCount > 0 ? `(${pendingCount}) Cord — Sadrax` : "Cord — Sadrax";
       setOrders(incoming);
     } catch {
@@ -232,7 +246,7 @@ export default function CordPage() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 8000); // poll every 8s
+    const interval = setInterval(fetchOrders, 8000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
@@ -240,75 +254,92 @@ export default function CordPage() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
-  const activeOrders = orders.filter((o) => !["delivered", "rejected", "cancelled"].includes(o.status));
+  const activeOrders  = orders.filter((o) => !["delivered", "rejected", "cancelled"].includes(o.status));
   const displayOrders = filter === "active" ? activeOrders : orders;
+  const pendingCount  = activeOrders.filter(o => o.status === "pending").length;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hidden audio for new order alert */}
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <audio ref={audioRef} src="/sounds/new-order.mp3" preload="auto" />
 
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-gray-950 border-b border-gray-800 px-4 py-3">
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-100 shadow-sm px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          {/* Brand */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-linear-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm shadow-orange-500/30">
+              <Zap size={16} className="text-white" fill="white" />
+            </div>
             <div>
-              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+              <h1 className="text-base font-extrabold text-gray-900 flex items-center gap-1.5">
                 Cord
-                {activeOrders.filter(o => o.status === "pending").length > 0 && (
+                {pendingCount > 0 && (
                   <span className="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-extrabold rounded-full animate-pulse">
-                    {activeOrders.filter(o => o.status === "pending").length}
+                    {pendingCount}
                   </span>
                 )}
               </h1>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400">
                 {activeOrders.length} active order{activeOrders.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
+
+          {/* Controls */}
           <div className="flex items-center gap-2">
-            <PanelSwitcher current="cord" dark />
-            <button
-              onClick={fetchOrders}
-              className="w-9 h-9 flex items-center justify-center bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors"
-            >
-              <RefreshCw size={16} />
-            </button>
-            <button
-              onClick={async () => { await signOut(); router.replace("/cord/login"); }}
-              className="w-9 h-9 flex items-center justify-center bg-gray-800 rounded-xl text-gray-400 hover:text-red-400 transition-colors"
-              title="Sign out"
-            >
-              <LogOut size={16} />
-            </button>
-            <div className="flex bg-gray-800 rounded-xl p-0.5">
+            <PanelSwitcher current="cord" />
+
+            {/* Filter toggle */}
+            <div className="flex bg-gray-100 rounded-xl p-0.5">
               <button
                 onClick={() => setFilter("active")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${filter === "active" ? "bg-white text-gray-900" : "text-gray-400"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  filter === "active" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                }`}
               >
                 Active
               </button>
               <button
                 onClick={() => setFilter("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${filter === "all" ? "bg-white text-gray-900" : "text-gray-400"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  filter === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                }`}
               >
                 All
               </button>
             </div>
+
+            <button
+              onClick={fetchOrders}
+              className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              <RefreshCw size={15} />
+            </button>
+
+            <button
+              onClick={async () => { await signOut(); router.replace("/cord/login"); }}
+              className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-red-50 rounded-xl text-gray-500 hover:text-red-500 transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={15} />
+            </button>
           </div>
         </div>
       </div>
 
+      {/* Body */}
       <div className="max-w-2xl mx-auto w-full px-4 py-4">
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : displayOrders.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center">
-            <span className="text-5xl mb-4">✅</span>
-            <h3 className="font-semibold text-gray-300">All clear!</h3>
-            <p className="text-sm text-gray-600 mt-1">No active orders right now</p>
+            <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-4">
+              <Check size={28} className="text-green-500" />
+            </div>
+            <h3 className="font-bold text-gray-800">All clear!</h3>
+            <p className="text-sm text-gray-400 mt-1">No active orders right now</p>
           </div>
         ) : (
           <div className="space-y-4">
