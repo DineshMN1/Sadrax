@@ -5,16 +5,11 @@ import { SearchBar } from "@/components/store/search-bar";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
+import { ChevronRight } from "lucide-react";
 
 async function getCategoriesWithCounts() {
   const cats = await db
-    .select({
-      id: categories.id,
-      name: categories.name,
-      slug: categories.slug,
-      image: categories.image,
-      order: categories.order,
-    })
+    .select({ id: categories.id, name: categories.name, slug: categories.slug, image: categories.image, order: categories.order })
     .from(categories)
     .where(eq(categories.active, true))
     .orderBy(categories.order);
@@ -47,8 +42,7 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 pt-4 pb-3 space-y-3">
+      <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-4 pb-3 space-y-3">
         <h1 className="text-xl font-extrabold text-gray-900">All Categories</h1>
         <Suspense><SearchBar /></Suspense>
       </div>
@@ -62,13 +56,13 @@ export default async function CategoriesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {cats.map((cat) => (
+            {cats.map(cat => (
               <Link
                 key={cat.id}
                 href={`/category/${cat.slug}`}
-                className="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 hover:border-green-300 hover:shadow-md transition-all"
+                className="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 hover:border-green-200 hover:shadow-md transition-all"
               >
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center border border-gray-100 group-hover:scale-105 transition-transform">
                   {cat.image ? (
                     <Image src={cat.image} alt={cat.name} width={48} height={48} className="w-full h-full object-cover" />
                   ) : (
@@ -76,11 +70,12 @@ export default async function CategoriesPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 leading-tight">{cat.name}</p>
+                  <p className="text-sm font-bold text-gray-900 leading-tight">{cat.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {cat.productCount} item{cat.productCount !== 1 ? "s" : ""}
                   </p>
                 </div>
+                <ChevronRight size={14} className="text-gray-300 group-hover:text-green-500 transition-colors shrink-0" />
               </Link>
             ))}
           </div>

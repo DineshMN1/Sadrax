@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { formatPrice } from "@/lib/utils";
 import { Plus, Upload } from "lucide-react";
 import { ProductToggle } from "./product-toggle";
+import { BulkStockEditor } from "./bulk-stock";
 
 export default async function ProductsPage() {
   const rows = await db
@@ -14,11 +15,14 @@ export default async function ProductsPage() {
     .leftJoin(categories, eq(products.categoryId, categories.id))
     .orderBy(desc(products.createdAt));
 
+  const productList = rows.map(({ product: p }) => ({ id: p.id, name: p.name, stock: p.stock }));
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <BulkStockEditor products={productList} />
           <Link href="/admin/products/import" className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50">
             <Upload size={15} /> CSV Import
           </Link>

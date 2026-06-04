@@ -1,21 +1,14 @@
-export async function sendOtp(phone: string, otp: string): Promise<void> {
-  const authKey = process.env.MSG91_AUTH_KEY!;
-  const templateId = process.env.MSG91_TEMPLATE_ID!;
+// sendOtp is active — used by Better Auth for email OTP login.
 
-  // Normalize phone to 91XXXXXXXXXX format
+export async function sendOtp(phone: string, otp: string): Promise<void> {
+  const authKey    = process.env.MSG91_AUTH_KEY!;
+  const templateId = process.env.MSG91_TEMPLATE_ID!;
   const normalized = phone.startsWith("+") ? phone.slice(1) : phone.startsWith("91") ? phone : `91${phone}`;
 
   const res = await fetch("https://control.msg91.com/api/v5/otp", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      authkey: authKey,
-    },
-    body: JSON.stringify({
-      template_id: templateId,
-      mobile: normalized,
-      otp,
-    }),
+    headers: { "Content-Type": "application/json", authkey: authKey },
+    body: JSON.stringify({ template_id: templateId, mobile: normalized, otp }),
   });
 
   if (!res.ok) {
@@ -24,36 +17,23 @@ export async function sendOtp(phone: string, otp: string): Promise<void> {
   }
 }
 
-export async function sendSms(phone: string, message: string): Promise<void> {
-  const authKey = process.env.MSG91_AUTH_KEY!;
-  const normalized = phone.startsWith("+") ? phone.slice(1) : phone.startsWith("91") ? phone : `91${phone}`;
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  NOT IN PLAN FOR NOW — Order status SMS notifications            ║
+// ║  Enable when: MSG91 flow/template IDs are configured             ║
+// ║  Calls are commented out in: api/orders/route.ts,               ║
+// ║    api/orders/[id]/route.ts, api/cord/orders/[id]/status/route.ts║
+// ╚══════════════════════════════════════════════════════════════════╝
 
-  await fetch("https://control.msg91.com/api/v5/flow/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      authkey: authKey,
-    },
-    body: JSON.stringify({
-      mobiles: normalized,
-      message,
-    }),
-  });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function sendSms(_phone: string, _message: string): Promise<void> {
+  // NOT IN PLAN FOR NOW
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function sendOrderStatusSms(
-  phone: string,
-  orderNumber: string,
-  status: string
+  _phone: string,
+  _orderNumber: string,
+  _status: string
 ): Promise<void> {
-  const messages: Record<string, string> = {
-    accepted: `Your Sadrax order #${orderNumber} has been accepted and is being prepared.`,
-    packed: `Your Sadrax order #${orderNumber} is packed and ready.`,
-    out_for_delivery: `Your Sadrax order #${orderNumber} is out for delivery. It will reach you shortly!`,
-    delivered: `Your Sadrax order #${orderNumber} has been delivered. Thank you for shopping with us!`,
-    rejected: `Your Sadrax order #${orderNumber} could not be processed. Please contact us for help.`,
-  };
-
-  const msg = messages[status];
-  if (msg) await sendSms(phone, msg);
+  // NOT IN PLAN FOR NOW
 }

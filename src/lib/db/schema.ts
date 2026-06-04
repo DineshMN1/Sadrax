@@ -197,6 +197,19 @@ export const deliveryPersons = pgTable("delivery_persons", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id:        serial("id").primaryKey(),
+    userId:    text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    endpoint:  text("endpoint").notNull(),
+    p256dh:    text("p256dh").notNull(),
+    auth:      text("auth").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
+);
+
 // key-value store for all store configuration
 export const storeSettings = pgTable("store_settings", {
   key: varchar("key", { length: 100 }).primaryKey(),
@@ -213,4 +226,5 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Address = typeof addresses.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
-export type DeliveryPerson = typeof deliveryPersons.$inferSelect;
+export type DeliveryPerson    = typeof deliveryPersons.$inferSelect;
+export type PushSubscription  = typeof pushSubscriptions.$inferSelect;

@@ -5,9 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import {
   LayoutDashboard, Package, Tag, ShoppingBag,
-  Settings, Users, Percent, Zap, LogOut,
+  Settings, Users, Percent, LogOut, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PanelSwitcher } from "@/components/panel-switcher";
 
 // Icons live here in the client component — never passed as props from server
 const NAV_ITEMS = [
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/admin/orders",     icon: ShoppingBag,     label: "Orders" },
   { href: "/admin/products",   icon: Package,         label: "Products" },
   { href: "/admin/categories", icon: Tag,             label: "Categories" },
+  { href: "/admin/analytics",  icon: TrendingUp,      label: "Analytics" },
   { href: "/admin/offers",     icon: Percent,         label: "Offers" },
   { href: "/admin/staff",      icon: Users,           label: "Staff" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },
@@ -32,15 +34,18 @@ export function AdminSidebar({ email }: { email: string }) {
   return (
     <aside className="w-56 min-h-screen bg-white border-r border-gray-100 flex-col fixed top-0 left-0 bottom-0 z-30 hidden md:flex">
       {/* Brand */}
-      <div className="px-5 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
-            S
+      <div className="px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0">
+              A
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900 text-sm leading-none">Admin</p>
+              <p className="text-[10px] text-gray-400 mt-0.5 truncate">{email}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-gray-900 text-sm leading-none">Sadrax Admin</p>
-            <p className="text-[10px] text-gray-400 mt-0.5 truncate max-w-30">{email}</p>
-          </div>
+          <PanelSwitcher current="admin" />
         </div>
       </div>
 
@@ -68,13 +73,6 @@ export function AdminSidebar({ email }: { email: string }) {
 
       {/* Footer */}
       <div className="px-3 pb-4 pt-2 border-t border-gray-100 space-y-1">
-        <Link
-          href="/cord"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          <Zap size={16} className="text-orange-500" />
-          Open Cord
-        </Link>
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"

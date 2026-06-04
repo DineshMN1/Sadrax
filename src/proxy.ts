@@ -39,6 +39,24 @@ function rateLimitResponse(retryAfter?: number) {
   );
 }
 
+const FAIL_OPEN = { success: true, reset: 0 };
+
+/* Safely call a rate limiter with a hard 300 ms timeout.
+   DNS failures take ~4 s to throw — the race ensures we fail open
+   in ≤300 ms instead of blocking every request for seconds. */
+async function limit(fn: () => Promise<{ success: boolean; reset?: number }>) {
+  try {
+    return await Promise.race([
+      fn(),
+      new Promise<typeof FAIL_OPEN>(resolve =>
+        setTimeout(() => resolve(FAIL_OPEN), 300)
+      ),
+    ]);
+  } catch {
+    return FAIL_OPEN;
+  }
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -48,33 +66,29 @@ export async function proxy(req: NextRequest) {
   const ip = getIp(req);
 
   // ── OTP endpoints ─────────────────────────────────────────────────────────
-  // Better Auth routes that trigger OTP sends:
-  //   POST /api/auth/sign-in/phone-number  (phone OTP send)
-  //   POST /api/auth/email-otp/send-verification-otp
   if (
     pathname === "/api/auth/sign-in/phone-number" ||
     pathname === "/api/auth/email-otp/send-verification-otp"
   ) {
-    const { success, reset } = await limiters.otp.limit(ip);
-    if (!success) return rateLimitResponse(Math.ceil((reset - Date.now()) / 1000));
+    const { success, reset } = await limit(() => limiters!.otp.limit(ip));
+    if (!success) return rateLimitResponse(reset ? Math.ceil((reset - Date.now()) / 1000) : undefined);
   }
 
   // ── Order creation ─────────────────────────────────────────────────────────
   if (pathname === "/api/orders" && req.method === "POST") {
-    const { success } = await limiters.orders.limit(ip);
+    const { success } = await limit(() => limiters!.orders.limit(ip));
     if (!success) return rateLimitResponse();
   }
 
   // ── Coupon brute-force protection ──────────────────────────────────────────
   if (pathname === "/api/coupons/validate" && req.method === "POST") {
-    // Stricter: 15 attempts per 5 min — brute-forcing coupons
-    const { success } = await limiters.otp.limit(`coupon:${ip}`);
+    const { success } = await limit(() => limiters!.otp.limit(`coupon:${ip}`));
     if (!success) return rateLimitResponse();
   }
 
   // ── General API rate limit ─────────────────────────────────────────────────
   if (pathname.startsWith("/api/")) {
-    const { success } = await limiters.api.limit(ip);
+    const { success } = await limit(() => limiters!.api.limit(ip));
     if (!success) return rateLimitResponse();
   }
 

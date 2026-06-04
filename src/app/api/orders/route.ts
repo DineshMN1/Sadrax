@@ -5,8 +5,8 @@ import { db } from "@/lib/db";
 import { orders, orderItems, products, coupons, addresses, users } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { generateOrderNumber, calculateDeliveryFee } from "@/lib/utils";
-import { createRazorpayOrder } from "@/lib/razorpay";
-import { sendOrderStatusSms } from "@/lib/msg91";
+// NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
+// NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -130,18 +130,18 @@ export async function POST(req: NextRequest) {
     await db.update(coupons).set({ usedCount: sql`${coupons.usedCount} + 1` }).where(eq(coupons.id, appliedCoupon.id));
   }
 
-  // For UPI/card, create Razorpay order
-  if (paymentMethod !== "cod") {
-    const rzpOrder = await createRazorpayOrder(total, order.orderNumber);
-    await db.update(orders).set({ razorpayOrderId: rzpOrder.id }).where(eq(orders.id, order.id));
-    return NextResponse.json({ orderId: order.id, orderNumber, razorpayOrderId: rzpOrder.id });
-  }
+  // NOT IN PLAN FOR NOW — Razorpay UPI/card flow (needs webhook handler)
+  // if (paymentMethod !== "cod") {
+  //   const rzpOrder = await createRazorpayOrder(total, order.orderNumber);
+  //   await db.update(orders).set({ razorpayOrderId: rzpOrder.id }).where(eq(orders.id, order.id));
+  //   return NextResponse.json({ orderId: order.id, orderNumber, razorpayOrderId: rzpOrder.id });
+  // }
 
-  // Send SMS for COD
-  const [user] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
-  if (user?.phone) {
-    sendOrderStatusSms(user.phone, orderNumber, "pending").catch(() => {});
-  }
+  // NOT IN PLAN FOR NOW — Order placed SMS (needs MSG91 templates configured)
+  // const [user] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+  // if (user?.phone) {
+  //   sendOrderStatusSms(user.phone, orderNumber, "pending").catch(() => {});
+  // }
 
   return NextResponse.json({ orderId: order.id, orderNumber });
 }

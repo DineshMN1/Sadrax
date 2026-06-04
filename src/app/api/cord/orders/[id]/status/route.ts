@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders, users } from "@/lib/db/schema";
+import { orders } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
-import { sendOrderStatusSms } from "@/lib/msg91";
+// NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
+import { sendPushToUser } from "@/lib/push";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -32,10 +33,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  // SMS notification
-  const [user] = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);
-  if (user?.phone) {
-    sendOrderStatusSms(user.phone, order.orderNumber, status).catch(() => {});
+  // NOT IN PLAN FOR NOW — SMS on status change (needs MSG91 templates configured)
+  // const [user] = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);
+  // if (user?.phone) {
+  //   sendOrderStatusSms(user.phone, order.orderNumber, status).catch(() => {});
+  // }
+
+  // Push notification on key status changes
+  const pushMessages: Record<string, { title: string; body: string }> = {
+    accepted:         { title: "Order Accepted ✅",     body: `#${order.orderNumber} is being prepared` },
+    packed:           { title: "Order Packed 📦",        body: `#${order.orderNumber} is packed and ready` },
+    out_for_delivery: { title: "Out for Delivery 🛵",    body: `#${order.orderNumber} is on the way to you!` },
+    delivered:        { title: "Order Delivered 🎉",     body: `#${order.orderNumber} delivered. Enjoy!` },
+    rejected:         { title: "Order Could Not Be Processed", body: `#${order.orderNumber} was rejected. Contact us for help.` },
+  };
+
+  if (pushMessages[status]) {
+    sendPushToUser(order.userId, {
+      ...pushMessages[status],
+      url: `/orders/${order.id}`,
+    }).catch(() => {});
   }
 
   return NextResponse.json({ order });

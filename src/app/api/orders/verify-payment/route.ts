@@ -1,3 +1,8 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  NOT IN PLAN FOR NOW — Razorpay payment verification webhook     ║
+// ║  Enable when: Razorpay integration is ready (see razorpay.ts)   ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";

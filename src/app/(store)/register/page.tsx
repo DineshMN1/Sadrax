@@ -56,7 +56,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
           className="w-11 h-14 text-center text-xl font-bold rounded-xl border-2 bg-white transition-all outline-none
             border-gray-200 text-gray-900
             focus:border-green-500 focus:ring-4 focus:ring-green-500/10
-            [&:not(:placeholder-shown)]:border-green-400 [&:not(:placeholder-shown)]:bg-green-50"
+            not-placeholder-shown:border-green-400 not-placeholder-shown:bg-green-50"
           placeholder="·"
         />
       ))}
@@ -509,7 +509,9 @@ function RegisterContent() {
 
               <p className="text-center text-xs text-gray-400">
                 By continuing you agree to our{" "}
-                <span className="text-green-600 font-medium cursor-pointer">Terms &amp; Privacy Policy</span>
+                <a href="/terms" className="text-green-600 font-medium hover:underline">Terms</a>
+                {" "}&amp;{" "}
+                <a href="/privacy" className="text-green-600 font-medium hover:underline">Privacy Policy</a>
               </p>
             </div>
           )}

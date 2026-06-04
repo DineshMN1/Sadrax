@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Mail, ShoppingBag, ArrowRight, ChevronLeft, RefreshCw } from "lucide-react";
+import { Mail, ShoppingBag, ArrowRight, ChevronLeft, RefreshCw, Sparkles } from "lucide-react";
 
-// ─── 6 individual OTP digit boxes ───────────────────────────────────────────
+// ─── 6 individual OTP digit boxes ────────────────────────────────────────────
 
 function OtpBoxes({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
@@ -30,30 +30,33 @@ function OtpBoxes({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="flex gap-2.5 justify-center">
       {Array(6).fill(0).map((_, i) => (
-        <input key={i}
-          ref={(el) => { refs.current[i] = el; }}
-          type="tel" inputMode="numeric" maxLength={1}
+        <input
+          key={i}
+          ref={el => { refs.current[i] = el; }}
+          type="tel"
+          inputMode="numeric"
+          maxLength={1}
           value={digits[i] || ""}
-          onChange={(e) => update(i, e.target.value.replace(/\D/g, "").slice(-1))}
-          onKeyDown={(e) => handleKey(i, e)}
+          onChange={e => update(i, e.target.value.replace(/\D/g, "").slice(-1))}
+          onKeyDown={e => handleKey(i, e)}
           onPaste={i === 0 ? handlePaste : undefined}
           placeholder="·"
-          className="w-11 h-14 text-center text-xl font-bold rounded-xl border-2 bg-white transition-all outline-none border-gray-200 text-gray-900 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 [&:not(:placeholder-shown)]:border-green-400 [&:not(:placeholder-shown)]:bg-green-50"
+          className="w-11 h-14 text-center text-xl font-bold rounded-2xl border-2 bg-white transition-all outline-none border-gray-200 text-gray-900 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 not-placeholder-shown:border-green-400 not-placeholder-shown:bg-green-50 shadow-sm"
         />
       ))}
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
 type Step = "email" | "otp";
 
 function LoginContent() {
-  const router = useRouter();
-  const params = useSearchParams();
+  const router   = useRouter();
+  const params   = useSearchParams();
   const redirect = params.get("redirect") ?? "/";
 
   const [step,     setStep]    = useState<Step>("email");
@@ -64,7 +67,7 @@ function LoginContent() {
 
   const startCooldown = () => {
     setCooldown(60);
-    const t = setInterval(() => setCooldown((c) => { if (c <= 1) { clearInterval(t); return 0; } return c - 1; }), 1000);
+    const t = setInterval(() => setCooldown(c => { if (c <= 1) { clearInterval(t); return 0; } return c - 1; }), 1000);
   };
 
   const handleSendOtp = async () => {
@@ -74,14 +77,11 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      const res = await authClient.emailOtp.sendVerificationOtp({
-        email: email.trim().toLowerCase(),
-        type: "sign-in",
-      });
+      const res = await authClient.emailOtp.sendVerificationOtp({ email: email.trim().toLowerCase(), type: "sign-in" });
       if (res.error) { toast.error(res.error.message ?? "Failed to send OTP"); return; }
       setStep("otp");
       startCooldown();
-      toast.success("OTP sent to " + email);
+      toast.success("OTP sent!", { description: email });
     } catch {
       toast.error("Could not send OTP. Try again.");
     } finally {
@@ -93,12 +93,9 @@ function LoginContent() {
     if (otp.length !== 6) { toast.error("Enter the 6-digit OTP"); return; }
     setLoading(true);
     try {
-      const res = await authClient.signIn.emailOtp({
-        email: email.trim().toLowerCase(),
-        otp,
-      });
+      const res = await authClient.signIn.emailOtp({ email: email.trim().toLowerCase(), otp });
       if (res.error) { toast.error(res.error.message ?? "Invalid OTP"); return; }
-      toast.success("Welcome back!");
+      toast.success("Welcome back! 👋");
       router.push(redirect);
       router.refresh();
     } catch {
@@ -113,10 +110,7 @@ function LoginContent() {
     setOtp("");
     setLoading(true);
     try {
-      await authClient.emailOtp.sendVerificationOtp({
-        email: email.trim().toLowerCase(),
-        type: "sign-in",
-      });
+      await authClient.emailOtp.sendVerificationOtp({ email: email.trim().toLowerCase(), type: "sign-in" });
       startCooldown();
       toast.success("New OTP sent!");
     } catch {
@@ -131,20 +125,22 @@ function LoginContent() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         {step === "otp" ? (
-          <button onClick={() => { setStep("email"); setOtp(""); }}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm">
+          <button
+            onClick={() => { setStep("email"); setOtp(""); }}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors"
+          >
             <ChevronLeft size={18} className="text-gray-600" />
           </button>
         ) : (
-          <Link href="/" className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm">
+          <Link href="/" className="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors">
             <ChevronLeft size={18} className="text-gray-600" />
           </Link>
         )}
-        <div className="flex items-center gap-1.5">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <ShoppingBag size={14} className="text-white" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+            <ShoppingBag size={15} className="text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-sm">Sadrax</span>
+          <span className="font-extrabold text-gray-900 text-sm">Sadrax</span>
         </div>
         <div className="w-9" />
       </div>
@@ -155,46 +151,58 @@ function LoginContent() {
           {step === "email" && (
             <>
               <div>
-                <h1 className="text-2xl font-extrabold text-gray-900">Sign in</h1>
+                <h1 className="text-2xl font-extrabold text-gray-900">Welcome back</h1>
                 <p className="text-gray-500 text-sm mt-1">
                   New here?{" "}
                   <Link
                     href={`/register${redirect !== "/" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
-                    className="text-green-600 font-semibold hover:underline"
+                    className="text-green-600 font-bold hover:underline"
                   >
                     Create account →
                   </Link>
                 </p>
               </div>
 
-              <div className="flex items-center rounded-2xl border-2 border-gray-200 bg-white focus-within:border-green-500 focus-within:shadow-[0_0_0_4px_rgba(22,163,74,0.1)] transition-all">
-                <Mail size={17} className="ml-4 text-gray-400 shrink-0" />
+              <div className="flex items-center rounded-2xl border-2 border-gray-200 bg-white focus-within:border-green-500 focus-within:shadow-[0_0_0_4px_rgba(22,163,74,0.08)] transition-all">
+                <div className="w-11 h-12 flex items-center justify-center shrink-0">
+                  <Mail size={17} className="text-gray-400" />
+                </div>
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSendOtp()}
                   placeholder="your@email.com"
                   autoComplete="email"
-                  className="flex-1 h-12 px-3 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+                  className="flex-1 h-12 pr-4 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
                 />
               </div>
 
               <button
                 onClick={handleSendOtp}
                 disabled={loading}
-                className="w-full h-14 bg-green-600 hover:bg-green-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-600/25 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-600/25 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading
                   ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   : <><span>Send OTP</span><ArrowRight size={18} /></>}
               </button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                <div className="relative flex justify-center">
+                  <span className="bg-gray-50 px-3 text-xs text-gray-400 font-medium">We&apos;ll email you a one-time code</span>
+                </div>
+              </div>
             </>
           )}
 
           {step === "otp" && (
             <>
               <div>
+                <div className="w-14 h-14 bg-linear-to-br from-green-50 to-emerald-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                  <Sparkles size={24} className="text-green-600" />
+                </div>
                 <h1 className="text-2xl font-extrabold text-gray-900">Enter OTP</h1>
                 <p className="text-gray-500 text-sm mt-1">
                   Sent to <span className="font-semibold text-gray-800">{email}</span>
@@ -206,7 +214,7 @@ function LoginContent() {
               <button
                 onClick={handleVerify}
                 disabled={loading || otp.length !== 6}
-                className="w-full h-14 bg-green-600 hover:bg-green-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-600/25 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-600/25 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading
                   ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -222,7 +230,7 @@ function LoginContent() {
                   <button
                     onClick={handleResend}
                     disabled={loading}
-                    className="flex items-center gap-1.5 mx-auto text-green-600 font-semibold"
+                    className="flex items-center gap-1.5 mx-auto text-green-600 font-semibold hover:text-green-700 transition-colors"
                   >
                     <RefreshCw size={14} /> Resend OTP
                   </button>

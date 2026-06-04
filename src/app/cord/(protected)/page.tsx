@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
+import { PanelSwitcher } from "@/components/panel-switcher";
 
 interface OrderItem {
   id: number;
@@ -216,9 +217,11 @@ export default function CordPage() {
       const pendingCount = incoming.filter((o) => o.status === "pending").length;
       if (pendingCount > lastOrderCount.current && lastOrderCount.current >= 0) {
         audioRef.current?.play().catch(() => {});
-        toast.success(`${pendingCount} new order${pendingCount > 1 ? "s" : ""}!`);
+        toast.success(`${pendingCount} new order${pendingCount > 1 ? "s" : ""}!`, { duration: 5000 });
       }
       lastOrderCount.current = pendingCount;
+      // Update browser tab title
+      document.title = pendingCount > 0 ? `(${pendingCount}) Cord — Sadrax` : "Cord — Sadrax";
       setOrders(incoming);
     } catch {
       // silently fail on background polls
@@ -248,13 +251,23 @@ export default function CordPage() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-gray-950 border-b border-gray-800 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-white">Cord Dashboard</h1>
-            <p className="text-xs text-gray-500">
-              {activeOrders.length} active order{activeOrders.length !== 1 ? "s" : ""}
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                Cord
+                {activeOrders.filter(o => o.status === "pending").length > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-extrabold rounded-full animate-pulse">
+                    {activeOrders.filter(o => o.status === "pending").length}
+                  </span>
+                )}
+              </h1>
+              <p className="text-xs text-gray-500">
+                {activeOrders.length} active order{activeOrders.length !== 1 ? "s" : ""}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
+            <PanelSwitcher current="cord" dark />
             <button
               onClick={fetchOrders}
               className="w-9 h-9 flex items-center justify-center bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors"

@@ -1,3 +1,9 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  NOT IN PLAN FOR NOW — Razorpay payment integration              ║
+// ║  Enable when: UPI/card webhook handler is implemented            ║
+// ║  Ref: needs /api/orders/verify-payment webhook + frontend flow   ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
