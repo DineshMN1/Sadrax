@@ -20,7 +20,7 @@ const LocationPicker = loadDynamic(
 
 function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, "").split("").slice(0, 6);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
   const update = (idx: number, char: string) => {
     const next = digits.map((d, i) => (i === idx ? char : d)).join("").replace(/[^0-9]/g, "").slice(0, 6);

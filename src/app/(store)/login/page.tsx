@@ -11,7 +11,7 @@ import { Mail, ShoppingBag, ArrowRight, ChevronLeft, RefreshCw, Sparkles } from 
 
 function OtpBoxes({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, "").split("").slice(0, 6);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
   const update = (i: number, char: string) => {
     const next = digits.map((d, j) => (j === i ? char : d)).join("").replace(/\D/g, "").slice(0, 6);
