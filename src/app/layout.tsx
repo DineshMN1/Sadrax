@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { Suspense } from "react";
+import { PageViewTracker } from "@/components/providers/pageview-tracker";
 
 const geistSans  = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono  = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -44,7 +47,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* NOT IN PLAN FOR NOW — Razorpay checkout script */}
         {/* <script src="https://checkout.razorpay.com/v1/checkout.js" async /> */}
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <PostHogProvider>
+          <Suspense fallback={null}><PageViewTracker /></Suspense>
+          {children}
+        </PostHogProvider>
+      </body>
     </html>
   );
 }

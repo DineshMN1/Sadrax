@@ -7,11 +7,13 @@ export const metadata: Metadata = {
   description: "Terms and Conditions for Sadrax Grocery, Sadras.",
 };
 
-const STORE_NAME    = "Sadrax Grocery";
-const STORE_ADDRESS = "Sadras, Kalpakam, Tamil Nadu — 603102";
-const STORE_EMAIL   = process.env.NEXT_PUBLIC_STORE_EMAIL ?? "support@sadrax.in";
-const STORE_PHONE   = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
-const APP_URL       = process.env.NEXT_PUBLIC_APP_URL     ?? "https://sadrax.in";
+const STORE_NAME    = process.env.NEXT_PUBLIC_STORE_NAME    ?? "Sadrax Grocery";
+const STORE_ADDRESS = process.env.NEXT_PUBLIC_STORE_ADDRESS ?? "Sadras, Kalpakam, Tamil Nadu — 603102";
+const STORE_EMAIL   = process.env.NEXT_PUBLIC_STORE_EMAIL   ?? "support@sadrax.in";
+const STORE_PHONE   = process.env.NEXT_PUBLIC_STORE_PHONE   ?? "9876543210";
+const APP_URL       = process.env.NEXT_PUBLIC_APP_URL       ?? "https://sadrax.in";
+const FSSAI_NUMBER  = process.env.NEXT_PUBLIC_FSSAI_NUMBER  ?? "[FSSAI Registration No. — to be updated]";
+const GST_NUMBER    = process.env.NEXT_PUBLIC_GST_NUMBER    ?? "[GST No. — to be updated]";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="space-y-2">
@@ -42,9 +44,12 @@ export default function TermsPage() {
         <Section title="1. About Us">
           <p>
             {STORE_NAME} is a local grocery delivery service operating in Sadras and Kalpakam,
-            Tamil Nadu. We are licensed under FSSAI and registered under the applicable state
-            laws for food retail. Our registered address is: <strong>{STORE_ADDRESS}</strong>.
+            Tamil Nadu. Our registered address is: <strong>{STORE_ADDRESS}</strong>.
           </p>
+          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-1 text-xs text-gray-500">
+            <p><strong className="text-gray-700">FSSAI Licence No.:</strong> {FSSAI_NUMBER}</p>
+            <p><strong className="text-gray-700">GST No.:</strong> {GST_NUMBER}</p>
+          </div>
         </Section>
 
         <Section title="2. Eligibility">
