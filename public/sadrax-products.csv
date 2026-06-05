@@ -1,0 +1,84 @@
+name,description,price,mrp,unit,stock,category,featured
+Hatsun Curd,Fresh curd by Hatsun,38,40,500ml,50,Dairy Products,false
+Hatsun Curd,Fresh curd by Hatsun,10,10,small,100,Dairy Products,false
+Arokya Curd,Fresh curd by Arokya,36,40,500ml,50,Dairy Products,false
+Arokya Curd,Fresh curd by Arokya,10,10,small,100,Dairy Products,false
+Milk,Fresh full cream milk,28,30,500ml,100,Dairy Products,true
+Milk,Fresh full cream milk,15,16,250ml,100,Dairy Products,false
+Aavin Milk Orange,Flavoured orange milk by Aavin,35,35,500ml,50,Dairy Products,false
+Dairy Day Cone,Ice cream cone,20,20,1 pc,30,Ice Cream,false
+Junior Cone,Small ice cream cone,10,10,1 pc,30,Ice Cream,false
+Chocobar Mini,Chocolate ice cream bar,10,10,1 pc,30,Ice Cream,false
+Chocobar Large,Large chocolate ice cream bar,20,20,1 pc,30,Ice Cream,false
+Spinno,Candy,5,5,1 pc,100,Candy,false
+Large Cup,Ice cream cup,20,20,1 pc,30,Ice Cream,false
+Tub,Ice cream tub,40,40,1 pc,20,Ice Cream,false
+Bogo,Candy,10,10,1 pc,100,Candy,false
+Sprite,Lemon lime soft drink,20,20,250ml,50,Beverages,false
+7 Up,Lemon lime soft drink,20,20,250ml,50,Beverages,false
+Mirinda,Orange soft drink,20,20,250ml,50,Beverages,false
+Coke,Cola soft drink,20,20,250ml,50,Beverages,true
+Bovonto,Grape soft drink,15,15,200ml,50,Beverages,false
+Maaza,Mango drink,20,20,250ml,50,Beverages,false
+Pepsi,Cola soft drink,20,20,250ml,50,Beverages,false
+Mountain Dew,Citrus soft drink,20,20,250ml,50,Beverages,false
+Nimbooz,Lemon drink,20,20,250ml,50,Beverages,false
+Badam Juice,Almond flavoured drink,30,35,200ml,30,Beverages,false
+Juice,Fruit juice,10,10,small,80,Beverages,false
+Milk Biscuit White,Milk biscuits white pack,10,12,1 pack,50,Biscuits & Snacks,false
+Milk Biscuit Blue,Milk biscuits blue pack,10,12,1 pack,50,Biscuits & Snacks,false
+Marie Lite,Light Marie biscuits,15,18,1 pack,50,Biscuits & Snacks,false
+Marie Gold,Classic Marie biscuits,15,18,1 pack,50,Biscuits & Snacks,false
+Oreo,Chocolate sandwich biscuits,20,22,1 pack,50,Biscuits & Snacks,true
+50-50,Sweet and salty biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Treat Choco,Chocolate filled biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Treat Vanilla,Vanilla filled biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Bourbon,Chocolate cream biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Jim Jam,Jam filled biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Butter Biscuit,Butter biscuits small,10,10,small,80,Biscuits & Snacks,false
+Butter Biscuit,Butter biscuits medium,20,20,medium,60,Biscuits & Snacks,false
+Butter Biscuit,Butter biscuits large,40,40,large,40,Biscuits & Snacks,false
+Butter Rusk,Butter rusk,20,22,1 pack,50,Biscuits & Snacks,false
+Nutri Choice,Digestive biscuits,30,35,1 pack,40,Biscuits & Snacks,false
+Good Day Cashew,Cashew butter cookies,30,35,1 pack,40,Biscuits & Snacks,false
+Dark Fantasy,Chocolate biscuits,30,35,1 pack,40,Biscuits & Snacks,false
+Tiger Cream,Cream biscuits,10,12,1 pack,50,Biscuits & Snacks,false
+Nabati Cheese,Cheese wafer biscuits,10,12,1 pack,60,Biscuits & Snacks,false
+Nabati Choco,Chocolate wafer biscuits,10,12,1 pack,60,Biscuits & Snacks,false
+Nabati Strawberry,Strawberry wafer biscuits,10,12,1 pack,60,Biscuits & Snacks,false
+Maggi,Instant noodles,14,15,70g,80,Biscuits & Snacks,true
+Yippee,Instant noodles,14,15,70g,80,Biscuits & Snacks,false
+Britannia Rusk,Rusk toast,30,35,1 pack,40,Biscuits & Snacks,false
+Elite Rusk,Rusk toast,25,28,1 pack,40,Biscuits & Snacks,false
+Kissan Jam,Mixed fruit jam,60,65,200g,30,Biscuits & Snacks,false
+Kissan Sauce,Tomato ketchup sachet,22,25,1 sachet,50,Biscuits & Snacks,false
+Soya Sauce,Soya sauce,25,28,1 bottle,30,Grocery,false
+Lion Dates,Premium dates,40,45,100g,40,Grocery,false
+Lion Dates,Premium dates,75,80,200g,40,Grocery,false
+Gold Winner Oil,Refined sunflower oil,150,160,1L,30,Oil & Ghee,true
+Gold Winner Oil,Refined sunflower oil,80,85,500ml,40,Oil & Ghee,false
+Gold Winner Oil,Refined sunflower oil,20,20,small,60,Oil & Ghee,false
+Roubini Palm Oil,Palm oil,100,110,1L,30,Oil & Ghee,false
+Roubini Palm Oil,Palm oil,55,60,500ml,40,Oil & Ghee,false
+Deepam Oil,Lamp oil,80,85,1 bottle,20,Oil & Ghee,false
+Groundnut Oil,Pure groundnut oil,200,220,1L,20,Oil & Ghee,false
+Lamp Oil,Lamp oil,50,55,1 bottle,20,Oil & Ghee,false
+Parachute Coconut Oil,Pure coconut oil,10,10,small,80,Oil & Ghee,false
+Parachute Coconut Oil,Pure coconut oil,20,22,medium,60,Oil & Ghee,false
+VVD Coconut Oil,Pure coconut oil,40,45,100ml,40,Oil & Ghee,false
+VVD Coconut Oil,Pure coconut oil,75,80,200ml,30,Oil & Ghee,false
+Udhaya Krishna Ghee,Pure cow ghee,10,10,small,80,Oil & Ghee,false
+Udhaya Krishna Ghee,Pure cow ghee,35,38,50g,40,Oil & Ghee,false
+Udhaya Krishna Ghee,Pure cow ghee,65,70,100g,30,Oil & Ghee,true
+Chakra Gold Tea,Premium CTC tea,45,50,100g,40,Tea & Coffee,true
+3 Roses Tea,CTC tea,25,28,50g,50,Tea & Coffee,false
+3 Roses Tea,CTC tea,45,50,100g,50,Tea & Coffee,false
+3 Roses Tea,CTC tea,110,120,250g,30,Tea & Coffee,false
+Gold Cup Tea,CTC tea,5,5,small,100,Tea & Coffee,false
+Gold Cup Tea,CTC tea,10,10,medium,80,Tea & Coffee,false
+Sunrise Tea,CTC tea sachet,2,2,1 sachet,150,Tea & Coffee,false
+Sunrise Tea,CTC tea sachet,5,5,1 sachet,120,Tea & Coffee,false
+Sunrise Tea,CTC tea sachet,10,10,1 sachet,100,Tea & Coffee,false
+Bru Coffee,Instant coffee,50,55,1 pack,30,Tea & Coffee,false
+Boost,Energy drink mix sachet,5,5,1 sachet,100,Tea & Coffee,false
+Horlicks,Health drink mix sachet,5,5,1 sachet,100,Tea & Coffee,false
