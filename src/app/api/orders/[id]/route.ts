@@ -6,6 +6,7 @@ import { orders } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sendPushToUser } from "@/lib/push";
+import { restockOrder } from "@/lib/inventory";
 
 export async function PATCH(
   req: NextRequest,
@@ -37,6 +38,9 @@ export async function PATCH(
     .update(orders)
     .set({ status: "cancelled", updatedAt: new Date() })
     .where(eq(orders.id, order.id));
+
+  // A pending order still holds its reserved stock — release it back.
+  await restockOrder(order.id);
 
   // NOT IN PLAN FOR NOW — SMS on cancel (needs MSG91 templates configured)
 

@@ -7,6 +7,10 @@ import { eq } from "drizzle-orm";
 import { ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sendPushToUser } from "@/lib/push";
+import { restockOrder } from "@/lib/inventory";
+
+// Statuses where the order no longer holds reserved stock
+const STOCK_RELEASING = ["cancelled", "rejected"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -21,6 +25,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
+  // Need the previous status to decide whether to release stock
+  const [existing] = await db.select().from(orders).where(eq(orders.id, Number(id))).limit(1);
+  if (!existing) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
   const [order] = await db
     .update(orders)
     .set({
@@ -31,7 +39,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .where(eq(orders.id, Number(id)))
     .returning();
 
-  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  // Release reserved stock when an order moves into cancelled/rejected for the
+  // first time (guard prevents double-restock if set again).
+  if (STOCK_RELEASING.includes(status) && !STOCK_RELEASING.includes(existing.status)) {
+    await restockOrder(order.id);
+  }
 
   // NOT IN PLAN FOR NOW — SMS on status change (needs MSG91 templates configured)
   // const [user] = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);

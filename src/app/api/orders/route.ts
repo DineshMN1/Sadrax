@@ -3,8 +3,9 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders, orderItems, products, coupons, addresses, users } from "@/lib/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, gte } from "drizzle-orm";
 import { generateOrderNumber, calculateDeliveryFee } from "@/lib/utils";
+import { restockItems, type StockLine } from "@/lib/inventory";
 // NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sql } from "drizzle-orm";
@@ -49,7 +50,10 @@ export async function POST(req: NextRequest) {
   for (const item of cartItems) {
     const p = dbProducts.find((p) => p.id === item.productId);
     if (!p || p.stock < item.quantity) {
-      return NextResponse.json({ error: `${p?.name ?? "Product"} is out of stock` }, { status: 400 });
+      const msg = !p || p.stock === 0
+        ? `${p?.name ?? "Product"} is out of stock`
+        : `Only ${p.stock} ${p.name} left in stock`;
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
   }
 
@@ -95,35 +99,59 @@ export async function POST(req: NextRequest) {
   const total = Math.max(0, subtotal + deliveryFee - discount);
   const orderNumber = generateOrderNumber();
 
-  // Create order + items in transaction
-  const [order] = await db
-    .insert(orders)
-    .values({
-      orderNumber,
-      userId: session.user.id,
-      addressId: Number(addressId),
-      status: "pending",
-      paymentMethod,
-      paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
-      subtotal,
-      deliveryFee,
-      discount,
-      total,
-      couponCode: couponCode ?? null,
-    })
-    .returning();
-
-  await db.insert(orderItems).values(orderItemsData.map((i: Omit<typeof orderItems.$inferInsert, 'id' | 'orderId'>) => ({ ...i, orderId: order.id })));
-
-  // Decrement stock + increment order counts
-  for (const item of cartItems as { productId: number; quantity: number }[]) {
-    await db
+  // ── Atomically reserve stock (prevents overselling on concurrent orders) ──
+  // The neon-http driver has no interactive transactions, so each decrement is
+  // a conditional UPDATE that only succeeds if enough stock remains. If any
+  // line fails, we compensate by restoring the ones already reserved.
+  const reserved: StockLine[] = [];
+  for (const item of cartItems as StockLine[]) {
+    const ok = await db
       .update(products)
       .set({
         stock: sql`${products.stock} - ${item.quantity}`,
         orderCount: sql`${products.orderCount} + ${item.quantity}`,
       })
-      .where(eq(products.id, item.productId));
+      .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)))
+      .returning({ id: products.id });
+
+    if (ok.length === 0) {
+      await restockItems(reserved); // roll back what we already took
+      const p = dbProducts.find((p) => p.id === item.productId);
+      // re-read current stock for an accurate message
+      const [fresh] = await db.select({ stock: products.stock }).from(products).where(eq(products.id, item.productId)).limit(1);
+      const left = fresh?.stock ?? 0;
+      return NextResponse.json(
+        { error: left > 0 ? `Only ${left} ${p?.name ?? "item"} left in stock` : `${p?.name ?? "Product"} is out of stock` },
+        { status: 409 }
+      );
+    }
+    reserved.push(item);
+  }
+
+  // Stock is now reserved — create the order. If this fails, release the hold.
+  let order: typeof orders.$inferSelect;
+  try {
+    [order] = await db
+      .insert(orders)
+      .values({
+        orderNumber,
+        userId: session.user.id,
+        addressId: Number(addressId),
+        status: "pending",
+        paymentMethod,
+        paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
+        subtotal,
+        deliveryFee,
+        discount,
+        total,
+        couponCode: couponCode ?? null,
+      })
+      .returning();
+
+    await db.insert(orderItems).values(orderItemsData.map((i: Omit<typeof orderItems.$inferInsert, 'id' | 'orderId'>) => ({ ...i, orderId: order.id })));
+  } catch (err) {
+    await restockItems(reserved); // don't leak the reserved stock
+    throw err;
   }
 
   // Increment coupon usage
