@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, ChevronRight, Zap, Sparkles, TrendingUp } from "lucide-react";
@@ -14,17 +16,18 @@ import { products, categories, storeSettings } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 async function getHomeData() {
-  const [cats, featured, topOrdered, settings] = await Promise.all([
+  const [cats, featured, topOrdered, allProducts, settings] = await Promise.all([
     db.select().from(categories).where(eq(categories.active, true)).orderBy(categories.order).limit(16),
     db.select().from(products).where(and(eq(products.active, true), eq(products.featured, true))).limit(8),
     db.select().from(products).where(eq(products.active, true)).orderBy(desc(products.orderCount)).limit(10),
+    db.select().from(products).where(eq(products.active, true)).orderBy(products.name).limit(40),
     db.select().from(storeSettings).where(eq(storeSettings.key, "store_open")),
   ]);
-  return { cats, featured, topOrdered, isOpen: settings[0]?.value !== "false" };
+  return { cats, featured, topOrdered, allProducts, isOpen: settings[0]?.value !== "false" };
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, isOpen } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -163,7 +166,24 @@ export default async function HomePage() {
         {/* ── Recently Viewed (client) ───────────────────────────────────── */}
         <RecentlyViewedSection />
 
-        {topOrdered.length === 0 && featured.length === 0 && (
+        {/* ── All Products ──────────────────────────────────────────────── */}
+        {allProducts.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-extrabold text-gray-900">All Products</h2>
+              <Link href="/categories" className="flex items-center gap-0.5 text-xs font-bold text-green-600 hover:text-green-700 transition-colors">
+                Browse all <ChevronRight size={13} strokeWidth={3} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {allProducts.map(p => (
+                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {allProducts.length === 0 && (
           <div className="flex flex-col items-center py-16 text-center">
             <div className="w-20 h-20 bg-linear-to-br from-green-100 to-emerald-100 rounded-3xl flex items-center justify-center mb-4 text-4xl shadow-sm">
               🛒
