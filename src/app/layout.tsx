@@ -16,6 +16,9 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: { default: "Sadrax Grocery", template: "%s — Sadrax" },
   description: "Sadras & Kalpakam-ல் fresh groceries — வீட்டுக்கே delivery!",
+  creator: "Sadrax",
+  publisher: "Sadrax",
+  other: { copyright: "© 2026 Sadrax. All Rights Reserved." },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -47,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* NOT IN PLAN FOR NOW — Razorpay checkout script */}
         {/* <script src="https://checkout.razorpay.com/v1/checkout.js" async /> */}
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <PostHogProvider>
           <Suspense fallback={null}><PageViewTracker /></Suspense>
           {children}

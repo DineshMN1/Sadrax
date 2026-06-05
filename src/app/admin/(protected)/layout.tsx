@@ -16,7 +16,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
       {/* Only plain serialisable props cross the server→client boundary */}
       <AdminSidebar email={session.user.email ?? ""} />
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
-        <main className="flex-1 p-4 md:p-6 max-w-6xl pt-18 md:pt-6">{children}</main>
+        <main className="flex-1 w-full p-4 md:p-6 max-w-6xl pt-14 md:pt-6">{children}</main>
       </div>
       <Toaster position="top-right" richColors />
     </div>

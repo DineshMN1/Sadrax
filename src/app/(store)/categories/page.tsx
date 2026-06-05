@@ -49,7 +49,7 @@ export default async function CategoriesPage() {
 
       <div className="px-4 py-4">
         {cats.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center min-h-[55vh] text-center">
             <span className="text-5xl mb-4">📦</span>
             <h3 className="font-semibold text-gray-700">No categories yet</h3>
             <p className="text-sm text-gray-400 mt-1">Add categories from the admin panel</p>
