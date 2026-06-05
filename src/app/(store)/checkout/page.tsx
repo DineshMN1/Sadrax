@@ -310,6 +310,25 @@ export default function CheckoutPage() {
 
       {/* Place Order CTA */}
       <div className="sticky bottom-16 md:bottom-0 px-4 pb-4 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent space-y-3">
+
+        {/* Blocking hints — shown only when something is missing */}
+        {!selectedAddress && (
+          <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
+            <MapPin size={15} className="text-amber-500 shrink-0" />
+            <p className="text-xs font-semibold text-amber-800">
+              Add a delivery address to continue
+            </p>
+          </div>
+        )}
+        {selectedAddress && !termsAccepted && (
+          <div className="flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5">
+            <ShieldCheck size={15} className="text-blue-500 shrink-0" />
+            <p className="text-xs font-semibold text-blue-800">
+              Accept the Terms &amp; Conditions below to place your order
+            </p>
+          </div>
+        )}
+
         {/* Terms checkbox */}
         <label className="flex items-start gap-3 cursor-pointer group">
           <div className="mt-0.5 shrink-0">
@@ -336,7 +355,7 @@ export default function CheckoutPage() {
         <button
           onClick={handlePlaceOrder}
           disabled={placing || !selectedAddress || !termsAccepted}
-          className="w-full flex items-center justify-between bg-linear-to-r from-green-600 to-emerald-600 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 disabled:opacity-60 disabled:pointer-events-none transition-all hover:shadow-xl hover:shadow-green-600/40 active:scale-[0.98]"
+          className="w-full flex items-center justify-between bg-linear-to-r from-green-600 to-emerald-600 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:pointer-events-none transition-all hover:shadow-xl hover:shadow-green-600/40 active:scale-[0.98]"
         >
           <span className="text-base flex items-center gap-2">
             {placing && <Loader2 size={18} className="animate-spin" />}

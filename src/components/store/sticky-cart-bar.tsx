@@ -6,15 +6,18 @@ import { useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export function StickyCartBar({ className }: { className?: string }) {
-  const items     = useCart(s => s.items);
   const total     = useCart(s => s.total());
   const itemCount = useCart(s => s.itemCount());
+  const pathname  = usePathname();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Don't show on cart or checkout pages
   if (!mounted || itemCount === 0) return null;
+  if (pathname === "/cart" || pathname === "/checkout") return null;
 
   return (
     <div className={cn("fixed bottom-16 left-0 right-0 z-30 px-4 pb-1.5", className)}>
