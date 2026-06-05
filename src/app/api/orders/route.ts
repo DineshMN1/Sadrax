@@ -8,6 +8,7 @@ import { generateOrderNumber, calculateDeliveryFee } from "@/lib/utils";
 // NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sql } from "drizzle-orm";
+import { sendTelegramMessage, formatNewOrderMessage } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -142,6 +143,18 @@ export async function POST(req: NextRequest) {
   // if (user?.phone) {
   //   sendOrderStatusSms(user.phone, orderNumber, "pending").catch(() => {});
   // }
+
+  // Telegram notification to store owner on new order
+  const [customer] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+  sendTelegramMessage(formatNewOrderMessage({
+    orderNumber,
+    customerName: customer?.name,
+    phone: customer?.phone,
+    total,
+    items: orderItemsData.map((i: { productName: string; quantity: number }) => ({ name: i.productName, qty: i.quantity })),
+    address: address ? `${address.line1}${address.line2 ? ", " + address.line2 : ""}, ${address.city ?? ""} ${address.pincode}` : undefined,
+    paymentMethod,
+  })).catch(() => {});
 
   return NextResponse.json({ orderId: order.id, orderNumber });
 }

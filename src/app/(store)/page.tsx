@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/store/search-bar";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreClosedBanner } from "@/components/store/store-closed-banner";
 import { LocationBanner } from "@/components/store/location-banner";
-import { NotificationBell } from "@/components/store/notification-bell";
+import { GreetingHeader } from "@/components/store/greeting-header";
 import { RecentlyViewedSection } from "@/components/store/recently-viewed-section";
 import { BuyAgainSection } from "@/components/store/buy-again-section";
 import { db } from "@/lib/db";
@@ -30,19 +30,13 @@ export default async function HomePage() {
     <div className="flex flex-col">
       {/* ── Mobile header ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-4 pb-3 space-y-3 md:hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative w-2 h-2">
-              <span className="absolute inset-0 bg-green-500 rounded-full animate-pulse-ring" />
-              <span className="absolute inset-0 bg-green-500 rounded-full" />
-            </div>
+        <Suspense fallback={
+          <div className="flex items-center justify-between">
             <span className="text-sm font-extrabold text-gray-900">Sadras</span>
-            <span className="text-xs text-gray-400 flex items-center gap-0.5">
-              <MapPin size={11} /> 603102
-            </span>
           </div>
-          <NotificationBell />
-        </div>
+        }>
+          <GreetingHeader />
+        </Suspense>
         <Suspense><SearchBar /></Suspense>
       </div>
 
@@ -56,7 +50,7 @@ export default async function HomePage() {
           <span className="text-sm font-bold text-gray-900">Delivering to Sadras, 603102</span>
         </div>
         <Suspense><SearchBar className="flex-1 max-w-lg" /></Suspense>
-        <NotificationBell />
+        <Suspense fallback={null}><GreetingHeader /></Suspense>
       </div>
 
       {/* Location banner — client component, outside px padding */}

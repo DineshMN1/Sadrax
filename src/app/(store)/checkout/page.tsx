@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");
   const [placing, setPlacing]                 = useState(false);
+  const [termsAccepted, setTermsAccepted]     = useState(false);
   const [loadingAddr, setLoadingAddr]         = useState(true);
   const [showAddAddress, setShowAddAddress]   = useState(false);
   const [showMap, setShowMap]                 = useState(false);
@@ -89,6 +90,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!selectedAddress) { toast.error("Please select a delivery address"); return; }
     if (items.length === 0) { toast.error("Your cart is empty"); return; }
+    if (!termsAccepted) { toast.error("Please accept the Terms & Conditions"); return; }
 
     setPlacing(true);
     try {
@@ -307,10 +309,33 @@ export default function CheckoutPage() {
       </div>
 
       {/* Place Order CTA */}
-      <div className="sticky bottom-16 md:bottom-0 px-4 pb-4 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent">
+      <div className="sticky bottom-16 md:bottom-0 px-4 pb-4 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent space-y-3">
+        {/* Terms checkbox */}
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="mt-0.5 shrink-0">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={e => setTermsAccepted(e.target.checked)}
+              className="hidden"
+            />
+            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+              termsAccepted ? "bg-green-600 border-green-600" : "border-gray-300 bg-white"
+            }`}>
+              {termsAccepted && <Check size={12} className="text-white" strokeWidth={3} />}
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            I agree to the{" "}
+            <a href="/terms" target="_blank" className="text-green-600 font-semibold hover:underline">Terms &amp; Conditions</a>
+            {" "}and{" "}
+            <a href="/privacy" target="_blank" className="text-green-600 font-semibold hover:underline">Privacy Policy</a>
+          </p>
+        </label>
+
         <button
           onClick={handlePlaceOrder}
-          disabled={placing || !selectedAddress}
+          disabled={placing || !selectedAddress || !termsAccepted}
           className="w-full flex items-center justify-between bg-linear-to-r from-green-600 to-emerald-600 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 disabled:opacity-60 disabled:pointer-events-none transition-all hover:shadow-xl hover:shadow-green-600/40 active:scale-[0.98]"
         >
           <span className="text-base flex items-center gap-2">

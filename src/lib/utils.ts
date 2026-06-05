@@ -72,11 +72,7 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
 
 // Delivery zones – list of valid pincodes for Sadras/Kalpakam area
 export const DELIVERY_PINCODES = [
-  "603102", // Sadras
-  "603102", // Kalpakam
-  "603104",
-  "603103",
-  "603105",
+  "603102", // Sadras & Kalpakam
 ];
 
 export function isDeliverable(pincode: string): boolean {

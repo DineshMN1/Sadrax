@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Upload, Trash2 } from "lucide-react";
+import { Plus, Upload, Trash2, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { toSlug } from "@/lib/utils";
 
@@ -15,6 +15,8 @@ export default function CategoriesPage() {
   const [form, setForm] = useState({ name: "", slug: "", order: "0" });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<number | "new">(0);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", slug: "", order: "0" });
 
   const fetchCategories = async () => {
     const res = await fetch("/api/admin/categories");
@@ -64,6 +66,23 @@ export default function CategoriesPage() {
     fetchCategories();
   };
 
+  const startEdit = (cat: Category) => {
+    setEditingId(cat.id);
+    setEditForm({ name: cat.name, slug: cat.slug, order: String(cat.order) });
+  };
+
+  const handleEditSave = async (id: number) => {
+    setSaving(true);
+    const res = await fetch(`/api/admin/categories/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...editForm, order: parseInt(editForm.order) }),
+    });
+    if (res.ok) { toast.success("Category updated"); setEditingId(null); fetchCategories(); }
+    else { const d = await res.json(); toast.error(d.error ?? "Failed"); }
+    setSaving(false);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -107,26 +126,61 @@ export default function CategoriesPage() {
           <tbody className="divide-y divide-gray-50">
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-gray-50/50">
-                <td className="px-4 py-3 font-semibold text-gray-900">{cat.name}</td>
-                <td className="px-4 py-3 text-gray-400 font-mono text-xs">{cat.slug}</td>
-                <td className="px-4 py-3 text-center text-gray-600">{cat.order}</td>
-                <td className="px-4 py-3 text-center">
-                  <label className="relative cursor-pointer inline-block">
-                    {cat.image ? (
-                      <Image src={cat.image} alt={cat.name} width={32} height={32} className="w-8 h-8 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200">
-                        <Upload size={12} />
+                {editingId === cat.id ? (
+                  <>
+                    <td className="px-4 py-2">
+                      <input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                        className="h-8 px-2 bg-gray-50 border border-gray-200 rounded-lg text-sm w-full focus:outline-none focus:border-green-500" />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input value={editForm.slug} onChange={e => setEditForm(p => ({ ...p, slug: e.target.value }))}
+                        className="h-8 px-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono w-full focus:outline-none focus:border-green-500" />
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <input type="number" value={editForm.order} onChange={e => setEditForm(p => ({ ...p, order: e.target.value }))}
+                        className="h-8 px-2 bg-gray-50 border border-gray-200 rounded-lg text-sm w-16 text-center focus:outline-none focus:border-green-500" />
+                    </td>
+                    <td className="px-4 py-2 text-center text-gray-400 text-xs">—</td>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button onClick={() => handleEditSave(cat.id)} disabled={saving} className="w-7 h-7 flex items-center justify-center bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                          <Check size={13} />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="w-7 h-7 flex items-center justify-center bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                          <X size={13} />
+                        </button>
                       </div>
-                    )}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, cat.id)} disabled={uploading === cat.id} />
-                  </label>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(cat.id)} className="text-red-400 hover:text-red-600 transition-colors">
-                    <Trash2 size={15} />
-                  </button>
-                </td>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-3 font-semibold text-gray-900">{cat.name}</td>
+                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{cat.slug}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">{cat.order}</td>
+                    <td className="px-4 py-3 text-center">
+                      <label className="relative cursor-pointer inline-block">
+                        {cat.image ? (
+                          <Image src={cat.image} alt={cat.name} width={32} height={32} className="w-8 h-8 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200">
+                            <Upload size={12} />
+                          </div>
+                        )}
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, cat.id)} disabled={uploading === cat.id} />
+                      </label>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => startEdit(cat)} className="text-gray-400 hover:text-indigo-600 transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(cat.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
             {categories.length === 0 && !loading && (

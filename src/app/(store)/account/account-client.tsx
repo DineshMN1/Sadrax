@@ -3,9 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
-import { Package, MapPin, LogOut, ChevronRight, Phone, Heart } from "lucide-react";
+import { Package, MapPin, LogOut, ChevronRight, Phone, Heart, Bell, Navigation, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import { PWAInstallButton } from "@/components/store/pwa-install-banner";
+
+const STORE_PHONE    = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
+const VAPID_KEY      = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+
+function urlBase64ToUint8Array(b64: string): Uint8Array {
+  const pad = "=".repeat((4 - b64.length % 4) % 4);
+  const base64 = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
 
 function getInitials(name?: string | null): string {
   if (!name) return "U";
@@ -107,6 +117,72 @@ export default function AccountClient() {
           </div>
           <PWAInstallButton />
         </div>
+
+        {/* Enable Notifications */}
+        <button
+          onClick={async () => {
+            if (!("Notification" in window)) { toast.error("Notifications not supported"); return; }
+            if (Notification.permission === "granted") { toast.success("Notifications already enabled"); return; }
+            const perm = await Notification.requestPermission();
+            if (perm === "granted") {
+              try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_KEY) as BufferSource });
+                const { endpoint, keys } = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
+                await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint, p256dh: keys.p256dh, auth: keys.auth }) });
+                toast.success("Order notifications enabled!");
+              } catch { toast.success("Notifications enabled"); }
+            } else {
+              toast.error("Notifications blocked. Enable in browser settings.");
+            }
+          }}
+          className="flex items-center gap-3 w-full bg-white rounded-2xl border border-gray-100 px-4 py-3.5 hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+            <Bell size={18} className="text-blue-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-gray-900">Order Notifications</p>
+            <p className="text-xs text-gray-400 mt-0.5">Get push alerts for your orders</p>
+          </div>
+          <ChevronRight size={16} className="text-gray-300" />
+        </button>
+
+        {/* Enable Location */}
+        <button
+          onClick={() => {
+            if (!navigator.geolocation) { toast.error("Location not supported"); return; }
+            navigator.geolocation.getCurrentPosition(
+              () => toast.success("Location enabled! We can now show accurate delivery info."),
+              () => toast.error("Location blocked. Enable it in browser settings.")
+            );
+          }}
+          className="flex items-center gap-3 w-full bg-white rounded-2xl border border-gray-100 px-4 py-3.5 hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
+            <Navigation size={18} className="text-green-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-gray-900">Enable Location</p>
+            <p className="text-xs text-gray-400 mt-0.5">For accurate delivery tracking</p>
+          </div>
+          <ChevronRight size={16} className="text-gray-300" />
+        </button>
+
+        {/* Support */}
+        <a
+          href={`tel:+91${STORE_PHONE}`}
+          className="flex items-center gap-3 w-full bg-white rounded-2xl border border-gray-100 px-4 py-3.5 hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+            <Headphones size={18} className="text-orange-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-gray-900">Customer Support</p>
+            <p className="text-xs text-gray-400 mt-0.5">Call us at +91 {STORE_PHONE}</p>
+          </div>
+          <Phone size={16} className="text-green-500" />
+        </a>
 
         <div className="pt-1">
           <button

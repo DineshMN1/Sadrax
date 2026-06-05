@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut, Zap } from "lucide-react";
+import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut, Zap, Navigation, Eye, EyeOff, Send } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { PanelSwitcher } from "@/components/panel-switcher";
@@ -57,9 +57,36 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
   const [updating, setUpdating]         = useState(false);
   const [showRejectReason, setShowRejectReason] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [expanded, setExpanded]         = useState(false);
+  const [tgSending, setTgSending]       = useState(false);
 
-  const actions = ACTION_BUTTONS[order.status] ?? [];
+  const actions   = ACTION_BUTTONS[order.status] ?? [];
   const isPending = order.status === "pending";
+
+  const handleTelegramNotify = async () => {
+    setTgSending(true);
+    try {
+      await fetch("/api/cord/notify-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      toast.success("Notified via Telegram");
+    } catch {
+      toast.error("Telegram notification failed");
+    } finally {
+      setTgSending(false);
+    }
+  };
+
+  const openDirections = () => {
+    if (order.address) {
+      const q = encodeURIComponent(
+        `${order.address.line1}${order.address.line2 ? " " + order.address.line2 : ""}, ${order.address.pincode}`
+      );
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${q}`, "_blank");
+    }
+  };
 
   const handleAction = async (next: OrderStatus) => {
     if (next === "rejected") { setShowRejectReason(true); return; }
@@ -125,19 +152,12 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           </div>
         )}
 
-        {/* Items */}
-        <div className="bg-gray-50 rounded-xl px-3 py-2.5 space-y-1.5">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-gray-700">
-                {item.productName}
-                {item.productUnit ? <span className="text-gray-400 text-xs ml-1">({item.productUnit})</span> : ""}
-                <span className="text-gray-400"> × {item.quantity}</span>
-              </span>
-              <span className="font-semibold text-gray-800">{formatPrice(item.total)}</span>
-            </div>
-          ))}
-        </div>
+        {/* Items compact summary */}
+        <p className="text-xs text-gray-500">
+          {order.items.length} item{order.items.length !== 1 ? "s" : ""} —{" "}
+          {order.items.slice(0, 2).map(i => `${i.productName} ×${i.quantity}`).join(", ")}
+          {order.items.length > 2 ? ` +${order.items.length - 2} more` : ""}
+        </p>
 
         {/* Notes */}
         {order.notes && (
@@ -152,29 +172,79 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           <span className="text-green-600">{formatPrice(order.total)}</span>
         </div>
 
-        {/* Contact buttons */}
-        {order.customerPhone && (
-          <div className="flex gap-2">
+        {/* View / Direction / Telegram / Contact buttons */}
+        <div className="flex gap-2 flex-wrap">
+          {/* View items toggle */}
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="flex items-center gap-1.5 h-9 px-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
+          >
+            {expanded ? <EyeOff size={13} /> : <Eye size={13} />}
+            {expanded ? "Hide" : "View"}
+          </button>
+
+          {/* Direction button */}
+          {order.address && (
+            <button
+              onClick={openDirections}
+              className="flex items-center gap-1.5 h-9 px-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-xs font-semibold text-blue-700 transition-colors"
+            >
+              <Navigation size={13} /> Direction
+            </button>
+          )}
+
+          {/* Telegram notify */}
+          <button
+            onClick={handleTelegramNotify}
+            disabled={tgSending}
+            className="flex items-center gap-1.5 h-9 px-3 bg-sky-50 hover:bg-sky-100 rounded-xl text-xs font-semibold text-sky-700 transition-colors disabled:opacity-50"
+          >
+            <Send size={13} /> {tgSending ? "…" : "Telegram"}
+          </button>
+
+          {/* Call customer */}
+          {order.customerPhone && (
             <a
               href={`tel:${order.customerPhone}`}
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
+              className="flex items-center justify-center gap-1.5 h-9 px-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
             >
               <Phone size={13} /> Call
             </a>
+          )}
+
+          {/* WhatsApp */}
+          {order.customerPhone && (
             <a
               href={`https://wa.me/91${order.customerPhone.replace(/^\+91/, "")}?text=Hi! Your Sadrax order %23${order.orderNumber}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-green-50 hover:bg-green-100 rounded-xl text-xs font-semibold text-green-700 transition-colors"
+              target="_blank" rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 h-9 px-3 bg-green-50 hover:bg-green-100 rounded-xl text-xs font-semibold text-green-700 transition-colors"
             >
               <MessageSquare size={13} /> WhatsApp
             </a>
-            <button
-              onClick={() => window.print()}
-              className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 transition-colors"
-            >
-              <Printer size={14} />
-            </button>
+          )}
+
+          <button
+            onClick={() => window.print()}
+            className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 transition-colors"
+          >
+            <Printer size={14} />
+          </button>
+        </div>
+
+        {/* Expanded items view */}
+        {expanded && (
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5 space-y-1.5 animate-slide-up">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Order Items</p>
+            {order.items.map(item => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <span className="text-gray-700">
+                  {item.productName}
+                  {item.productUnit && <span className="text-gray-400 text-xs ml-1">({item.productUnit})</span>}
+                  <span className="text-gray-400 ml-1">× {item.quantity}</span>
+                </span>
+                <span className="font-semibold text-gray-800">{formatPrice(item.total)}</span>
+              </div>
+            ))}
           </div>
         )}
 
