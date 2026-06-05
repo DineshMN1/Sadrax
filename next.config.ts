@@ -1,14 +1,30 @@
 import type { NextConfig } from "next";
+import type { RemotePattern } from "next/dist/shared/lib/image-config";
 import { withSentryConfig } from "@sentry/nextjs";
+
+// Allow the MinIO host that serves uploaded images (derived from MINIO_PUBLIC_URL,
+// e.g. http://localhost:9000/sadrax in dev or https://cdn.example.com in prod).
+function minioRemotePattern(): RemotePattern | null {
+  const url = process.env.MINIO_PUBLIC_URL;
+  if (!url) return null;
+  try {
+    const { protocol, hostname, port } = new URL(url);
+    return {
+      protocol: protocol.replace(":", "") as "http" | "https",
+      hostname,
+      ...(port ? { port } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["better-auth", "@better-auth/kysely-adapter", "sharp"],
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "pub-*.r2.dev" },
-      { protocol: "https", hostname: "*.r2.dev" },
-      { protocol: "https", hostname: "*.cloudflare.com" },
-    ],
+    remotePatterns: [minioRemotePattern()].filter(
+      (p): p is RemotePattern => p !== null
+    ),
   },
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3000"] },
