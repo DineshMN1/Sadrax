@@ -194,8 +194,9 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
                   <Minus size={16} strokeWidth={3} />
                 </button>
                 <span className="text-white text-lg font-extrabold min-w-8 text-center tabular-nums">{qty}</span>
-                <button onClick={() => updateQuantity(id, qty + 1)}
-                  className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all">
+                <button onClick={() => { if (qty < stock) updateQuantity(id, qty + 1); }}
+                  disabled={qty >= stock}
+                  className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all disabled:opacity-40 disabled:pointer-events-none">
                   <Plus size={16} strokeWidth={3} />
                 </button>
               </div>
@@ -204,12 +205,16 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
           )}
         </div>
 
-        {/* Stock indicator */}
-        {stock > 0 && stock <= 10 && (
+        {/* Stock indicator — stays on the product, no toast */}
+        {stock > 0 && qty >= stock ? (
+          <p className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100 w-fit">
+            That&apos;s all {stock} we have in stock
+          </p>
+        ) : stock > 0 && stock <= 10 ? (
           <p className="text-xs font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 w-fit">
             Only {stock} left!
           </p>
-        )}
+        ) : null}
       </div>
 
       {/* Description */}

@@ -45,7 +45,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, classNa
     fireFlash("added");
   };
 
-  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); updateQuantity(id, qty + 1); fireFlash("inc"); };
+  const atMax    = qty >= stock;
+  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, qty + 1); fireFlash("inc"); };
   const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(id) : updateQuantity(id, qty - 1); fireFlash("dec"); };
   const handleWish = (e: React.MouseEvent) => { e.preventDefault(); toggle(id); };
 
@@ -101,8 +102,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, classNa
           <Heart size={12} className={cn(wished ? "text-white fill-white" : "text-gray-400")} />
         </button>
 
-        {/* Low stock badge */}
-        {stock > 0 && stock <= 5 && qty === 0 && (
+        {/* Low stock badge — stays visible even after adding to cart */}
+        {stock > 0 && stock <= 5 && (
           <div className="absolute bottom-2 left-2 bg-orange-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
             Only {stock} left!
           </div>
@@ -176,7 +177,7 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, classNa
                 <Minus size={13} strokeWidth={3} />
               </button>
               <span className="text-white text-sm font-extrabold min-w-6 text-center tabular-nums">{qty}</span>
-              <button onClick={handleInc} className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/20 rounded-lg transition-colors active:scale-90">
+              <button onClick={handleInc} disabled={atMax} className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/20 rounded-lg transition-colors active:scale-90 disabled:opacity-40 disabled:pointer-events-none">
                 <Plus size={13} strokeWidth={3} />
               </button>
             </div>

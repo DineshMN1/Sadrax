@@ -2,9 +2,9 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck } from "lucide-react";
+import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { formatPrice, isDeliverable } from "@/lib/utils";
 import { toast } from "sonner";
@@ -45,6 +45,33 @@ export default function CheckoutPage() {
   const [newAddress, setNewAddress]           = useState({
     name: "", phone: "", line1: "", line2: "", city: "Sadras", pincode: "", label: "home",
   });
+
+  // Live stock re-check (cart is persisted and can go stale; also guards
+  // against deep-linking straight to /checkout past the cart's block)
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  const [stockLoaded, setStockLoaded] = useState(false);
+  const idsKey = useMemo(
+    () => [...new Set(items.map(i => i.id))].sort((a, b) => a - b).join(","),
+    [items]
+  );
+  useEffect(() => {
+    if (!idsKey) { setStockLoaded(true); return; }
+    let cancelled = false;
+    fetch(`/api/products?ids=${idsKey}`)
+      .then(r => r.json())
+      .then((d: { products?: { id: number; stock: number }[] }) => {
+        if (cancelled) return;
+        const m: Record<number, number> = {};
+        for (const p of d.products ?? []) m[p.id] = p.stock;
+        setStockMap(m);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setStockLoaded(true); });
+    return () => { cancelled = true; };
+  }, [idsKey]);
+
+  const stockIssues = stockLoaded ? items.filter(i => i.quantity > (stockMap[i.id] ?? 0)) : [];
+  const hasStockIssue = stockIssues.length > 0;
 
   const sub = subtotal();
   const fee = deliveryFee();
@@ -90,6 +117,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!selectedAddress) { toast.error("Please select a delivery address"); return; }
     if (items.length === 0) { toast.error("Your cart is empty"); return; }
+    if (hasStockIssue) return; // inline banner already explains what to fix
     if (!termsAccepted) { toast.error("Please accept the Terms & Conditions"); return; }
 
     setPlacing(true);
@@ -111,7 +139,7 @@ export default function CheckoutPage() {
       }
       clearCart();
       toast.success("Order placed!", { description: `#${data.orderNumber}` });
-      router.push(`/orders/${data.orderId}?placed=1`);
+      router.push("/orders");
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -312,6 +340,21 @@ export default function CheckoutPage() {
       <div className="sticky bottom-16 md:bottom-0 px-4 pb-4 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent space-y-3">
 
         {/* Blocking hints — shown only when something is missing */}
+        {hasStockIssue && (
+          <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
+            <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" />
+            <div className="text-xs font-semibold text-red-700">
+              <p>Some items aren&apos;t available in the quantity you chose:</p>
+              <ul className="mt-1 space-y-0.5 font-medium">
+                {stockIssues.map(i => {
+                  const s = stockMap[i.id] ?? 0;
+                  return <li key={i.id}>• {i.name} — {s === 0 ? "out of stock" : `only ${s} left`}</li>;
+                })}
+              </ul>
+              <a href="/cart" className="inline-block mt-1.5 underline font-bold">Update cart →</a>
+            </div>
+          </div>
+        )}
         {!selectedAddress && (
           <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
             <MapPin size={15} className="text-amber-500 shrink-0" />
@@ -354,7 +397,7 @@ export default function CheckoutPage() {
 
         <button
           onClick={handlePlaceOrder}
-          disabled={placing || !selectedAddress || !termsAccepted}
+          disabled={placing || !selectedAddress || !termsAccepted || hasStockIssue}
           className="w-full flex items-center justify-between bg-linear-to-r from-green-600 to-emerald-600 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:pointer-events-none transition-all hover:shadow-xl hover:shadow-green-600/40 active:scale-[0.98]"
         >
           <span className="text-base flex items-center gap-2">

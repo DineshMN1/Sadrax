@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkles, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
 import { formatPrice, DELIVERY_FEE } from "@/lib/utils";
@@ -17,6 +17,40 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, deliveryFee, total, discount, couponCode, applyCoupon, removeCoupon } = useCart();
   const [couponInput, setCouponInput] = useState("");
   const [applying, setApplying] = useState(false);
+
+  // Live stock for the products in the cart. The cart is persisted in
+  // localStorage and can go stale, so we re-check against the server.
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  const [stockLoaded, setStockLoaded] = useState(false);
+
+  // Refetch only when the *set* of product ids changes (not on qty change)
+  const idsKey = useMemo(
+    () => [...new Set(items.map(i => i.id))].sort((a, b) => a - b).join(","),
+    [items]
+  );
+
+  useEffect(() => {
+    if (!idsKey) { setStockMap({}); setStockLoaded(true); return; }
+    let cancelled = false;
+    fetch(`/api/products?ids=${idsKey}`)
+      .then(r => r.json())
+      .then((d: { products?: { id: number; stock: number }[] }) => {
+        if (cancelled) return;
+        const m: Record<number, number> = {};
+        for (const p of d.products ?? []) m[p.id] = p.stock;
+        setStockMap(m);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setStockLoaded(true); });
+    return () => { cancelled = true; };
+  }, [idsKey]);
+
+  // Once loaded, a product missing from the response is unavailable (stock 0)
+  const stockOf = (id: number): number | undefined =>
+    stockLoaded ? (stockMap[id] ?? 0) : undefined;
+
+  const hasStockIssue =
+    stockLoaded && items.some(i => i.quantity > (stockMap[i.id] ?? 0));
 
   const sub = subtotal();
   const fee = deliveryFee();
@@ -86,7 +120,13 @@ export default function CartPage() {
 
         {/* Items */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-          {items.map(item => (
+          {items.map(item => {
+            const stock = stockOf(item.id);
+            const out  = stock !== undefined && stock === 0;
+            const over = stock !== undefined && stock > 0 && item.quantity > stock;
+            const low  = stock !== undefined && stock > 0 && stock <= 5;
+            const atMax = stock !== undefined && item.quantity >= stock;
+            return (
             <div key={item.id} className="flex items-center gap-3 p-3 group">
               <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100">
                 {item.image
@@ -97,6 +137,19 @@ export default function CartPage() {
                 <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
                 {item.unit && <p className="text-xs text-gray-400 mt-0.5">{item.unit}</p>}
                 <p className="text-sm font-extrabold text-gray-900 mt-1">{formatPrice(item.price)}</p>
+                {out ? (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                    <AlertTriangle size={11} /> Out of stock
+                  </span>
+                ) : over ? (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                    <AlertTriangle size={11} /> Only {stock} left — reduce quantity
+                  </span>
+                ) : low ? (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    Only {stock} left
+                  </span>
+                ) : null}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -108,13 +161,15 @@ export default function CartPage() {
                 <span className="w-7 text-center text-sm font-extrabold tabular-nums">{item.quantity}</span>
                 <button
                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all shadow-sm shadow-green-500/30"
+                  disabled={atMax}
+                  className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all shadow-sm shadow-green-500/30 disabled:opacity-40 disabled:pointer-events-none"
                 >
                   <Plus size={12} strokeWidth={3} />
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Coupon */}
@@ -192,19 +247,37 @@ export default function CartPage() {
       </div>
 
       {/* CTA */}
-      <div className="sticky bottom-20 md:bottom-0 px-4 pb-3 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent">
-        <Link
-          href="/checkout"
-          className="flex items-center justify-between w-full bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all"
-        >
-          <span className="text-base">Proceed to Checkout</span>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-extrabold">{formatPrice(tot)}</span>
-            <div className="w-7 h-7 bg-white/20 rounded-xl flex items-center justify-center">
-              <ArrowRight size={16} />
-            </div>
+      <div className="sticky bottom-20 md:bottom-0 px-4 pb-3 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent space-y-2.5">
+        {hasStockIssue && (
+          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
+            <AlertTriangle size={15} className="text-red-500 shrink-0" />
+            <p className="text-xs font-semibold text-red-700">
+              Some items are out of stock. Adjust the quantities above to continue.
+            </p>
           </div>
-        </Link>
+        )}
+        {hasStockIssue ? (
+          <div
+            aria-disabled
+            className="flex items-center justify-between w-full bg-gray-300 text-white px-5 py-4 rounded-2xl font-bold cursor-not-allowed select-none"
+          >
+            <span className="text-base">Proceed to Checkout</span>
+            <span className="text-base font-extrabold">{formatPrice(tot)}</span>
+          </div>
+        ) : (
+          <Link
+            href="/checkout"
+            className="flex items-center justify-between w-full bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all"
+          >
+            <span className="text-base">Proceed to Checkout</span>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold">{formatPrice(tot)}</span>
+              <div className="w-7 h-7 bg-white/20 rounded-xl flex items-center justify-center">
+                <ArrowRight size={16} />
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
