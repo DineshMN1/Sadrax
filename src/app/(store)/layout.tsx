@@ -1,7 +1,6 @@
 import { BottomNav } from "@/components/store/bottom-nav";
 import { StickyCartBar } from "@/components/store/sticky-cart-bar";
 import { DesktopSidebar } from "@/components/store/desktop-sidebar";
-import { CallStoreButton } from "@/components/store/call-store-button";
 import { SplashScreen } from "@/components/store/splash-screen";
 import { SessionPrompts } from "@/components/store/session-prompts";
 import { SWRegister } from "@/components/store/sw-register";
@@ -22,7 +21,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
 
       <StickyCartBar className="md:hidden" />
       <BottomNav />
-      <CallStoreButton />
       <SessionPrompts />
 
       <Toaster

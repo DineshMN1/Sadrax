@@ -30,7 +30,12 @@ export const auth = betterAuth({
     }),
     emailOTP({
       async sendVerificationOTP({ email, otp }) {
-        await sendOtpEmail(email, otp);
+        // Look up name so the email can say "Hi Dinesh" instead of "Hi there"
+        const user = await db.query.users.findFirst({
+          where: (u, { eq }) => eq(u.email, email),
+          columns: { name: true },
+        });
+        await sendOtpEmail(email, otp, user?.name ?? undefined);
       },
       otpLength: 6,
       expiresIn: 300,

@@ -81,14 +81,14 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
     <>
       {/* Image carousel */}
       <div className="relative bg-gray-50 select-none" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div className="aspect-square overflow-hidden relative">
+        <div className="aspect-square md:aspect-4/3 lg:aspect-video max-h-105 overflow-hidden relative">
           {images.length > 0 ? (
             <Image
               src={images[imgIdx]}
               alt={name}
               fill
               sizes="(max-width: 768px) 100vw, 600px"
-              className={cn("object-cover transition-opacity duration-200", flash && "opacity-80")}
+              className={cn("object-contain transition-opacity duration-200", flash && "opacity-80")}
               priority
             />
           ) : (
