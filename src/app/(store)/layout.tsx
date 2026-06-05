@@ -15,7 +15,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <DesktopSidebar />
 
       <div className="md:ml-56 lg:ml-64">
-        <main className="max-w-xl mx-auto md:mx-0 md:max-w-none pb-28 md:pb-8 min-h-screen">
+        <main className="max-w-xl mx-auto md:mx-0 md:max-w-3xl lg:max-w-4xl xl:max-w-5xl pb-28 md:pb-8 min-h-screen">
           {children}
         </main>
       </div>

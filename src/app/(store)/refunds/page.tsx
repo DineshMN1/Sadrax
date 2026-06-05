@@ -18,9 +18,9 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 );
 
 const Row = ({ label, value, color }: { label: string; value: string; color?: string }) => (
-  <div className="flex items-start justify-between gap-2 py-2.5 border-b border-gray-50 last:border-0">
-    <span className="text-sm text-gray-600 flex-1">{label}</span>
-    <span className={`text-sm font-bold shrink-0 ${color ?? "text-gray-900"}`}>{value}</span>
+  <div className="flex items-start justify-between gap-3 py-2.5 border-b border-gray-50 last:border-0">
+    <span className="text-sm text-gray-600 min-w-0 flex-1">{label}</span>
+    <span className={`text-sm font-bold text-right max-w-[55%] ${color ?? "text-gray-900"}`}>{value}</span>
   </div>
 );
 
@@ -35,7 +35,7 @@ export default function RefundsPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        <p className="text-xs text-gray-400">Last updated: June 2025</p>
+        <p className="text-xs text-gray-400">Last updated: June 2026</p>
 
         <p className="text-sm text-gray-600 leading-relaxed">
           We want you to be completely satisfied. If something is wrong with your order,
@@ -52,7 +52,8 @@ export default function RefundsPage() {
           <Row label="Expired product delivered"             value="✅ Full replacement/refund" color="text-green-600" />
           <Row label="Missing item from order"               value="✅ Refund for missing item" color="text-green-600" />
           <Row label="Change of mind after delivery"         value="❌ Not applicable (perishables)" color="text-red-500" />
-          <Row label="Refund mode (COD orders)"              value="Cash / UPI on next delivery" />
+          <Row label="Refund mode (COD orders)"              value="Cash / UPI within 24 hours" />
+          <Row label="Refund mode (online payments)"         value="Original payment method, 5–7 business days" />
         </div>
 
         <Section title="1. Cancellation Policy">
@@ -100,17 +101,19 @@ export default function RefundsPage() {
         </Section>
 
         <Section title="4. Refund Process">
-          <p>
-            Since we currently only support <strong>Cash on Delivery</strong>, refunds are
-            processed as:
-          </p>
+          <p><strong>COD orders:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Cash deducted from your next order payment, or</li>
+            <li>Cash refund handed on your next delivery, or</li>
             <li>Direct UPI transfer within 24 hours upon request</li>
           </ul>
+          <p><strong>Online payment (Razorpay):</strong></p>
+          <ul className="list-disc list-inside space-y-1 ml-2">
+            <li>Refund to the original payment method (UPI / card / net banking)</li>
+            <li>Processed within 5–7 business days after approval</li>
+          </ul>
           <p>
-            Once a refund or replacement is agreed, it will be processed within
-            <strong> 1–2 business days</strong>.
+            Once a refund or replacement is approved, we will confirm by call or message
+            within <strong>1 business day</strong>.
           </p>
         </Section>
 
@@ -133,9 +136,12 @@ export default function RefundsPage() {
           </p>
         </Section>
 
-        <div className="flex gap-4 pt-4 border-t border-gray-100 text-sm">
-          <Link href="/terms" className="text-green-600 font-semibold hover:underline">Terms &amp; Conditions</Link>
-          <Link href="/privacy" className="text-green-600 font-semibold hover:underline">Privacy Policy</Link>
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="flex gap-4 text-sm">
+            <Link href="/terms"   className="text-green-600 font-semibold hover:underline">Terms &amp; Conditions</Link>
+            <Link href="/privacy" className="text-green-600 font-semibold hover:underline">Privacy Policy</Link>
+          </div>
+          <p className="text-xs text-gray-300">© 2026 Sadrax. All Rights Reserved.</p>
         </div>
       </div>
     </div>

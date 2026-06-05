@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Privacy Policy for Sadrax Grocery, Sadras.",
 };
 
-const STORE_NAME  = "Sadrax Grocery";
+const STORE_NAME  = process.env.NEXT_PUBLIC_STORE_NAME  ?? "Sadrax Grocery";
 const STORE_EMAIL = process.env.NEXT_PUBLIC_STORE_EMAIL ?? "support@sadrax.in";
 const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
 
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        <p className="text-xs text-gray-400">Last updated: June 2025</p>
+        <p className="text-xs text-gray-400">Last updated: June 2026</p>
 
         <p className="text-sm text-gray-600 leading-relaxed">
           {STORE_NAME} (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your personal
@@ -62,9 +62,11 @@ export default function PrivacyPage() {
           <p>We share your data only with:</p>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li><strong>Delivery staff</strong> — name, address, and phone for order delivery</li>
-            <li><strong>MSG91</strong> — for OTP and SMS delivery (they process your phone number)</li>
-            <li><strong>Neon (database)</strong> — your data is stored securely on Neon's servers</li>
-            <li><strong>Cloudflare R2</strong> — product images are stored on Cloudflare</li>
+            <li><strong>Google (Gmail SMTP)</strong> — your email address is used to send OTPs and order notifications</li>
+            <li><strong>Razorpay</strong> — for online payment processing (they handle card/UPI data; we never see it)</li>
+            <li><strong>PostHog</strong> — anonymised usage analytics to improve the app (no personally identifiable data)</li>
+            <li><strong>Neon (database)</strong> — your data is stored securely on Neon's encrypted servers</li>
+            <li><strong>Cloudflare R2</strong> — product and category images are stored on Cloudflare</li>
             <li><strong>Legal authorities</strong> — if required by law or court order</li>
           </ul>
         </Section>
@@ -140,9 +142,12 @@ export default function PrivacyPage() {
           </div>
         </Section>
 
-        <div className="flex gap-4 pt-4 border-t border-gray-100 text-sm">
-          <Link href="/terms" className="text-green-600 font-semibold hover:underline">Terms &amp; Conditions</Link>
-          <Link href="/refunds" className="text-green-600 font-semibold hover:underline">Refund Policy</Link>
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="flex gap-4 text-sm">
+            <Link href="/terms"   className="text-green-600 font-semibold hover:underline">Terms &amp; Conditions</Link>
+            <Link href="/refunds" className="text-green-600 font-semibold hover:underline">Refund Policy</Link>
+          </div>
+          <p className="text-xs text-gray-300">© 2026 Sadrax. All Rights Reserved.</p>
         </div>
       </div>
     </div>

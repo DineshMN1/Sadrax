@@ -192,7 +192,7 @@ export default function CartPage() {
       </div>
 
       {/* CTA */}
-      <div className="sticky bottom-16 md:bottom-0 px-4 pb-3 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent">
+      <div className="sticky bottom-20 md:bottom-0 px-4 pb-3 pt-3 bg-linear-to-t from-gray-50 via-gray-50/90 to-transparent">
         <Link
           href="/checkout"
           className="flex items-center justify-between w-full bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all"

@@ -62,7 +62,7 @@ export default function OffersPage() {
 
         {/* Empty */}
         {!loading && coupons.length === 0 && (
-          <div className="flex flex-col items-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center min-h-[55vh] text-center">
             <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mb-5">
               <Tag size={36} className="text-green-300" />
             </div>

@@ -158,7 +158,7 @@ function LoginContent() {
         <div className="w-9" />
       </div>
 
-      <div className="flex-1 flex items-start justify-center px-5 pt-8 pb-10">
+      <div className="flex-1 flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm space-y-6">
 
           {step === "email" && (

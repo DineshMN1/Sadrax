@@ -33,7 +33,7 @@ export default function TermsPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        <p className="text-xs text-gray-400">Last updated: June 2025</p>
+        <p className="text-xs text-gray-400">Last updated: June 2026</p>
 
         <p className="text-sm text-gray-600 leading-relaxed">
           Welcome to {STORE_NAME}. By placing an order or using our website at{" "}
@@ -74,11 +74,15 @@ export default function TermsPage() {
 
         <Section title="4. Payment">
           <p>
-            Currently we accept <strong>Cash on Delivery (COD)</strong> only. Payment is due at
-            the time of delivery. Please keep exact change ready when possible.
+            We accept the following payment methods:
           </p>
+          <ul className="list-disc list-inside space-y-1 ml-2">
+            <li><strong>Cash on Delivery (COD)</strong> — pay in cash at the time of delivery</li>
+            <li><strong>Online Payment</strong> — UPI, debit/credit cards, and net banking via Razorpay (secure, PCI-DSS compliant)</li>
+          </ul>
           <p>
-            We do not store any card or banking information on our servers.
+            We do not store any card or banking information on our servers. All online payments
+            are processed securely by Razorpay. Payment is confirmed before order dispatch.
           </p>
         </Section>
 
@@ -135,10 +139,15 @@ export default function TermsPage() {
 
         <Section title="10. Intellectual Property">
           <p>
-            All content on this platform — including the Sadrax name, logo, design, and text —
-            is owned by us and protected under applicable Indian intellectual property laws.
-            You may not reproduce or use any content without our written permission.
+            All content on this platform — including the Sadrax name, logo, design, source code,
+            and text — is the exclusive property of Sadrax and is protected under applicable
+            Indian intellectual property and copyright laws (Copyright Act, 1957).
           </p>
+          <p>
+            Unauthorised copying, reproduction, modification, distribution, or use of any content
+            is strictly prohibited without prior written permission from Sadrax.
+          </p>
+          <p className="text-xs text-gray-400">© 2026 Sadrax. All Rights Reserved.</p>
         </Section>
 
         <Section title="11. Limitation of Liability">
@@ -180,11 +189,16 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <div className="text-sm text-gray-500 pt-4 border-t border-gray-100 space-y-1">
-          <p>Questions? Contact us:</p>
-          <p className="font-semibold text-gray-700">
-            {STORE_EMAIL} · +91 {STORE_PHONE}
-          </p>
+        <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Questions? Contact us:</p>
+            <p className="font-semibold text-gray-700">{STORE_EMAIL} · +91 {STORE_PHONE}</p>
+          </div>
+          <div className="flex gap-4 text-sm">
+            <Link href="/privacy" className="text-green-600 font-semibold hover:underline">Privacy Policy</Link>
+            <Link href="/refunds" className="text-green-600 font-semibold hover:underline">Refund Policy</Link>
+          </div>
+          <p className="text-xs text-gray-300">© 2026 Sadrax. All Rights Reserved.</p>
         </div>
       </div>
     </div>
