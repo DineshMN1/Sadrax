@@ -108,15 +108,24 @@ export default function NewProductPage() {
         <h2 className="font-semibold text-gray-900">Pricing &amp; Stock</h2>
         <div className="grid grid-cols-2 gap-4">
           {[
-            { key: "price", label: "Price (₹) *" },
-            { key: "mrp", label: "MRP (₹)" },
-            { key: "stock", label: "Stock (units)" },
-          ].map(({ key, label }) => (
+            { key: "price", label: "Price *", rupee: true },
+            { key: "mrp",   label: "MRP",     rupee: true },
+            { key: "stock", label: "Stock (units)", rupee: false },
+          ].map(({ key, label, rupee }) => (
             <div key={key}>
               <label className="text-xs font-semibold text-gray-600 mb-1 block">{label}</label>
-              <input type="number" min="0" step={key === "stock" ? "1" : "0.01"} value={(form as Record<string, string | boolean>)[key] as string}
-                onChange={(e) => update(key, e.target.value)}
-                className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400/30" />
+              <div className="relative">
+                {rupee && (
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500 pointer-events-none">₹</span>
+                )}
+                <input
+                  type="number" min="0" step={key === "stock" ? "1" : "0.01"}
+                  value={(form as Record<string, string | boolean>)[key] as string}
+                  onChange={(e) => update(key, e.target.value)}
+                  placeholder={rupee ? "0.00" : "0"}
+                  className={`w-full h-10 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400/30 ${rupee ? "pl-7 pr-3" : "px-3"}`}
+                />
+              </div>
             </div>
           ))}
           <div>
