@@ -112,7 +112,7 @@ export function SearchBar({ className }: { className?: string }) {
           onChange={e => handleChange(e.target.value)}
           onFocus={() => setOpen(true)}
           placeholder="Search groceries, brands..."
-          className="w-full h-11 pl-10 pr-10 rounded-xl bg-gray-100 text-sm text-gray-900 placeholder:text-gray-400 border border-transparent focus:border-green-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-400/20 transition-all"
+          className="w-full h-11 pl-10 pr-10 rounded-xl bg-gray-100 text-sm text-gray-900 placeholder:text-gray-400 border border-transparent focus:border-green-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-400/20 transition-all [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-cancel-button]:hidden"
         />
         {value && (
           <button type="button" onClick={handleClear}

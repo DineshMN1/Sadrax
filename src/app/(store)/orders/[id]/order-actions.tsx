@@ -61,45 +61,51 @@ export function OrderActions({ orderId, orderNumber, status, items }: Props) {
     }
   };
 
+  // Confirming a cancellation takes over the full row so the buttons aren't cramped.
+  if (status === "pending" && showConfirm) {
+    return (
+      <div className="space-y-2.5">
+        <p className="text-sm font-semibold text-gray-700 text-center">Cancel this order?</p>
+        <div className="flex gap-2.5">
+          <button
+            onClick={() => setShowConfirm(false)}
+            className="flex-1 h-11 px-4 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-2xl hover:bg-gray-50 transition-colors"
+          >
+            Keep order
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="flex-1 flex items-center justify-center gap-1.5 h-11 px-4 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-2xl transition-colors disabled:opacity-60"
+          >
+            {cancelling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
+            Yes, cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2.5">
       {/* Reorder */}
       <button
         onClick={handleReorder}
-        className="flex-1 flex items-center justify-center gap-2 h-11 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-sm shadow-green-600/30"
+        className="flex-1 flex items-center justify-center gap-2 h-11 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-2xl transition-colors shadow-sm shadow-green-600/30"
       >
         <RotateCcw size={15} />
         Reorder
       </button>
 
       {/* Cancel — only for pending orders */}
-      {status === "pending" && !showConfirm && (
+      {status === "pending" && (
         <button
           onClick={() => setShowConfirm(true)}
-          className="flex items-center justify-center gap-2 px-4 h-11 bg-white border border-red-200 text-red-500 text-sm font-bold rounded-2xl hover:bg-red-50 transition-colors"
+          className="flex items-center justify-center gap-2 px-5 h-11 bg-white border border-red-200 text-red-500 text-sm font-bold rounded-2xl hover:bg-red-50 transition-colors"
         >
           <X size={15} />
           Cancel
         </button>
-      )}
-
-      {status === "pending" && showConfirm && (
-        <div className="flex gap-2 flex-1">
-          <button
-            onClick={() => setShowConfirm(false)}
-            className="flex-1 h-11 bg-white border border-gray-200 text-gray-600 text-sm font-semibold rounded-2xl hover:bg-gray-50 transition-colors"
-          >
-            Keep
-          </button>
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-2xl transition-colors disabled:opacity-60"
-          >
-            {cancelling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
-            Confirm Cancel
-          </button>
-        </div>
       )}
     </div>
   );

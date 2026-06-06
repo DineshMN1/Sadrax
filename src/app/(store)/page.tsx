@@ -110,12 +110,12 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2.5">
+            <div className="flex flex-wrap justify-center gap-2.5">
               {cats.map(cat => (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
-                  className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 hover:shadow-md active:scale-95 transition-all group"
+                  className="basis-[calc((100%-1.25rem)/3)] sm:basis-[calc((100%-2.5rem)/5)] md:basis-[calc((100%-4.375rem)/8)] flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 hover:shadow-md active:scale-95 transition-all group"
                 >
                   <div className="w-16 h-16 md:w-14 md:h-14 rounded-2xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center group-hover:scale-110 transition-transform">
                     {cat.image
