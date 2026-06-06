@@ -12,7 +12,8 @@ export default async function AdminDashboard() {
   const [totalOrders, todayOrders, totalRevenue, totalProducts, totalUsers] = await Promise.all([
     db.select({ count: count() }).from(orders),
     db.select({ count: count() }).from(orders).where(gte(orders.createdAt, today)),
-    db.select({ sum: sum(orders.total) }).from(orders).where(eq(orders.paymentStatus, "paid")),
+    // COD orders are never flagged "paid"; realized revenue = delivered orders
+    db.select({ sum: sum(orders.total) }).from(orders).where(eq(orders.status, "delivered")),
     db.select({ count: count() }).from(products).where(eq(products.active, true)),
     db.select({ count: count() }).from(users),
   ]);
