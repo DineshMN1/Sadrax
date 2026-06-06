@@ -2,19 +2,9 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ChevronDown, Store, LayoutDashboard, Zap, X } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Zap, X } from "lucide-react";
 
 const PANELS = [
-  {
-    href:  "/",
-    label: "Store",
-    desc:  "Customer-facing shop",
-    icon:  Store,
-    color: "bg-green-500",
-    ring:  "ring-green-500/30",
-    text:  "text-green-700",
-    bg:    "bg-green-50",
-  },
   {
     href:  "/admin",
     label: "Admin",
@@ -38,7 +28,7 @@ const PANELS = [
 ] as const;
 
 interface Props {
-  current: "store" | "admin" | "cord";
+  current: "admin" | "cord";
   dark?: boolean;
 }
 
@@ -51,7 +41,6 @@ export function PanelSwitcher({ current, dark }: Props) {
   const btnRef          = useRef<HTMLButtonElement>(null);
 
   const active = PANELS.find(p =>
-    current === "store" ? p.href === "/" :
     current === "admin" ? p.href === "/admin" : p.href === "/cord"
   )!;
   const Icon = active.icon;
@@ -115,7 +104,6 @@ export function PanelSwitcher({ current, dark }: Props) {
             {PANELS.map(panel => {
               const PIcon    = panel.icon;
               const isCurrent =
-                (current === "store" && panel.href === "/") ||
                 (current === "admin" && panel.href === "/admin") ||
                 (current === "cord"  && panel.href === "/cord");
 

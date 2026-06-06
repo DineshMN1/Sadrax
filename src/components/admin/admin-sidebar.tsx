@@ -11,24 +11,49 @@ import {
 import { cn } from "@/lib/utils";
 import { PanelSwitcher } from "@/components/panel-switcher";
 
-const NAV_ITEMS = [
-  { href: "/admin",            icon: LayoutDashboard, label: "Dashboard",  exact: true },
-  { href: "/admin/orders",     icon: ShoppingBag,     label: "Orders"               },
-  { href: "/admin/returns",    icon: RotateCcw,       label: "Returns"              },
-  { href: "/admin/customers",  icon: UserRound,       label: "Customers"            },
-  { href: "/admin/products",   icon: Package,         label: "Products"             },
-  { href: "/admin/categories", icon: Tag,             label: "Categories"           },
-  { href: "/admin/inventory",  icon: Boxes,           label: "Inventory"            },
-  { href: "/admin/banners",    icon: GalleryHorizontalEnd, label: "Banners"          },
-  { href: "/admin/notifications", icon: Bell,         label: "Notifications"        },
-  { href: "/admin/feedback",   icon: Star,            label: "Feedback"             },
-  { href: "/admin/analytics",  icon: TrendingUp,      label: "Analytics"            },
-  { href: "/admin/offers",     icon: Percent,         label: "Coupons"              },
-  { href: "/admin/promotions", icon: Sparkles,        label: "Promotions"           },
-  { href: "/admin/riders",     icon: Bike,            label: "Riders"               },
-  { href: "/admin/staff",      icon: Users,           label: "Staff"                },
-  { href: "/admin/settings",   icon: Settings,        label: "Settings"             },
-  { href: "/admin/audit",      icon: ScrollText,      label: "Audit Log"            },
+const NAV_GROUPS = [
+  {
+    title: null,
+    items: [
+      { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
+    ],
+  },
+  {
+    title: "Sales",
+    items: [
+      { href: "/admin/orders",    icon: ShoppingBag, label: "Orders"    },
+      { href: "/admin/returns",   icon: RotateCcw,   label: "Returns"   },
+      { href: "/admin/customers", icon: UserRound,   label: "Customers" },
+      { href: "/admin/feedback",  icon: Star,        label: "Feedback"  },
+      { href: "/admin/analytics", icon: TrendingUp,  label: "Analytics" },
+    ],
+  },
+  {
+    title: "Catalog",
+    items: [
+      { href: "/admin/products",   icon: Package, label: "Products"   },
+      { href: "/admin/categories", icon: Tag,     label: "Categories" },
+      { href: "/admin/inventory",  icon: Boxes,   label: "Inventory"  },
+    ],
+  },
+  {
+    title: "Marketing",
+    items: [
+      { href: "/admin/promotions",    icon: Sparkles,             label: "Promotions"    },
+      { href: "/admin/offers",        icon: Percent,              label: "Coupons"       },
+      { href: "/admin/banners",       icon: GalleryHorizontalEnd, label: "Banners"       },
+      { href: "/admin/notifications", icon: Bell,                 label: "Notifications" },
+    ],
+  },
+  {
+    title: "Team & System",
+    items: [
+      { href: "/admin/riders",   icon: Bike,       label: "Riders"    },
+      { href: "/admin/staff",    icon: Users,      label: "Staff"     },
+      { href: "/admin/settings", icon: Settings,   label: "Settings"  },
+      { href: "/admin/audit",    icon: ScrollText, label: "Audit Log" },
+    ],
+  },
 ];
 
 export function AdminSidebar({ email }: { email: string }) {
@@ -44,8 +69,9 @@ export function AdminSidebar({ email }: { email: string }) {
     router.replace("/admin/login");
   };
 
-  const currentPage = NAV_ITEMS.find(item =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href)
+  const allItems = NAV_GROUPS.flatMap(g => g.items);
+  const currentPage = allItems.find(item =>
+    ("exact" in item && item.exact) ? pathname === item.href : pathname.startsWith(item.href)
   );
 
   return (
@@ -65,18 +91,29 @@ export function AdminSidebar({ email }: { email: string }) {
           </div>
         </div>
 
-        <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto overscroll-contain">
-          {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link key={href} href={href} className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                active ? "bg-green-50 text-green-700 font-semibold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}>
-                <Icon size={16} strokeWidth={active ? 2.5 : 2} />{label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-3 px-3 overflow-y-auto overscroll-contain">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+              {group.title && (
+                <p className="px-3 mb-1 text-[10px] font-bold text-gray-300 uppercase tracking-wider">{group.title}</p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const exact = "exact" in item && item.exact;
+                  const active = exact ? pathname === item.href : pathname.startsWith(item.href);
+                  return (
+                    <Link key={item.href} href={item.href} className={cn(
+                      "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                      active ? "bg-green-50 text-green-700 font-semibold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    )}>
+                      <Icon size={16} strokeWidth={active ? 2.5 : 2} />{item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="px-3 pb-4 pt-2 border-t border-gray-100">
@@ -131,23 +168,34 @@ export function AdminSidebar({ email }: { email: string }) {
         </div>
 
         {/* Drawer nav */}
-        <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto overscroll-contain">
-          {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                  active ? "bg-green-50 text-green-700 font-bold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                )}
-              >
-                <Icon size={18} strokeWidth={active ? 2.5 : 2} />{label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-3 px-3 overflow-y-auto overscroll-contain">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
+              {group.title && (
+                <p className="px-4 mb-1 text-[10px] font-bold text-gray-300 uppercase tracking-wider">{group.title}</p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const exact = "exact" in item && item.exact;
+                  const active = exact ? pathname === item.href : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                        active ? "bg-green-50 text-green-700 font-bold" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      )}
+                    >
+                      <Icon size={18} strokeWidth={active ? 2.5 : 2} />{item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Drawer footer */}
