@@ -11,23 +11,25 @@ import { LocationBanner } from "@/components/store/location-banner";
 import { GreetingHeader } from "@/components/store/greeting-header";
 import { RecentlyViewedSection } from "@/components/store/recently-viewed-section";
 import { BuyAgainSection } from "@/components/store/buy-again-section";
+import { BannerCarousel } from "@/components/store/banner-carousel";
 import { db } from "@/lib/db";
-import { products, categories, storeSettings } from "@/lib/db/schema";
+import { products, categories, storeSettings, banners } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 async function getHomeData() {
-  const [cats, featured, topOrdered, allProducts, settings] = await Promise.all([
+  const [cats, featured, topOrdered, allProducts, settings, promoBanners] = await Promise.all([
     db.select().from(categories).where(eq(categories.active, true)).orderBy(categories.order).limit(16),
     db.select().from(products).where(and(eq(products.active, true), eq(products.featured, true))).limit(8),
     db.select().from(products).where(eq(products.active, true)).orderBy(desc(products.orderCount)).limit(10),
     db.select().from(products).where(eq(products.active, true)).orderBy(products.name).limit(40),
     db.select().from(storeSettings).where(eq(storeSettings.key, "store_open")),
+    db.select().from(banners).where(eq(banners.active, true)).orderBy(banners.order, banners.id).limit(5),
   ]);
-  return { cats, featured, topOrdered, allProducts, isOpen: settings[0]?.value !== "false" };
+  return { cats, featured, topOrdered, allProducts, isOpen: settings[0]?.value !== "false", promoBanners };
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, allProducts, isOpen } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen, promoBanners } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -62,28 +64,32 @@ export default async function HomePage() {
       <div className="px-4 md:px-6 py-4 space-y-7">
         {!isOpen && <StoreClosedBanner />}
 
-        {/* ── Hero banner ───────────────────────────────────────────────── */}
-        <div className="relative bg-linear-to-br from-green-600 via-green-700 to-emerald-800 rounded-3xl p-5 overflow-hidden min-h-32.5 flex items-center shadow-xl shadow-green-700/20">
-          <div className="absolute -right-8 -top-8 w-44 h-44 bg-white/10 rounded-full blur-sm" />
-          <div className="absolute -right-2 -bottom-12 w-32 h-32 bg-white/10 rounded-full" />
-          <div className="absolute right-16 top-4 w-12 h-12 bg-white/10 rounded-full" />
-          <div className="relative z-10 flex-1">
-            <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-[11px] font-bold px-2.5 py-1 rounded-full mb-2.5 backdrop-blur-sm border border-white/10">
-              <Zap size={10} fill="white" />
-              10-min local delivery
+        {/* ── Hero banner(s) ────────────────────────────────────────────── */}
+        {promoBanners.length > 0 ? (
+          <BannerCarousel banners={promoBanners} />
+        ) : (
+          <div className="relative bg-linear-to-br from-green-600 via-green-700 to-emerald-800 rounded-3xl p-5 overflow-hidden min-h-32.5 flex items-center shadow-xl shadow-green-700/20">
+            <div className="absolute -right-8 -top-8 w-44 h-44 bg-white/10 rounded-full blur-sm" />
+            <div className="absolute -right-2 -bottom-12 w-32 h-32 bg-white/10 rounded-full" />
+            <div className="absolute right-16 top-4 w-12 h-12 bg-white/10 rounded-full" />
+            <div className="relative z-10 flex-1">
+              <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-[11px] font-bold px-2.5 py-1 rounded-full mb-2.5 backdrop-blur-sm border border-white/10">
+                <Zap size={10} fill="white" />
+                10-min local delivery
+              </div>
+              <h2 className="text-white text-xl font-extrabold leading-tight mb-1">
+                நம்ம Sadras-ல<br />கிரசரி 🛒
+              </h2>
+              <p className="text-green-200 text-xs mb-3.5">புதுசா. நம்ம ஊரு. வேகமா டெலிவரி.</p>
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-1.5 bg-white text-green-700 text-xs font-extrabold px-4 py-2 rounded-xl hover:bg-green-50 transition-colors shadow-sm"
+              >
+                Shop Now <ChevronRight size={12} strokeWidth={3} />
+              </Link>
             </div>
-            <h2 className="text-white text-xl font-extrabold leading-tight mb-1">
-              நம்ம Sadras-ல<br />கிரசரி 🛒
-            </h2>
-            <p className="text-green-200 text-xs mb-3.5">புதுசா. நம்ம ஊரு. வேகமா டெலிவரி.</p>
-            <Link
-              href="/categories"
-              className="inline-flex items-center gap-1.5 bg-white text-green-700 text-xs font-extrabold px-4 py-2 rounded-xl hover:bg-green-50 transition-colors shadow-sm"
-            >
-              Shop Now <ChevronRight size={12} strokeWidth={3} />
-            </Link>
           </div>
-        </div>
+        )}
 
         {/* ── Categories ────────────────────────────────────────────────── */}
         <section>
@@ -94,28 +100,28 @@ export default async function HomePage() {
             </Link>
           </div>
           {cats.length === 0 ? (
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-              {Array(8).fill(0).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-gray-100">
-                  <div className="w-10 h-10 skeleton rounded-xl" />
-                  <div className="h-2 w-8 skeleton rounded" />
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2.5">
+              {Array(6).fill(0).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100">
+                  <div className="w-16 h-16 skeleton rounded-2xl" />
+                  <div className="h-2.5 w-12 skeleton rounded" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2.5">
               {cats.map(cat => (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
-                  className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 hover:shadow-md active:scale-95 transition-all group"
+                  className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-green-200 hover:shadow-md active:scale-95 transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-16 h-16 md:w-14 md:h-14 rounded-2xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center group-hover:scale-110 transition-transform">
                     {cat.image
-                      ? <Image src={cat.image} alt={cat.name} width={40} height={40} className="w-full h-full object-cover" />
-                      : <span className="text-xl">🛒</span>}
+                      ? <Image src={cat.image} alt={cat.name} width={64} height={64} className="w-full h-full object-cover" />
+                      : <span className="text-3xl">🛒</span>}
                   </div>
-                  <span className="text-[10px] font-semibold text-gray-700 text-center leading-tight line-clamp-2">{cat.name}</span>
+                  <span className="text-[11px] font-semibold text-gray-700 text-center leading-tight line-clamp-2">{cat.name}</span>
                 </Link>
               ))}
             </div>

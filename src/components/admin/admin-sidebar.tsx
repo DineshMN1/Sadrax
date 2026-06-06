@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { signOut } from "@/lib/auth-client";
 import {
   LayoutDashboard, Package, Tag, ShoppingBag,
-  Settings, Users, Percent, LogOut, TrendingUp, Menu, X, UserRound,
+  Settings, Users, Percent, LogOut, TrendingUp, Menu, X, UserRound, GalleryHorizontalEnd,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PanelSwitcher } from "@/components/panel-switcher";
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/admin/customers",  icon: UserRound,       label: "Customers"            },
   { href: "/admin/products",   icon: Package,         label: "Products"             },
   { href: "/admin/categories", icon: Tag,             label: "Categories"           },
+  { href: "/admin/banners",    icon: GalleryHorizontalEnd, label: "Banners"          },
   { href: "/admin/analytics",  icon: TrendingUp,      label: "Analytics"            },
   { href: "/admin/offers",     icon: Percent,         label: "Offers"               },
   { href: "/admin/staff",      icon: Users,           label: "Staff"                },

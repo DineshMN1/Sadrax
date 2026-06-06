@@ -217,6 +217,26 @@ export const storeSettings = pgTable("store_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Home-screen promotional banners (admin managed, max 5, ordered by priority)
+export const banners = pgTable(
+  "banners",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 120 }),        // main heading
+    subtitle: varchar("subtitle", { length: 200 }),  // supporting line
+    badge: varchar("badge", { length: 60 }),          // e.g. "10-min local delivery"
+    image: text("image"),                             // optional background image
+    ctaText: varchar("cta_text", { length: 40 }),     // button label
+    ctaLink: varchar("cta_link", { length: 300 }),    // where the banner links to
+    theme: varchar("theme", { length: 20 }).default("green").notNull(), // gradient preset
+    order: integer("order").default(0).notNull(),     // lower = shown first
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("banners_order_idx").on(t.order)]
+);
+
 // ─── Type exports ──────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -228,3 +248,4 @@ export type Address = typeof addresses.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
 export type DeliveryPerson    = typeof deliveryPersons.$inferSelect;
 export type PushSubscription  = typeof pushSubscriptions.$inferSelect;
+export type Banner            = typeof banners.$inferSelect;
