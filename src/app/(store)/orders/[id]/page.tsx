@@ -3,7 +3,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders, orderItems, addresses, storeSettings, returnRequests } from "@/lib/db/schema";
+import { orders, orderItems, addresses, storeSettings, returnRequests, deliveryPersons } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle, Phone } from "lucide-react";
@@ -53,6 +53,9 @@ export default async function OrderDetailPage({
     db.select().from(returnRequests).where(eq(returnRequests.orderId, order.id)).limit(1),
   ]);
   const existingReturn = returnRows[0] ?? null;
+  const rider = order.deliveryPersonId
+    ? (await db.select().from(deliveryPersons).where(eq(deliveryPersons.id, order.deliveryPersonId)).limit(1))[0] ?? null
+    : null;
 
   const eta = etaSetting[0]?.value ?? "30–45 min";
   const currentIdx = TRACKING_STEPS.findIndex(s => s.status === order.status);
@@ -143,6 +146,24 @@ export default async function OrderDetailPage({
               </p>
               {order.rejectionReason && <p className="text-xs text-gray-500 mt-0.5">{order.rejectionReason}</p>}
             </div>
+          </div>
+        )}
+
+        {/* Rider — out for delivery */}
+        {order.status === "out_for_delivery" && rider && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0"><Truck size={20} /></div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900">{rider.name} is on the way</p>
+              <p className="text-xs text-gray-400">Your delivery partner</p>
+            </div>
+            {order.riderLat != null && order.riderLng != null && (
+              <a href={`https://www.google.com/maps/search/?api=1&query=${order.riderLat},${order.riderLng}`} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-3 py-2 rounded-xl">
+                <MapPin size={13} /> Track
+              </a>
+            )}
+            <a href={`tel:${rider.phone}`} className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-xl shrink-0"><Phone size={15} /></a>
           </div>
         )}
 

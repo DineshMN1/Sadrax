@@ -41,10 +41,13 @@ interface Order {
   tip?: number;
   deliveryInstructions?: string | null;
   deliverySlot?: string | null;
+  deliveryPersonId?: number | null;
   items: OrderItem[];
   address?: OrderAddress;
   customerPhone?: string;
 }
+
+interface Rider { id: number; name: string; phone: string; active: boolean }
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -122,12 +125,48 @@ const ACTION_BUTTONS: Record<string, { next: OrderStatus; label: string; icon: R
   out_for_delivery: [{ next: "delivered",        label: "Mark Delivered",    icon: Check,   color: "bg-green-600 hover:bg-green-500"  }],
 };
 
-function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, status: OrderStatus) => void }) {
+function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: number, status: OrderStatus) => void; riders: Rider[] }) {
   const [updating, setUpdating]         = useState(false);
   const [showRejectReason, setShowRejectReason] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [expanded, setExpanded]         = useState(false);
   const [tgSending, setTgSending]       = useState(false);
+  const [riderId, setRiderId]           = useState<string>(order.deliveryPersonId ? String(order.deliveryPersonId) : "");
+  const [sharing, setSharing]           = useState(false);
+  const watchRef                        = useRef<number | null>(null);
+
+  const assignRider = async (val: string) => {
+    setRiderId(val);
+    await fetch(`/api/cord/orders/${order.id}/assign`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deliveryPersonId: val ? Number(val) : null }),
+    });
+    toast.success(val ? "Rider assigned" : "Rider cleared");
+  };
+
+  const toggleShareLocation = () => {
+    if (sharing) {
+      if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
+      watchRef.current = null;
+      setSharing(false);
+      return;
+    }
+    if (!navigator.geolocation) { toast.error("Location not supported"); return; }
+    watchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        fetch("/api/cord/rider-location", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        }).catch(() => {});
+      },
+      () => toast.error("Couldn't get location"),
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+    setSharing(true);
+    toast.success("Sharing live location with the customer");
+  };
+
+  useEffect(() => () => { if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current); }, []);
 
   const actions   = ACTION_BUTTONS[order.status] ?? [];
   const isPending = order.status === "pending";
@@ -337,6 +376,23 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           </div>
         )}
 
+        {/* Rider assignment + live location (active orders) */}
+        {!["delivered", "rejected", "cancelled"].includes(order.status) && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+            <select value={riderId} onChange={(e) => assignRider(e.target.value)}
+              className="h-9 px-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none">
+              <option value="">Assign rider…</option>
+              {riders.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            {order.status === "out_for_delivery" && (
+              <button onClick={toggleShareLocation}
+                className={`flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold transition-colors ${sharing ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700 hover:bg-green-100"}`}>
+                <Navigation size={13} /> {sharing ? "Stop sharing" : "Share live location"}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Action buttons */}
         {showRejectReason ? (
           <div className="space-y-2">
@@ -377,10 +433,15 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
 export default function CordPage() {
   const router = useRouter();
   const [orders, setOrders]   = useState<Order[]>([]);
+  const [riders, setRiders]   = useState<Rider[]>([]);
   const [filter, setFilter]   = useState<"active" | "all">("active");
   const [loading, setLoading] = useState(true);
   const audioRef              = useRef<HTMLAudioElement | null>(null);
   const lastOrderCount        = useRef(0);
+
+  useEffect(() => {
+    fetch("/api/admin/riders").then((r) => r.json()).then((d) => setRiders((d.riders ?? []).filter((x: Rider) => x.active))).catch(() => {});
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -503,7 +564,7 @@ export default function CordPage() {
         ) : (
           <div className="space-y-4">
             {displayOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onUpdate={handleStatusUpdate} />
+              <OrderCard key={order.id} order={order} onUpdate={handleStatusUpdate} riders={riders} />
             ))}
           </div>
         )}

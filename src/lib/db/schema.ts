@@ -159,6 +159,10 @@ export const orders = pgTable(
     // live GPS location captured at checkout (optional — customer may decline)
     deliveryLat: real("delivery_lat"),
     deliveryLng: real("delivery_lng"),
+    // live rider location while out for delivery
+    riderLat: real("rider_lat"),
+    riderLng: real("rider_lng"),
+    riderUpdatedAt: timestamp("rider_updated_at"),
     deliveredAt: timestamp("delivered_at"), // set when status first becomes delivered
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
