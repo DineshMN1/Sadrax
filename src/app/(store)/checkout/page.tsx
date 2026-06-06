@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { formatPrice, isDeliverable } from "@/lib/utils";
+import { requestCoords, getCachedCoords } from "@/lib/geo";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
 
@@ -120,8 +121,17 @@ export default function CheckoutPage() {
     if (hasStockIssue) return; // inline banner already explains what to fix
     if (!termsAccepted) { toast.error("Please accept the Terms & Conditions"); return; }
 
+    // Serviceability — warn (don't hard-block) if the address is out of zone
+    const addr = addresses.find(a => a.id === selectedAddress);
+    if (addr && !isDeliverable(addr.pincode)) {
+      if (!confirm(`Heads up: ${addr.pincode} is outside our usual delivery area, so we may not be able to deliver. Place the order anyway?`)) return;
+    }
+
     setPlacing(true);
     try {
+      // Optional GPS capture so the rider can find the exact spot — never blocks
+      const coords = getCachedCoords() ?? await requestCoords();
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,6 +140,8 @@ export default function CheckoutPage() {
           paymentMethod,
           couponCode,
           items: items.map(i => ({ productId: i.id, quantity: i.quantity })),
+          deliveryLat: coords?.lat ?? null,
+          deliveryLng: coords?.lng ?? null,
         }),
       });
       const data = await res.json();

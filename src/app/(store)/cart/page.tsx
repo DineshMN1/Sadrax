@@ -10,6 +10,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
 import { formatPrice, DELIVERY_FEE } from "@/lib/utils";
+import { primeCoords } from "@/lib/geo";
 import { toast } from "sonner";
 
 export default function CartPage() {
@@ -267,6 +268,7 @@ export default function CartPage() {
         ) : (
           <Link
             href="/checkout"
+            onClick={() => primeCoords()}
             className="flex items-center justify-between w-full bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-4 rounded-2xl font-bold shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all"
           >
             <span className="text-base">Proceed to Checkout</span>

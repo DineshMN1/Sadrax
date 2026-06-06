@@ -96,6 +96,16 @@ export default async function AdminOrderDetailPage({
               </p>
               <p className="text-sm text-gray-400 mt-0.5">{addressRows[0].city} — {addressRows[0].pincode}</p>
               <p className="text-xs text-gray-400 mt-1">{addressRows[0].phone}</p>
+              {order.deliveryLat != null && order.deliveryLng != null && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${order.deliveryLat},${order.deliveryLng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-2.5 text-xs font-bold text-green-600 hover:underline"
+                >
+                  <MapPin size={12} /> Navigate to customer&apos;s pinned location
+                </a>
+              )}
             </>
           ) : (
             <p className="text-sm text-gray-400">No address on record</p>

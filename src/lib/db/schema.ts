@@ -151,6 +151,9 @@ export const orders = pgTable(
     notes: text("notes"),
     deliveryPersonId: integer("delivery_person_id"),
     rejectionReason: text("rejection_reason"),
+    // live GPS location captured at checkout (optional — customer may decline)
+    deliveryLat: real("delivery_lat"),
+    deliveryLng: real("delivery_lng"),
     deliveredAt: timestamp("delivered_at"), // set when status first becomes delivered
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
