@@ -25,11 +25,19 @@ export function GreetingInner() {
         </div>
         <div>
           {firstName ? (
-            <p className="text-sm font-extrabold text-gray-900 leading-none">
-              {getGreeting()}, {firstName} 👋
-            </p>
+            <>
+              <p className="text-sm font-extrabold text-gray-900 leading-none">
+                {getGreeting()}, {firstName} 👋
+              </p>
+              <p className="text-[10px] font-semibold text-gray-400 leading-none mt-1">
+                Sadrax <span className="text-gray-300">by Malik Stores</span>
+              </p>
+            </>
           ) : (
-            <span className="text-sm font-extrabold text-gray-900">Sadras</span>
+            <>
+              <p className="text-sm font-extrabold text-gray-900 leading-none">Sadrax</p>
+              <p className="text-[10px] font-semibold text-gray-400 leading-none mt-1">by Malik Stores</p>
+            </>
           )}
         </div>
       </div>

@@ -13,7 +13,10 @@ function StaticFallback() {
           <span className="absolute inset-0 bg-green-500 rounded-full animate-pulse-ring" />
           <span className="absolute inset-0 bg-green-500 rounded-full" />
         </div>
-        <span className="text-sm font-extrabold text-gray-900">Sadras</span>
+        <div>
+          <span className="text-sm font-extrabold text-gray-900 leading-none block">Sadrax</span>
+          <span className="text-[10px] font-semibold text-gray-400 leading-none">by Malik Stores</span>
+        </div>
       </div>
     </div>
   );
