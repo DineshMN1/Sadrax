@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logAudit, diffSummary } from "@/lib/audit";
+import { notifyBackInStock } from "@/lib/stock-alerts";
 
 function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
   return session && ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
@@ -38,6 +39,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (before) {
     const summary = diffSummary(before as Record<string, unknown>, body, Object.keys(body)) || "updated";
     logAudit(req, session, { action: "update", entity: "product", entityId: id, summary: `${before.name}: ${summary}` });
+    // Back-in-stock alerts when stock crosses 0 → positive
+    if (before.stock === 0 && typeof body.stock === "number" && body.stock > 0) {
+      notifyBackInStock(product.id, product.name).catch(() => {});
+    }
   }
 
   return NextResponse.json({ product });

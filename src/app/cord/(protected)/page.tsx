@@ -38,6 +38,9 @@ interface Order {
   discount: number;
   createdAt: string;
   notes?: string;
+  tip?: number;
+  deliveryInstructions?: string | null;
+  deliverySlot?: string | null;
   items: OrderItem[];
   address?: OrderAddress;
   customerPhone?: string;
@@ -230,6 +233,25 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
             📝 {order.notes}
           </p>
+        )}
+
+        {/* Delivery instructions (customer) */}
+        {order.deliveryInstructions && (
+          <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
+            🛵 {order.deliveryInstructions}
+          </p>
+        )}
+
+        {/* Slot + tip */}
+        {(order.deliverySlot || (order.tip ?? 0) > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {order.deliverySlot && (
+              <span className="text-[11px] font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">🕒 {order.deliverySlot}</span>
+            )}
+            {(order.tip ?? 0) > 0 && (
+              <span className="text-[11px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-lg">💚 Tip {formatPrice(order.tip!)}</span>
+            )}
+          </div>
         )}
 
         {/* Total */}

@@ -96,6 +96,8 @@ export const products = pgTable(
     unit: varchar("unit", { length: 50 }), // "500g", "1L", "1 pc"
     stock: integer("stock").default(0).notNull(),
     categoryId: integer("category_id").references(() => categories.id),
+    brand: varchar("brand", { length: 100 }),
+    veg: varchar("veg", { length: 10 }), // "veg" | "nonveg" | null (not applicable)
     images: json("images").$type<string[]>().default([]),
     active: boolean("active").default(true).notNull(),
     featured: boolean("featured").default(false),
@@ -149,6 +151,9 @@ export const orders = pgTable(
     total: integer("total").notNull(),
     couponCode: varchar("coupon_code", { length: 50 }),
     notes: text("notes"),
+    tip: integer("tip").default(0).notNull(),               // rider tip in paise
+    deliveryInstructions: text("delivery_instructions"),    // "leave at door" etc.
+    deliverySlot: varchar("delivery_slot", { length: 60 }), // chosen time slot label
     deliveryPersonId: integer("delivery_person_id"),
     rejectionReason: text("rejection_reason"),
     // live GPS location captured at checkout (optional — customer may decline)
@@ -212,6 +217,19 @@ export const pushSubscriptions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
+);
+
+// "Notify me when back in stock" requests. One per product per user.
+export const stockAlerts = pgTable(
+  "stock_alerts",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    notified: boolean("notified").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("stock_alerts_product_user_idx").on(t.productId, t.userId)]
 );
 
 // Admin/staff action audit trail — who changed what, from what, when, and from where.
@@ -324,3 +342,4 @@ export type Banner            = typeof banners.$inferSelect;
 export type ReturnRequest     = typeof returnRequests.$inferSelect;
 export type OrderFeedback     = typeof orderFeedback.$inferSelect;
 export type AuditLog          = typeof auditLogs.$inferSelect;
+export type StockAlert        = typeof stockAlerts.$inferSelect;

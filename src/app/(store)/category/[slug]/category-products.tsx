@@ -17,6 +17,8 @@ interface Product {
   images: unknown;
   stock: number;
   orderCount: number;
+  brand?: string | null;
+  veg?: string | null;
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -30,6 +32,12 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   const [sort, setSort]         = useState<SortKey>("popular");
   const [filters, setFilters]   = useState<Set<FilterKey>>(new Set());
   const [showSort, setShowSort] = useState(false);
+  const [brand, setBrand]       = useState<string>("all");
+
+  const brands = useMemo(
+    () => Array.from(new Set(initialItems.map(p => p.brand).filter((b): b is string => !!b))).sort(),
+    [initialItems]
+  );
 
   const toggleFilter = (f: FilterKey) =>
     setFilters(prev => {
@@ -44,6 +52,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
     // Filter
     if (filters.has("instock"))     list = list.filter(p => p.stock > 0);
     if (filters.has("has_discount")) list = list.filter(p => p.mrp && p.mrp > p.price);
+    if (brand !== "all")            list = list.filter(p => p.brand === brand);
 
     // Sort
     switch (sort) {
@@ -57,7 +66,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
       default: list.sort((a, b) => b.orderCount - a.orderCount);
     }
     return list;
-  }, [initialItems, sort, filters]);
+  }, [initialItems, sort, filters, brand]);
 
   const activeFilters = filters.size;
   const currentSort  = SORT_OPTIONS.find(o => o.value === sort)!;
@@ -128,6 +137,18 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
           On sale
         </button>
 
+        {/* Brand filter */}
+        {brands.length > 0 && (
+          <select value={brand} onChange={(e) => setBrand(e.target.value)}
+            className={cn(
+              "h-9 px-2.5 rounded-xl text-xs font-semibold border bg-white transition-all focus:outline-none",
+              brand !== "all" ? "border-green-500 text-green-700" : "border-gray-200 text-gray-600"
+            )}>
+            <option value="all">All brands</option>
+            {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+
         {/* Clear filters */}
         {activeFilters > 0 && (
           <button onClick={() => setFilters(new Set())}
@@ -162,6 +183,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               unit={p.unit}
               images={p.images as string[]}
               stock={p.stock}
+              veg={p.veg}
             />
           ))}
         </div>

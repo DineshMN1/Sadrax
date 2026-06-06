@@ -17,10 +17,11 @@ interface ProductCardProps {
   unit?: string | null;
   images?: string[];
   stock: number;
+  veg?: string | null;
   className?: string;
 }
 
-export function ProductCard({ id, name, price, mrp, unit, images, stock, className }: ProductCardProps) {
+export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, className }: ProductCardProps) {
   const { items, addItem, updateQuantity, removeItem } = useCart();
   const { toggle, has } = useWishlist();
   const cartItem = items.find(i => i.id === id);
@@ -141,7 +142,14 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, classNa
 
       {/* Info */}
       <div className="flex flex-col flex-1 p-2.5 gap-1">
-        {unit && <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{unit}</p>}
+        <div className="flex items-center gap-1.5">
+          {veg && (
+            <span className={`inline-flex w-3.5 h-3.5 items-center justify-center border rounded-xs shrink-0 ${veg === "veg" ? "border-green-600" : "border-red-600"}`} title={veg === "veg" ? "Veg" : "Non-veg"}>
+              <span className={`w-1.5 h-1.5 rounded-full ${veg === "veg" ? "bg-green-600" : "bg-red-600"}`} />
+            </span>
+          )}
+          {unit && <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{unit}</p>}
+        </div>
         <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">{name}</p>
 
         <div className="flex items-baseline gap-1.5 mt-0.5">

@@ -18,7 +18,7 @@ export default function NewProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: "", slug: "", description: "", price: "", mrp: "",
-    unit: "", stock: "0", categoryId: "", featured: false, active: true,
+    unit: "", stock: "0", categoryId: "", brand: "", veg: "", featured: false, active: true,
   });
 
   useEffect(() => {
@@ -63,6 +63,8 @@ export default function NewProductPage() {
           mrp: form.mrp ? Math.round(parseFloat(form.mrp) * 100) : null,
           stock: parseInt(form.stock),
           categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+          brand: form.brand || null,
+          veg: form.veg || null,
           images,
         }),
       });
@@ -134,6 +136,20 @@ export default function NewProductPage() {
               className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none">
               <option value="">Uncategorised</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Brand</label>
+            <input value={form.brand} onChange={(e) => update("brand", e.target.value)} placeholder="e.g. Aavin"
+              className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Veg / Non-veg</label>
+            <select value={form.veg} onChange={(e) => update("veg", e.target.value)}
+              className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none">
+              <option value="">Not applicable</option>
+              <option value="veg">Veg</option>
+              <option value="nonveg">Non-veg</option>
             </select>
           </div>
         </div>

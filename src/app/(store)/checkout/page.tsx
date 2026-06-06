@@ -41,6 +41,9 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");
   const [placing, setPlacing]                 = useState(false);
   const [termsAccepted, setTermsAccepted]     = useState(false);
+  const [tip, setTip]                         = useState(0);            // paise
+  const [instructions, setInstructions]       = useState("");
+  const [slot, setSlot]                       = useState("Now (30–45 min)");
   const [loadingAddr, setLoadingAddr]         = useState(true);
   const [showAddAddress, setShowAddAddress]   = useState(false);
   const [showMap, setShowMap]                 = useState(false);
@@ -145,6 +148,9 @@ export default function CheckoutPage() {
           items: items.map(i => ({ productId: i.id, quantity: i.quantity })),
           deliveryLat: coords?.lat ?? null,
           deliveryLng: coords?.lng ?? null,
+          tip,
+          deliveryInstructions: instructions || null,
+          deliverySlot: slot || null,
         }),
       });
       const data = await res.json();
@@ -300,6 +306,45 @@ export default function CheckoutPage() {
           )}
         </section>
 
+        {/* Delivery preferences */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-extrabold text-gray-900">Delivery preferences</h2>
+
+          {/* Time slot */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Delivery time</label>
+            <div className="flex flex-wrap gap-2">
+              {["Now (30–45 min)", "Today 5–7 PM", "Today 7–9 PM"].map((s) => (
+                <button key={s} onClick={() => setSlot(s)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${slot === s ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-200 text-gray-600"}`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tip */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Tip your delivery partner</label>
+            <div className="flex flex-wrap gap-2">
+              {[0, 1000, 2000, 3000].map((t) => (
+                <button key={t} onClick={() => setTip(t)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${tip === t ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-200 text-gray-600"}`}>
+                  {t === 0 ? "No tip" : formatPrice(t)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Delivery instructions <span className="font-normal text-gray-400">(optional)</span></label>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value.slice(0, 300))} rows={2}
+              placeholder="e.g. Leave at the door, call on arrival…"
+              className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 resize-none" />
+          </div>
+        </section>
+
         {/* Payment */}
         <section>
           <div className="flex items-center gap-2 mb-3">
@@ -344,9 +389,15 @@ export default function CheckoutPage() {
               <span className="text-green-600 font-bold">−{formatPrice(discount)}</span>
             </div>
           )}
+          {tip > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Delivery tip</span>
+              <span className="font-semibold text-gray-900">{formatPrice(tip)}</span>
+            </div>
+          )}
           <div className="border-t border-gray-100 pt-3 flex justify-between font-extrabold text-base">
             <span className="text-gray-900">Total</span>
-            <span className="text-green-600">{formatPrice(tot)}</span>
+            <span className="text-green-600">{formatPrice(tot + tip)}</span>
           </div>
         </div>
       </div>

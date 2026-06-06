@@ -15,7 +15,7 @@ export function ProductBackButton() {
   );
 }
 import Image from "next/image";
-import { Plus, Minus, ShoppingCart, Heart, Flame, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Heart, Flame, ChevronLeft, ChevronRight, Share2, Check, Bell, Loader2 } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { useRecentlyViewed, type RecentProduct } from "@/store/recently-viewed";
@@ -48,6 +48,24 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
   const wished   = has(id);
   const [imgIdx, setImgIdx] = useState(0);
   const [flash, setFlash]   = useState(false);
+  const [notifying, setNotifying] = useState(false);
+  const [notified, setNotified]   = useState(false);
+
+  const notifyMe = async () => {
+    setNotifying(true);
+    try {
+      const res = await fetch("/api/stock-alert", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: id }),
+      });
+      if (res.status === 401) { toast.error("Please log in to get notified"); return; }
+      if (!res.ok) { toast.error("Couldn't set the alert"); return; }
+      setNotified(true);
+      toast.success("We'll notify you when it's back!");
+    } finally {
+      setNotifying(false);
+    }
+  };
 
   // Track as recently viewed on mount
   useEffect(() => {
@@ -177,11 +195,19 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
 
         {/* Add to cart control */}
         <div className="pt-1">
-          {qty === 0 ? (
+          {stock === 0 ? (
+            <button
+              onClick={notifyMe}
+              disabled={notifying || notified}
+              className="w-full h-13 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold text-base rounded-2xl active:scale-[0.98] transition-all disabled:opacity-60"
+            >
+              {notifying ? <Loader2 size={18} className="animate-spin" /> : <Bell size={17} />}
+              {notified ? "We'll notify you" : "Notify me when back in stock"}
+            </button>
+          ) : qty === 0 ? (
             <button
               onClick={handleAdd}
-              disabled={stock === 0}
-              className="w-full h-13 flex items-center justify-center gap-2 bg-linear-to-r from-green-600 to-emerald-600 text-white font-bold text-base rounded-2xl shadow-lg shadow-green-600/30 disabled:opacity-40 disabled:pointer-events-none active:scale-[0.98] transition-all hover:shadow-xl"
+              className="w-full h-13 flex items-center justify-center gap-2 bg-linear-to-r from-green-600 to-emerald-600 text-white font-bold text-base rounded-2xl shadow-lg shadow-green-600/30 active:scale-[0.98] transition-all hover:shadow-xl"
             >
               <Plus size={18} strokeWidth={3} />
               Add to Cart

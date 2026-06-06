@@ -6,6 +6,7 @@ import { orders, orderItems, products, coupons, addresses, users } from "@/lib/d
 import { eq, and, inArray, gte, ne } from "drizzle-orm";
 import { generateOrderNumber } from "@/lib/utils";
 import { getStoreSettings, computeDeliveryFee, isStoreOpen } from "@/lib/settings";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { restockItems, type StockLine } from "@/lib/inventory";
 // NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
@@ -16,8 +17,13 @@ export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Throttle order placement to curb spam (10 orders / 5 min per IP)
+  const limited = checkRateLimit(req, "orders", 10, 5 * 60_000);
+  if (limited) return limited;
+
   const body = await req.json();
-  const { addressId, paymentMethod, couponCode, items: cartItems, deliveryLat, deliveryLng } = body;
+  const { addressId, paymentMethod, couponCode, items: cartItems, deliveryLat, deliveryLng,
+          tip, deliveryInstructions, deliverySlot } = body;
 
   if (!addressId || !paymentMethod || !cartItems?.length) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -112,7 +118,9 @@ export async function POST(req: NextRequest) {
     appliedCoupon = coupon;
   }
 
-  const total = Math.max(0, subtotal + deliveryFee - discount);
+  // Rider tip (paise) — sanitise to a sane non-negative integer
+  const tipAmount = Math.max(0, Math.min(Math.round(Number(tip) || 0), 100000));
+  const total = Math.max(0, subtotal + deliveryFee + tipAmount - discount);
   const orderNumber = generateOrderNumber();
 
   // ── Atomically reserve stock (prevents overselling on concurrent orders) ──
@@ -161,6 +169,9 @@ export async function POST(req: NextRequest) {
         discount,
         total,
         couponCode: couponCode ?? null,
+        tip: tipAmount,
+        deliveryInstructions: typeof deliveryInstructions === "string" ? deliveryInstructions.slice(0, 300) : null,
+        deliverySlot: typeof deliverySlot === "string" ? deliverySlot.slice(0, 60) : null,
         deliveryLat: typeof deliveryLat === "number" ? deliveryLat : null,
         deliveryLng: typeof deliveryLng === "number" ? deliveryLng : null,
       })
