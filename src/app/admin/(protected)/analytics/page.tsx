@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, ShoppingBag, IndianRupee, Package, RefreshCw } from "lucide-react";
+import { TrendingUp, ShoppingBag, IndianRupee, Package, RefreshCw, Download } from "lucide-react";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 
 interface Analytics {
@@ -42,12 +42,18 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-        <button onClick={fetch_} disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-50">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <a href="/api/admin/reports/orders" download
+            className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-xl hover:bg-gray-50">
+            <Download size={14} /> Export sales CSV
+          </a>
+          <button onClick={fetch_} disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-50">
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
+        </div>
       </div>
 
       {loading && !data ? (

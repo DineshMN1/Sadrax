@@ -223,6 +223,31 @@ export const pushSubscriptions = pgTable(
   t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
 );
 
+// Suppliers / vendors stock is purchased from.
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  notes: text("notes"),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Stock-in / purchase receipts — each increments product stock.
+export const purchases = pgTable(
+  "purchases",
+  {
+    id: serial("id").primaryKey(),
+    supplierId: integer("supplier_id").references(() => suppliers.id),
+    productId: integer("product_id").notNull().references(() => products.id),
+    quantity: integer("quantity").notNull(),
+    costPrice: integer("cost_price"), // per-unit cost in paise
+    note: text("note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("purchases_created_idx").on(t.createdAt), index("purchases_product_idx").on(t.productId)]
+);
+
 // Promotional offers — auto-applied promos + display-only bank offers.
 export const offers = pgTable(
   "offers",
@@ -371,3 +396,5 @@ export type OrderFeedback     = typeof orderFeedback.$inferSelect;
 export type AuditLog          = typeof auditLogs.$inferSelect;
 export type StockAlert        = typeof stockAlerts.$inferSelect;
 export type Offer             = typeof offers.$inferSelect;
+export type Supplier          = typeof suppliers.$inferSelect;
+export type Purchase          = typeof purchases.$inferSelect;
