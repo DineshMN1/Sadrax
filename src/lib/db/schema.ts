@@ -151,6 +151,7 @@ export const orders = pgTable(
     notes: text("notes"),
     deliveryPersonId: integer("delivery_person_id"),
     rejectionReason: text("rejection_reason"),
+    deliveredAt: timestamp("delivered_at"), // set when status first becomes delivered
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -217,6 +218,37 @@ export const storeSettings = pgTable("store_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Customer return / refund requests against a delivered order. Eligibility
+// (delivered, within window, allowed reasons) is enforced in the API per the
+// published Refund & Cancellation policy.
+export const returnRequests = pgTable(
+  "return_requests",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    // wrong_item | damaged | expired | missing
+    reason: varchar("reason", { length: 20 }).notNull(),
+    description: text("description"),
+    photos: json("photos").$type<string[]>().default([]),
+    // affected line items: [{ name, quantity }]
+    items: json("items").$type<{ name: string; quantity: number }[]>().default([]),
+    // pending | approved | rejected
+    status: varchar("status", { length: 20 }).default("pending").notNull(),
+    // refund | replacement (set by admin on approval)
+    resolution: varchar("resolution", { length: 20 }),
+    refundAmount: integer("refund_amount"), // paise, optional
+    adminNote: text("admin_note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("return_requests_order_idx").on(t.orderId),
+    index("return_requests_user_idx").on(t.userId),
+    index("return_requests_status_idx").on(t.status),
+  ]
+);
+
 // Home-screen promotional banners (admin managed, max 5, ordered by priority)
 export const banners = pgTable(
   "banners",
@@ -249,3 +281,4 @@ export type Coupon = typeof coupons.$inferSelect;
 export type DeliveryPerson    = typeof deliveryPersons.$inferSelect;
 export type PushSubscription  = typeof pushSubscriptions.$inferSelect;
 export type Banner            = typeof banners.$inferSelect;
+export type ReturnRequest     = typeof returnRequests.$inferSelect;

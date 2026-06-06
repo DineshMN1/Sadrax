@@ -3,12 +3,14 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders, orderItems, addresses, storeSettings } from "@/lib/db/schema";
+import { orders, orderItems, addresses, storeSettings, returnRequests } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle, Phone } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { OrderActions } from "./order-actions";
+import { ReturnRequest } from "./return-request";
+import { canRequestReturn } from "@/lib/returns";
 import { OrderStatusWatcher } from "@/components/store/notification-bell";
 
 const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
@@ -41,13 +43,15 @@ export default async function OrderDetailPage({
 
   if (!order) notFound();
 
-  const [items, addressRows, etaSetting] = await Promise.all([
+  const [items, addressRows, etaSetting, returnRows] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, order.id)),
     order.addressId
       ? db.select().from(addresses).where(eq(addresses.id, order.addressId)).limit(1)
       : Promise.resolve([]),
     db.select().from(storeSettings).where(eq(storeSettings.key, "delivery_eta")).limit(1),
+    db.select().from(returnRequests).where(eq(returnRequests.orderId, order.id)).limit(1),
   ]);
+  const existingReturn = returnRows[0] ?? null;
 
   const eta = etaSetting[0]?.value ?? "30–45 min";
   const currentIdx = TRACKING_STEPS.findIndex(s => s.status === order.status);
@@ -155,6 +159,17 @@ export default async function OrderDetailPage({
             quantity: i.quantity,
           }))}
         />
+
+        {/* Return / refund — delivered orders only */}
+        {(order.status === "delivered" || existingReturn) && (
+          <ReturnRequest
+            orderId={order.id}
+            windowOpen={canRequestReturn(order)}
+            items={items.map(i => ({ name: i.productName, quantity: i.quantity }))}
+            existing={existingReturn}
+            storePhone={STORE_PHONE}
+          />
+        )}
 
         {/* Call store */}
         <a

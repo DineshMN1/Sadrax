@@ -34,6 +34,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .set({
       status,
       rejectionReason: reason ?? null,
+      // stamp the delivery time once — anchors the return window
+      ...(status === "delivered" && !existing.deliveredAt ? { deliveredAt: new Date() } : {}),
       updatedAt: new Date(),
     })
     .where(eq(orders.id, Number(id)))
