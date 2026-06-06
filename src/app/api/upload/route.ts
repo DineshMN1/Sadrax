@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { processAndUploadImage } from "@/lib/storage";
+import { processAndUploadImage, processAndUploadBanner } from "@/lib/storage";
 import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -20,7 +20,13 @@ export async function POST(req: NextRequest) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const id = randomUUID();
-  const urls = await processAndUploadImage(buffer, `${folder}/${id}`);
 
+  // Banners keep their wide aspect ratio; everything else is squared for thumbs.
+  if (folder === "banners") {
+    const { url } = await processAndUploadBanner(buffer, `${folder}/${id}`);
+    return NextResponse.json({ url, thumb: url, medium: url, large: url });
+  }
+
+  const urls = await processAndUploadImage(buffer, `${folder}/${id}`);
   return NextResponse.json({ urls, thumb: urls.thumb, medium: urls.medium, large: urls.large });
 }

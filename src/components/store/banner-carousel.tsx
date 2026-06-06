@@ -47,7 +47,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 gap-3"
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0 gap-3"
       >
         {banners.map((b) => (
           <BannerSlide key={b.id} banner={b} />
@@ -76,62 +76,38 @@ function BannerSlide({ banner }: { banner: Banner }) {
   const theme = getBannerTheme(banner.theme);
   const hasImage = !!banner.image;
 
-  const inner = (
-    <div
-      className={`relative rounded-3xl p-5 overflow-hidden min-h-32.5 flex items-center shadow-xl ${
-        hasImage ? "bg-gray-900" : `${theme.gradient} shadow-green-700/20`
-      }`}
-    >
-      {hasImage && (
-        <>
-          <Image
-            src={banner.image!}
-            alt={banner.title ?? "Banner"}
-            fill
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
-            priority
-          />
-          {/* readability scrim only when there's overlay text */}
-          {(banner.title || banner.subtitle || banner.badge || banner.ctaText) && (
-            <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent" />
-          )}
-        </>
-      )}
-
-      {!hasImage && (
-        <>
-          <div className="absolute -right-8 -top-8 w-44 h-44 bg-white/10 rounded-full blur-sm" />
-          <div className="absolute -right-2 -bottom-12 w-32 h-32 bg-white/10 rounded-full" />
-          <div className="absolute right-16 top-4 w-12 h-12 bg-white/10 rounded-full" />
-        </>
-      )}
+  // Image promo banner — the artwork is the whole banner, no overlay text.
+  const inner = hasImage ? (
+    <div className="relative rounded-3xl overflow-hidden aspect-3/1 bg-gray-100 shadow-xl">
+      <Image
+        src={banner.image!}
+        alt={banner.title ?? "Promotion"}
+        fill
+        sizes="(max-width: 768px) 100vw, 768px"
+        className="object-contain"
+        priority
+      />
+    </div>
+  ) : (
+    // Text/gradient banner (used when no artwork is uploaded)
+    <div className={`relative rounded-3xl p-5 overflow-hidden flex items-center shadow-xl min-h-32.5 ${theme.gradient} shadow-green-700/20`}>
+      <div className="absolute -right-8 -top-8 w-44 h-44 bg-white/10 rounded-full blur-sm" />
+      <div className="absolute -right-2 -bottom-12 w-32 h-32 bg-white/10 rounded-full" />
+      <div className="absolute right-16 top-4 w-12 h-12 bg-white/10 rounded-full" />
 
       <div className="relative z-10 flex-1">
         {banner.badge && (
-          <div
-            className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-2.5 backdrop-blur-sm ${
-              hasImage ? "bg-white/20 text-white border border-white/10" : theme.badgeBg
-            }`}
-          >
+          <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-2.5 backdrop-blur-sm ${theme.badgeBg}`}>
             <Zap size={10} fill="currentColor" />
             {banner.badge}
           </div>
         )}
         {banner.title && (
-          <h2 className={`text-xl font-extrabold leading-tight mb-1 ${hasImage ? "text-white" : theme.text}`}>
-            {banner.title}
-          </h2>
+          <h2 className={`text-xl font-extrabold leading-tight mb-1 ${theme.text}`}>{banner.title}</h2>
         )}
-        {banner.subtitle && (
-          <p className={`text-xs mb-3.5 ${hasImage ? "text-gray-200" : theme.sub}`}>{banner.subtitle}</p>
-        )}
+        {banner.subtitle && <p className={`text-xs mb-3.5 ${theme.sub}`}>{banner.subtitle}</p>}
         {banner.ctaText && (
-          <span
-            className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2 rounded-xl transition-colors shadow-sm ${
-              hasImage ? "bg-white text-gray-900 hover:bg-gray-100" : theme.ctaBg
-            }`}
-          >
+          <span className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-4 py-2 rounded-xl transition-colors shadow-sm ${theme.ctaBg}`}>
             {banner.ctaText} <ChevronRight size={12} strokeWidth={3} />
           </span>
         )}

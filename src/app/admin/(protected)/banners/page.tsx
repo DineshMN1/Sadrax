@@ -82,7 +82,7 @@ export default function BannersPage() {
     fd.append("folder", "banners");
     const res = await fetch("/api/upload", { method: "POST", body: fd });
     const data = await res.json();
-    if (res.ok) setDraft((p) => ({ ...p, image: data.large ?? data.medium }));
+    if (res.ok) setDraft((p) => ({ ...p, image: data.url ?? data.large }));
     else toast.error(data.error ?? "Upload failed");
     setUploading(false);
   };
@@ -189,7 +189,7 @@ export default function BannersPage() {
               {/* thumbnail */}
               <div className={`relative w-28 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${b.image ? "bg-gray-900" : theme.gradient}`}>
                 {b.image
-                  ? <Image src={b.image} alt={b.title ?? "Banner"} fill className="object-cover" sizes="112px" />
+                  ? <Image src={b.image} alt={b.title ?? "Banner"} fill className="object-contain" sizes="112px" />
                   : <span className="text-white text-[9px] font-bold px-2 text-center line-clamp-2">{b.title}</span>}
               </div>
 
@@ -251,86 +251,99 @@ function BannerForm({
       <h2 className="font-semibold text-gray-900">{editing ? "Edit Banner" : "New Banner"}</h2>
 
       {/* Live preview */}
-      <div className={`relative rounded-2xl p-5 overflow-hidden min-h-30 flex items-center ${draft.image ? "bg-gray-900" : theme.gradient}`}>
-        {draft.image && (
-          <>
-            <Image src={draft.image} alt="preview" fill className="object-cover" sizes="600px" />
-            {(draft.title || draft.subtitle || draft.badge || draft.ctaText) && (
-              <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent" />
+      {draft.image ? (
+        <div className="relative rounded-2xl overflow-hidden aspect-3/1 bg-gray-100">
+          <Image src={draft.image} alt="preview" fill className="object-contain" sizes="600px" />
+        </div>
+      ) : (
+        <div className={`relative rounded-2xl p-5 overflow-hidden flex items-center min-h-30 ${theme.gradient}`}>
+          <div className="relative z-10">
+            {draft.badge && (
+              <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-2 backdrop-blur-sm ${theme.badgeBg}`}>
+                <Zap size={10} fill="currentColor" />{draft.badge}
+              </div>
             )}
-          </>
-        )}
-        <div className="relative z-10">
-          {draft.badge && (
-            <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full mb-2 backdrop-blur-sm ${draft.image ? "bg-white/20 text-white border border-white/10" : theme.badgeBg}`}>
-              <Zap size={10} fill="currentColor" />{draft.badge}
-            </div>
-          )}
-          {draft.title && <h3 className={`text-lg font-extrabold leading-tight ${draft.image ? "text-white" : theme.text}`}>{draft.title}</h3>}
-          {draft.subtitle && <p className={`text-xs mt-0.5 ${draft.image ? "text-gray-200" : theme.sub}`}>{draft.subtitle}</p>}
-          {draft.ctaText && (
-            <span className={`inline-flex items-center gap-1 text-xs font-extrabold px-3 py-1.5 rounded-lg mt-2.5 ${draft.image ? "bg-white text-gray-900" : theme.ctaBg}`}>
-              {draft.ctaText}<ChevronRight size={11} strokeWidth={3} />
-            </span>
-          )}
-          {!draft.title && !draft.image && <p className="text-white/70 text-xs">Preview — add a title or image</p>}
+            {draft.title && <h3 className={`text-lg font-extrabold leading-tight ${theme.text}`}>{draft.title}</h3>}
+            {draft.subtitle && <p className={`text-xs mt-0.5 ${theme.sub}`}>{draft.subtitle}</p>}
+            {draft.ctaText && (
+              <span className={`inline-flex items-center gap-1 text-xs font-extrabold px-3 py-1.5 rounded-lg mt-2.5 ${theme.ctaBg}`}>
+                {draft.ctaText}<ChevronRight size={11} strokeWidth={3} />
+              </span>
+            )}
+            {!draft.title && <p className="text-white/70 text-xs">Preview — upload an image, or fill the text below</p>}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="grid md:grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-500">Badge <span className="font-normal text-gray-400">(e.g. 10-min local delivery)</span></label>
-          <input className={input} value={draft.badge} onChange={(e) => set("badge", e.target.value)} placeholder="10-min local delivery" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-500">Title</label>
-          <input className={input} value={draft.title} onChange={(e) => set("title", e.target.value)} placeholder="Fresh groceries, fast" />
-        </div>
-        <div className="space-y-1 md:col-span-2">
-          <label className="text-xs font-semibold text-gray-500">Subtitle</label>
-          <input className={input} value={draft.subtitle} onChange={(e) => set("subtitle", e.target.value)} placeholder="Delivered to your door in minutes" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-500">Button text</label>
-          <input className={input} value={draft.ctaText} onChange={(e) => set("ctaText", e.target.value)} placeholder="Shop Now" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-gray-500">Button link</label>
-          <input className={input} value={draft.ctaLink} onChange={(e) => set("ctaLink", e.target.value)} placeholder="/categories" />
-        </div>
-      </div>
-
-      {/* Theme picker */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-gray-500">Theme {draft.image && <span className="font-normal text-gray-400">(used when no image)</span>}</label>
-        <div className="flex flex-wrap gap-2">
-          {BANNER_THEMES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => set("theme", t.id)}
-              className={`h-9 px-3 rounded-xl text-xs font-bold text-white ${t.gradient} ${draft.theme === t.id ? "ring-2 ring-offset-2 ring-gray-900" : "opacity-80 hover:opacity-100"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Image + options */}
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 cursor-pointer hover:bg-gray-100">
+      {/* Image upload — the promo artwork is the banner */}
+      <div className="rounded-2xl border border-dashed border-gray-200 p-4 flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 h-10 px-4 bg-green-600 text-white text-sm font-semibold rounded-xl cursor-pointer hover:bg-green-700">
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-          {draft.image ? "Replace image" : "Upload image (optional)"}
+          {draft.image ? "Replace image" : "Upload banner image"}
           <input type="file" accept="image/*" className="hidden" onChange={onUpload} disabled={uploading} />
         </label>
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-gray-600">Recommended: 1200 × 400 px · 3:1 ratio</span>
+          <span className="text-[10px] text-gray-400">JPG / PNG / WebP · under 1 MB · design the promo text inside the image</span>
+        </div>
         {draft.image && (
-          <button onClick={() => set("image", "")} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600">
-            <X size={13} /> Remove image
+          <button onClick={() => set("image", "")} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 ml-auto">
+            <X size={13} /> Remove
           </button>
         )}
+      </div>
+
+      {/* Redirect link — applies to image banners on tap */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-gray-500">Redirect link <span className="font-normal text-gray-400">(opened when the banner is tapped)</span></label>
+        <input className={input} value={draft.ctaLink} onChange={(e) => set("ctaLink", e.target.value)} placeholder="/categories  or  /category/fruits  or  /product/12" />
+      </div>
+
+      {/* Text-banner fields — only when no image is uploaded */}
+      {!draft.image && (
+        <div className="space-y-4 rounded-2xl bg-gray-50 border border-gray-100 p-4">
+          <p className="text-xs font-semibold text-gray-500">No image? Build a text banner instead:</p>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-500">Badge <span className="font-normal text-gray-400">(e.g. 10-min local delivery)</span></label>
+              <input className={input} value={draft.badge} onChange={(e) => set("badge", e.target.value)} placeholder="10-min local delivery" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-500">Title</label>
+              <input className={input} value={draft.title} onChange={(e) => set("title", e.target.value)} placeholder="Fresh groceries, fast" />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-xs font-semibold text-gray-500">Subtitle</label>
+              <input className={input} value={draft.subtitle} onChange={(e) => set("subtitle", e.target.value)} placeholder="Delivered to your door in minutes" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-500">Button text</label>
+              <input className={input} value={draft.ctaText} onChange={(e) => set("ctaText", e.target.value)} placeholder="Shop Now" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-500">Theme</label>
+            <div className="flex flex-wrap gap-2">
+              {BANNER_THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => set("theme", t.id)}
+                  className={`h-9 px-3 rounded-xl text-xs font-bold text-white ${t.gradient} ${draft.theme === t.id ? "ring-2 ring-offset-2 ring-gray-900" : "opacity-80 hover:opacity-100"}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Priority + visibility */}
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-gray-500">Priority</label>
           <input type="number" className="h-10 w-20 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-green-500" value={draft.order} onChange={(e) => set("order", e.target.value)} />
+          <span className="text-[10px] text-gray-400">lower shows first</span>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer ml-auto">
           <input type="checkbox" checked={draft.active} onChange={(e) => set("active", e.target.checked)} className="w-4 h-4 accent-green-600" />

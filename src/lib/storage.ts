@@ -72,6 +72,21 @@ export async function processAndUploadImage(
   return results as { thumb: string; medium: string; large: string };
 }
 
+// Wide promotional banners: keep the artwork's aspect ratio (no square crop),
+// just downscale to a sensible max width and convert to WebP. Returns one URL.
+export async function processAndUploadBanner(
+  inputBuffer: Buffer,
+  basePath: string // e.g. "banners/abc123"
+): Promise<{ url: string }> {
+  const resized = await sharp(inputBuffer)
+    .resize(1200, null, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  const url = await uploadImage(resized, `${basePath}/banner.webp`);
+  return { url };
+}
+
 export function getPresignedUploadUrl(key: string): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: process.env.MINIO_BUCKET!,
