@@ -98,6 +98,8 @@ export const products = pgTable(
     categoryId: integer("category_id").references(() => categories.id),
     brand: varchar("brand", { length: 100 }),
     veg: varchar("veg", { length: 10 }), // "veg" | "nonveg" | null (not applicable)
+    // products sharing a variantGroup are sizes/weights of the same item
+    variantGroup: varchar("variant_group", { length: 100 }),
     images: json("images").$type<string[]>().default([]),
     active: boolean("active").default(true).notNull(),
     featured: boolean("featured").default(false),
@@ -109,6 +111,7 @@ export const products = pgTable(
     uniqueIndex("products_slug_idx").on(t.slug),
     index("products_category_idx").on(t.categoryId),
     index("products_order_count_idx").on(t.orderCount),
+    index("products_variant_group_idx").on(t.variantGroup),
   ]
 );
 

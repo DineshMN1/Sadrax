@@ -18,7 +18,7 @@ export default function NewProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: "", slug: "", description: "", price: "", mrp: "",
-    unit: "", stock: "0", categoryId: "", brand: "", veg: "", featured: false, active: true,
+    unit: "", stock: "0", categoryId: "", brand: "", veg: "", variantGroup: "", featured: false, active: true,
   });
 
   useEffect(() => {
@@ -65,6 +65,7 @@ export default function NewProductPage() {
           categoryId: form.categoryId ? parseInt(form.categoryId) : null,
           brand: form.brand || null,
           veg: form.veg || null,
+          variantGroup: form.variantGroup || null,
           images,
         }),
       });
@@ -151,6 +152,11 @@ export default function NewProductPage() {
               <option value="veg">Veg</option>
               <option value="nonveg">Non-veg</option>
             </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 mb-1 block">Variant group <span className="font-normal text-gray-400">(same key = sizes of one item)</span></label>
+            <input value={form.variantGroup} onChange={(e) => update("variantGroup", e.target.value)} placeholder="e.g. aavin-milk"
+              className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
           </div>
         </div>
         <div className="flex items-center gap-4">

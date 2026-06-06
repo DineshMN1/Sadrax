@@ -8,6 +8,7 @@ import { eq, and, ne } from "drizzle-orm";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductDetailClient } from "./product-detail-client";
 import { FrequentlyBought } from "@/components/store/frequently-bought";
+import { formatPrice } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,6 +60,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       : Promise.resolve([]),
   ]);
 
+  // Sibling variants (same variantGroup) — sizes/weights of this item
+  const variants = product.variantGroup
+    ? await db.select({ id: products.id, unit: products.unit, price: products.price, stock: products.stock })
+        .from(products)
+        .where(and(eq(products.variantGroup, product.variantGroup), eq(products.active, true)))
+        .orderBy(products.price)
+    : [];
+
   const discount = product.mrp && product.mrp > product.price
     ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
     : null;
@@ -88,6 +97,25 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         discount={discount}
         category={category[0] ?? null}
       />
+
+      {/* Variant / size selector */}
+      {variants.length > 1 && (
+        <div className="px-4 pt-1">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Available sizes</p>
+          <div className="flex flex-wrap gap-2">
+            {variants.map((v) => {
+              const current = v.id === product.id;
+              return (
+                <Link key={v.id} href={`/product/${v.id}`}
+                  className={`flex flex-col items-start px-3 py-2 rounded-xl border transition-colors ${current ? "border-green-500 bg-green-50" : "border-gray-200 bg-white hover:border-green-200"} ${v.stock === 0 ? "opacity-50" : ""}`}>
+                  <span className={`text-sm font-bold ${current ? "text-green-700" : "text-gray-800"}`}>{v.unit ?? "—"}</span>
+                  <span className="text-xs text-gray-500">{formatPrice(v.price)}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Frequently bought together (co-purchase) */}
       <FrequentlyBought productId={product.id} />

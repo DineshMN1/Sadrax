@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!isAdmin(session)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { name, price, description, mrp, unit, stock, categoryId, images, active, featured, brand, veg } = body;
+  const { name, price, description, mrp, unit, stock, categoryId, images, active, featured, brand, veg, variantGroup } = body;
 
   if (!name || !price) return NextResponse.json({ error: "name and price required" }, { status: 400 });
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const [product] = await db
     .insert(products)
-    .values({ name, slug, description, price, mrp: mrp ?? null, unit, stock: stock ?? 0, categoryId: categoryId ?? null, images: images ?? [], active: active ?? true, featured: featured ?? false, brand: brand ?? null, veg: veg ?? null })
+    .values({ name, slug, description, price, mrp: mrp ?? null, unit, stock: stock ?? 0, categoryId: categoryId ?? null, images: images ?? [], active: active ?? true, featured: featured ?? false, brand: brand ?? null, veg: veg ?? null, variantGroup: variantGroup ?? null })
     .returning();
 
   return NextResponse.json({ product });
