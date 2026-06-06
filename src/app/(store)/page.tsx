@@ -12,6 +12,7 @@ import { GreetingHeader } from "@/components/store/greeting-header";
 import { RecentlyViewedSection } from "@/components/store/recently-viewed-section";
 import { BuyAgainSection } from "@/components/store/buy-again-section";
 import { BannerCarousel } from "@/components/store/banner-carousel";
+import { getCategoryEmoji } from "@/lib/category-emoji";
 import { db } from "@/lib/db";
 import { products, categories, storeSettings, banners } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -119,7 +120,7 @@ export default async function HomePage() {
                   <div className="w-16 h-16 md:w-14 md:h-14 rounded-2xl overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center group-hover:scale-110 transition-transform">
                     {cat.image
                       ? <Image src={cat.image} alt={cat.name} width={64} height={64} className="w-full h-full object-cover" />
-                      : <span className="text-3xl">🛒</span>}
+                      : <span className="text-3xl">{getCategoryEmoji(cat.slug)}</span>}
                   </div>
                   <span className="text-[11px] font-semibold text-gray-700 text-center leading-tight line-clamp-2">{cat.name}</span>
                 </Link>

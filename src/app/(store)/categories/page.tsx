@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
 import { ChevronRight } from "lucide-react";
+import { getCategoryEmoji } from "@/lib/category-emoji";
 
 async function getCategoriesWithCounts() {
   const cats = await db
@@ -22,19 +23,6 @@ async function getCategoriesWithCounts() {
 
   const countMap = new Map(counts.map(c => [c.categoryId, c.count]));
   return cats.map(c => ({ ...c, productCount: countMap.get(c.id) ?? 0 }));
-}
-
-const EMOJI_FALLBACKS: Record<string, string> = {
-  "vegetables": "🥦", "fruits": "🍎", "dairy": "🥛", "snacks": "🍪",
-  "beverages": "🥤", "rice": "🌾", "pulses": "🫘", "spices": "🌶️",
-  "oil": "🫙", "cleaning": "🧹", "personal-care": "🧴", "bakery": "🍞",
-};
-
-function getCategoryEmoji(slug: string): string {
-  for (const [key, emoji] of Object.entries(EMOJI_FALLBACKS)) {
-    if (slug.includes(key)) return emoji;
-  }
-  return "🛒";
 }
 
 export default async function CategoriesPage() {
