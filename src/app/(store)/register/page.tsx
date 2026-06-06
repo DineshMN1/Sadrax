@@ -313,6 +313,7 @@ function RegisterContent() {
   const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneFocused, setPhoneFocused] = useState(false);
   const [email, setEmail] = useState(params.get("email") ?? "");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -463,20 +464,21 @@ function RegisterContent() {
                   placeholder="Dinesh Kumar"
                   autoComplete="name"
                 />
-                <div className={`relative flex items-center rounded-2xl border-2 bg-white transition-all duration-200 border-gray-200`}>
-                  <Phone size={17} className="absolute left-4 text-gray-400" />
+                <div className={`relative flex items-center rounded-2xl border-2 bg-white transition-all duration-200 ${phoneFocused ? "border-green-400" : "border-gray-200"}`}>
+                  <Phone size={17} className={`absolute left-4 ${phoneFocused ? "text-green-600" : "text-gray-400"}`} />
                   <div className="flex-1 relative pt-5 pb-2 pl-11 pr-4">
                     <label className={`absolute left-11 transition-all duration-200 pointer-events-none ${
-                      phone ? "top-2 text-[10px] font-semibold text-green-600 uppercase tracking-wider" : "top-1/2 -translate-y-1/2 text-sm text-gray-400"
+                      phone || phoneFocused ? "top-2 text-[10px] font-semibold text-green-600 uppercase tracking-wider" : "top-1/2 -translate-y-1/2 text-sm text-gray-400"
                     }`}>Mobile Number</label>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-500 shrink-0">+91</span>
+                      {(phone || phoneFocused) && <span className="text-sm font-semibold text-gray-500 shrink-0">+91</span>}
                       <input
                         type="tel"
                         inputMode="numeric"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                        placeholder={phone ? "98765 43210" : ""}
+                        onFocus={() => setPhoneFocused(true)}
+                        onBlur={() => setPhoneFocused(false)}
                         autoComplete="tel"
                         className="flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-300"
                       />

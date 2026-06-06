@@ -10,6 +10,9 @@ function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
 }
 
 export async function GET() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!isAdmin(session)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const rows = await db
     .select({
       id: categories.id,

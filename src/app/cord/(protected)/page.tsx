@@ -43,6 +43,72 @@ interface Order {
   customerPhone?: string;
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+const rupee = (paise: number) => "₹" + (paise / 100).toFixed(2);
+
+// Print a clean single-order bill (not the whole page) in a popup window.
+function printBill(order: Order) {
+  const w = window.open("", "_blank", "width=380,height=640");
+  if (!w) { toast.error("Allow pop-ups to print the bill"); return; }
+
+  const date = new Date(order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+
+  const itemRows = order.items.map((i) => `
+    <tr>
+      <td>${escapeHtml(i.productName)}${i.productUnit ? ` <span class="u">(${escapeHtml(i.productUnit)})</span>` : ""}
+        <br><span class="u">${rupee(i.price)} × ${i.quantity}</span></td>
+      <td class="r">${rupee(i.total)}</td>
+    </tr>`).join("");
+
+  const addr = order.address ? `
+    <hr>
+    <div class="sec">
+      <strong>${escapeHtml(order.address.name)}</strong><br>
+      ${order.address.phone ? escapeHtml(order.address.phone) + "<br>" : ""}
+      ${escapeHtml(order.address.line1)}${order.address.line2 ? ", " + escapeHtml(order.address.line2) : ""}<br>
+      ${order.address.city ? escapeHtml(order.address.city) + " — " : ""}${escapeHtml(order.address.pincode)}
+    </div>` : "";
+
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill #${order.orderNumber}</title>
+  <style>
+    *{font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;box-sizing:border-box}
+    body{width:280px;margin:0 auto;padding:14px;color:#111;font-size:12px}
+    h1{font-size:17px;text-align:center;margin:0}
+    .muted{color:#777}.center{text-align:center}.u{color:#999;font-size:11px}
+    hr{border:none;border-top:1px dashed #bbb;margin:8px 0}
+    table{width:100%;border-collapse:collapse}
+    td{padding:3px 0;vertical-align:top}.r{text-align:right;white-space:nowrap}
+    .sec{margin:6px 0;line-height:1.5}
+    .row{display:flex;justify-content:space-between;margin:2px 0}
+    .tot{font-weight:700;font-size:15px}
+    @media print{body{width:auto}}
+  </style></head><body>
+    <h1>Sadrax Grocery</h1>
+    <p class="center muted" style="margin:2px 0 8px">Bill / Receipt</p>
+    <hr>
+    <div class="row"><span class="muted">Order</span><strong>#${order.orderNumber}</strong></div>
+    <div class="row"><span class="muted">Date</span><span>${date}</span></div>
+    <div class="row"><span class="muted">Status</span><span>${escapeHtml(STATUS_LABELS[order.status as OrderStatus] ?? order.status)}</span></div>
+    <div class="row"><span class="muted">Payment</span><span>${order.paymentMethod.toUpperCase()}</span></div>
+    ${addr}
+    <hr>
+    <table>${itemRows}</table>
+    <hr>
+    <div class="row"><span class="muted">Subtotal</span><span>${rupee(order.subtotal)}</span></div>
+    <div class="row"><span class="muted">Delivery</span><span>${order.deliveryFee === 0 ? "FREE" : rupee(order.deliveryFee)}</span></div>
+    ${order.discount > 0 ? `<div class="row"><span class="muted">Discount</span><span>-${rupee(order.discount)}</span></div>` : ""}
+    <hr>
+    <div class="row tot"><span>Total</span><span>${rupee(order.total)}</span></div>
+    <hr>
+    <p class="center muted">Thank you for shopping with us!</p>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 300);
+}
+
 const ACTION_BUTTONS: Record<string, { next: OrderStatus; label: string; icon: React.ElementType; color: string }[]> = {
   pending: [
     { next: "accepted",  label: "Accept", icon: Check, color: "bg-green-600 hover:bg-green-500" },
@@ -224,10 +290,11 @@ function OrderCard({ order, onUpdate }: { order: Order; onUpdate: (id: number, s
           )}
 
           <button
-            onClick={() => window.print()}
-            className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 transition-colors"
+            onClick={() => printBill(order)}
+            title="Print bill"
+            className="flex items-center gap-1.5 h-9 px-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
           >
-            <Printer size={14} />
+            <Printer size={13} /> Print
           </button>
         </div>
 
