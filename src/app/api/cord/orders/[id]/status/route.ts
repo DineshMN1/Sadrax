@@ -8,6 +8,7 @@ import { ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
 import { sendPushToUser } from "@/lib/push";
 import { restockOrder } from "@/lib/inventory";
+import { logAudit } from "@/lib/audit";
 
 // Statuses where the order no longer holds reserved stock
 const STOCK_RELEASING = ["cancelled", "rejected"];
@@ -46,6 +47,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (STOCK_RELEASING.includes(status) && !STOCK_RELEASING.includes(existing.status)) {
     await restockOrder(order.id);
   }
+
+  logAudit(req, session, {
+    action: "status", entity: "order", entityId: order.orderNumber,
+    summary: `#${order.orderNumber}: ${existing.status} → ${status}${reason ? ` (${reason})` : ""}`,
+  });
 
   // NOT IN PLAN FOR NOW — SMS on status change (needs MSG91 templates configured)
   // const [user] = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);

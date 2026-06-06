@@ -214,6 +214,26 @@ export const pushSubscriptions = pgTable(
   t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
 );
 
+// Admin/staff action audit trail — who changed what, from what, when, and from where.
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id"),                       // actor (admin/staff)
+    userName: varchar("user_name", { length: 120 }), // denormalized for display
+    action: varchar("action", { length: 30 }).notNull(), // create | update | delete | status
+    entity: varchar("entity", { length: 40 }).notNull(),  // product | category | order | setting | coupon | banner
+    entityId: varchar("entity_id", { length: 60 }),
+    summary: text("summary"),                      // human-readable "stock 50 → 30"
+    ip: varchar("ip", { length: 60 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("audit_logs_created_idx").on(t.createdAt),
+    index("audit_logs_entity_idx").on(t.entity),
+  ]
+);
+
 // key-value store for all store configuration
 export const storeSettings = pgTable("store_settings", {
   key: varchar("key", { length: 100 }).primaryKey(),
@@ -303,3 +323,4 @@ export type PushSubscription  = typeof pushSubscriptions.$inferSelect;
 export type Banner            = typeof banners.$inferSelect;
 export type ReturnRequest     = typeof returnRequests.$inferSelect;
 export type OrderFeedback     = typeof orderFeedback.$inferSelect;
+export type AuditLog          = typeof auditLogs.$inferSelect;

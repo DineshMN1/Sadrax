@@ -3,9 +3,9 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders, orderItems, products, coupons, addresses, users } from "@/lib/db/schema";
-import { eq, and, inArray, gte } from "drizzle-orm";
+import { eq, and, inArray, gte, ne } from "drizzle-orm";
 import { generateOrderNumber } from "@/lib/utils";
-import { getStoreSettings, computeDeliveryFee } from "@/lib/settings";
+import { getStoreSettings, computeDeliveryFee, isStoreOpen } from "@/lib/settings";
 import { restockItems, type StockLine } from "@/lib/inventory";
 // NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
@@ -74,6 +74,12 @@ export async function POST(req: NextRequest) {
 
   const subtotal = orderItemsData.reduce((s: number, i: { total: number }) => s + i.total, 0);
   const settings = await getStoreSettings();
+
+  // Don't accept orders while the store is closed (manual toggle or outside hours)
+  if (!isStoreOpen(settings)) {
+    return NextResponse.json({ error: "Sorry, the store is currently closed. Please try again during opening hours." }, { status: 403 });
+  }
+
   const deliveryFee = computeDeliveryFee(subtotal, settings);
 
   // Validate coupon
@@ -90,6 +96,14 @@ export async function POST(req: NextRequest) {
     if (coupon.expiresAt && coupon.expiresAt < new Date()) return NextResponse.json({ error: "Coupon expired" }, { status: 400 });
     if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: "Coupon limit reached" }, { status: 400 });
     if (subtotal < (coupon.minOrder ?? 0)) return NextResponse.json({ error: `Minimum order ${coupon.minOrder}` }, { status: 400 });
+
+    // One use per customer — block reuse of the same code by the same user
+    const [prior] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(and(eq(orders.userId, session.user.id), eq(orders.couponCode, couponCode), ne(orders.status, "cancelled")))
+      .limit(1);
+    if (prior) return NextResponse.json({ error: "You've already used this coupon" }, { status: 400 });
 
     discount = coupon.type === "flat"
       ? coupon.value
@@ -141,7 +155,7 @@ export async function POST(req: NextRequest) {
         addressId: Number(addressId),
         status: "pending",
         paymentMethod,
-        paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
+        paymentStatus: "pending", // COD is collected on delivery; online pay flips this later
         subtotal,
         deliveryFee,
         discount,

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { storeSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { logAudit, diffSummary } from "@/lib/audit";
 
 function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
   return session && ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
@@ -25,12 +26,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const entries = Object.entries(body);
 
+  // Snapshot current values for the audit diff
+  const before = Object.fromEntries((await db.select().from(storeSettings)).map((r) => [r.key, r.value]));
+  const after = Object.fromEntries(entries.map(([k, v]) => [k, String(v)]));
+
   for (const [key, value] of entries) {
     await db
       .insert(storeSettings)
       .values({ key, value: String(value), updatedAt: new Date() })
       .onConflictDoUpdate({ target: storeSettings.key, set: { value: String(value), updatedAt: new Date() } });
   }
+
+  const summary = diffSummary(before, after);
+  if (summary) logAudit(req, session, { action: "update", entity: "setting", summary });
 
   return NextResponse.json({ success: true });
 }

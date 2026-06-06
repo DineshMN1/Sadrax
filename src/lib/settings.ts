@@ -45,6 +45,18 @@ export function computeDeliveryFee(subtotal: number, s: StoreSettings): number {
   return subtotal >= s.freeDeliveryThreshold ? 0 : s.deliveryFee;
 }
 
+// Open if the manual toggle is on AND the current IST time is within hours.
+export function isStoreOpen(s: StoreSettings, now: Date = new Date()): boolean {
+  if (!s.storeOpen) return false;
+  if (!s.openTime || !s.closeTime) return true;
+  const cur = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(now); // "HH:MM"
+  return s.openTime <= s.closeTime
+    ? cur >= s.openTime && cur < s.closeTime
+    : cur >= s.openTime || cur < s.closeTime; // overnight window
+}
+
 export function isServiceable(pincode: string, s: StoreSettings): boolean {
   return s.pincodes.includes(pincode.trim());
 }

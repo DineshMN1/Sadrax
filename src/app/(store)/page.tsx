@@ -13,8 +13,9 @@ import { RecentlyViewedSection } from "@/components/store/recently-viewed-sectio
 import { BuyAgainSection } from "@/components/store/buy-again-section";
 import { BannerCarousel } from "@/components/store/banner-carousel";
 import { getCategoryEmoji } from "@/lib/category-emoji";
+import { getStoreSettings, isStoreOpen } from "@/lib/settings";
 import { db } from "@/lib/db";
-import { products, categories, storeSettings, banners } from "@/lib/db/schema";
+import { products, categories, banners } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 async function getHomeData() {
@@ -23,14 +24,14 @@ async function getHomeData() {
     db.select().from(products).where(and(eq(products.active, true), eq(products.featured, true))).limit(8),
     db.select().from(products).where(eq(products.active, true)).orderBy(desc(products.orderCount)).limit(10),
     db.select().from(products).where(eq(products.active, true)).orderBy(products.name).limit(40),
-    db.select().from(storeSettings).where(eq(storeSettings.key, "store_open")),
+    getStoreSettings(),
     db.select().from(banners).where(eq(banners.active, true)).orderBy(banners.order, banners.id).limit(5),
   ]);
-  return { cats, featured, topOrdered, allProducts, isOpen: settings[0]?.value !== "false", promoBanners };
+  return { cats, featured, topOrdered, allProducts, isOpen: isStoreOpen(settings), pincodes: settings.pincodes, promoBanners };
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, allProducts, isOpen, promoBanners } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen, pincodes, promoBanners } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -53,7 +54,7 @@ export default async function HomePage() {
             <span className="absolute inset-0 bg-green-500 rounded-full animate-pulse-ring" />
             <span className="absolute inset-0 bg-green-500 rounded-full" />
           </div>
-          <span className="text-sm font-bold text-gray-900">Delivering to Sadras, 603102</span>
+          <span className="text-sm font-bold text-gray-900">Delivering to {pincodes.join(", ")}</span>
         </div>
         <Suspense><SearchBar className="flex-1 max-w-lg" /></Suspense>
         <Suspense fallback={null}><GreetingHeader /></Suspense>

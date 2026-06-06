@@ -9,6 +9,7 @@ import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/l
 import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle, Phone } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { OrderActions } from "./order-actions";
+import { InvoiceButton } from "./invoice-button";
 import { ReturnRequest } from "./return-request";
 import { canRequestReturn } from "@/lib/returns";
 import { OrderStatusWatcher } from "@/components/store/notification-bell";
@@ -158,6 +159,20 @@ export default async function OrderDetailPage({
             image: i.productImage ?? undefined,
             quantity: i.quantity,
           }))}
+        />
+
+        {/* Invoice */}
+        <InvoiceButton
+          orderNumber={order.orderNumber}
+          createdAt={new Date(order.createdAt).toISOString()}
+          paymentMethod={order.paymentMethod}
+          subtotal={order.subtotal}
+          deliveryFee={order.deliveryFee}
+          discount={order.discount}
+          total={order.total}
+          couponCode={order.couponCode}
+          items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
+          address={addressRows[0] ?? null}
         />
 
         {/* Return / refund — delivered orders only */}
