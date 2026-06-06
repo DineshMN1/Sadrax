@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Upload } from "lucide-react";
+import { ChevronLeft, Upload, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -20,6 +20,14 @@ export default function NewProductPage() {
     name: "", slug: "", description: "", price: "", mrp: "",
     unit: "", stock: "0", categoryId: "", brand: "", veg: "", variantGroup: "", featured: false, active: true,
   });
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variants, setVariants] = useState<{ unit: string; price: string; stock: string }[]>([
+    { unit: "", price: "", stock: "0" },
+  ]);
+  const setVar = (i: number, k: "unit" | "price" | "stock", v: string) =>
+    setVariants((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
+  const addVar = () => setVariants((p) => [...p, { unit: "", price: "", stock: "0" }]);
+  const removeVar = (i: number) => setVariants((p) => p.filter((_, idx) => idx !== i));
 
   useEffect(() => {
     fetch("/api/admin/categories").then((r) => r.json()).then((d) => setCategories(d.categories ?? []));
@@ -51,7 +59,15 @@ export default function NewProductPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.price) { toast.error("Name and price are required"); return; }
+    if (!form.name) { toast.error("Name is required"); return; }
+    const variantPayload = hasVariants
+      ? variants
+          .filter((v) => v.unit.trim() && v.price)
+          .map((v) => ({ unit: v.unit.trim(), price: Math.round(parseFloat(v.price) * 100), stock: parseInt(v.stock) || 0 }))
+      : [];
+    if (hasVariants && variantPayload.length === 0) { toast.error("Add at least one size with a price"); return; }
+    if (!hasVariants && !form.price) { toast.error("Price is required"); return; }
+
     setSaving(true);
     try {
       const res = await fetch("/api/admin/products", {
@@ -59,19 +75,22 @@ export default function NewProductPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          price: Math.round(parseFloat(form.price) * 100),
+          price: form.price ? Math.round(parseFloat(form.price) * 100) : 0,
           mrp: form.mrp ? Math.round(parseFloat(form.mrp) * 100) : null,
           stock: parseInt(form.stock),
           categoryId: form.categoryId ? parseInt(form.categoryId) : null,
           brand: form.brand || null,
           veg: form.veg || null,
           variantGroup: form.variantGroup || null,
+          variants: variantPayload,
           images,
         }),
       });
       const data = await res.json();
-      if (res.ok) { toast.success("Product created!"); router.push("/admin/products"); }
-      else toast.error(data.error ?? "Failed to save");
+      if (res.ok) {
+        toast.success(variantPayload.length ? `Created ${data.products?.length ?? 0} variants!` : "Product created!");
+        router.push("/admin/products");
+      } else toast.error(data.error ?? "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -108,13 +127,45 @@ export default function NewProductPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900">Pricing &amp; Stock</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900">Pricing &amp; Stock</h2>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-600 cursor-pointer">
+            <input type="checkbox" checked={hasVariants} onChange={(e) => setHasVariants(e.target.checked)} className="w-4 h-4 accent-green-600" />
+            Multiple sizes / variants
+          </label>
+        </div>
+
+        {/* Variant editor — each size is its own price + stock */}
+        {hasVariants && (
+          <div className="space-y-2 rounded-xl border border-green-200 bg-green-50/40 p-3">
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-[11px] font-semibold text-gray-500 px-1">
+              <span>Size / unit</span><span>Price ₹</span><span>Stock</span><span />
+            </div>
+            {variants.map((v, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                <input value={v.unit} onChange={(e) => setVar(i, "unit", e.target.value)} placeholder="500g"
+                  className="h-9 px-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500" />
+                <input type="number" step="0.01" value={v.price} onChange={(e) => setVar(i, "price", e.target.value)} placeholder="0.00"
+                  className="h-9 px-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500" />
+                <input type="number" value={v.stock} onChange={(e) => setVar(i, "stock", e.target.value)} placeholder="0"
+                  className="h-9 px-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500" />
+                <button onClick={() => removeVar(i)} disabled={variants.length === 1}
+                  className="w-9 h-9 flex items-center justify-center text-red-400 hover:text-red-600 disabled:opacity-30"><Trash2 size={15} /></button>
+              </div>
+            ))}
+            <button onClick={addVar} className="flex items-center gap-1.5 text-sm font-semibold text-green-700 hover:text-green-800 px-1 pt-1">
+              <Plus size={14} /> Add size
+            </button>
+            <p className="text-[11px] text-gray-400 px-1">Creates one linked product per size; customers pick the size on the product page.</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
-          {[
+          {(hasVariants ? [] : [
             { key: "price", label: "Price *", rupee: true },
             { key: "mrp",   label: "MRP",     rupee: true },
             { key: "stock", label: "Stock (units)", rupee: false },
-          ].map(({ key, label, rupee }) => (
+          ]).map(({ key, label, rupee }) => (
             <div key={key}>
               <label className="text-xs font-semibold text-gray-600 mb-1 block">{label}</label>
               <div className="relative">
