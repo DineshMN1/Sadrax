@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: { default: "Cord Orders", template: "%s — Cord" },
-  manifest: "/cord/manifest.webmanifest",
+  manifest: "/cord.webmanifest",
 };
 
 export const viewport: Viewport = {

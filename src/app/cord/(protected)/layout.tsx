@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { Toaster } from "sonner";
+import { SWRegister } from "@/components/store/sw-register";
 
 export default async function CordProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -13,6 +14,7 @@ export default async function CordProtectedLayout({ children }: { children: Reac
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <SWRegister />
       {children}
       <Toaster theme="dark" position="top-center" richColors />
     </div>

@@ -3,6 +3,9 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 
+// A (pass-through) fetch handler is required for PWA installability in some browsers.
+self.addEventListener("fetch", () => { /* let the network handle it */ });
+
 /* ── Push notification received ────────────────────────────────── */
 self.addEventListener("push", e => {
   let data = { title: "Sadrax", body: "You have a new update", url: "/orders" };
