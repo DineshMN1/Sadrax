@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { products, categories } from "@/lib/db/schema";
-import { eq, and, ilike, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, inArray } from "drizzle-orm";
+import { expandSynonyms } from "@/lib/search-synonyms";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -23,13 +24,22 @@ export async function GET(req: NextRequest) {
   const conditions = [eq(products.active, true)];
   if (categoryId) conditions.push(eq(products.categoryId, Number(categoryId)));
   if (featured)   conditions.push(eq(products.featured, true));
-  if (search)     conditions.push(ilike(products.name, `%${search}%`));
+
+  // Fuzzy, synonym-aware search: name/brand ILIKE across synonym terms, OR a
+  // trigram similarity match (typo tolerance), ranked by closeness.
+  let orderBy = desc(products.orderCount);
+  if (search) {
+    const terms = expandSynonyms(search);
+    const likeConds = terms.flatMap((t) => [ilike(products.name, `%${t}%`), ilike(products.brand, `%${t}%`)]);
+    conditions.push(or(...likeConds, sql`similarity(${products.name}, ${search}) > 0.25`)!);
+    orderBy = sql`similarity(${products.name}, ${search}) DESC, ${products.orderCount} DESC` as typeof orderBy;
+  }
 
   const rows = await db
     .select()
     .from(products)
     .where(and(...conditions))
-    .orderBy(desc(products.orderCount))
+    .orderBy(orderBy)
     .limit(limit)
     .offset(offset);
 

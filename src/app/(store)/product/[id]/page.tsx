@@ -7,6 +7,7 @@ import { products, categories } from "@/lib/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductDetailClient } from "./product-detail-client";
+import { FrequentlyBought } from "@/components/store/frequently-bought";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -87,6 +88,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         discount={discount}
         category={category[0] ?? null}
       />
+
+      {/* Frequently bought together (co-purchase) */}
+      <FrequentlyBought productId={product.id} />
 
       {/* Related products */}
       {related.length > 0 && (
