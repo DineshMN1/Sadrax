@@ -16,11 +16,14 @@ import { getCategoryEmoji } from "@/lib/category-emoji";
 import { getStoreSettings, isStoreOpen } from "@/lib/settings";
 import { db } from "@/lib/db";
 import { products, categories, banners } from "@/lib/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 async function getHomeData() {
   const [cats, featured, topOrdered, allProducts, settings, promoBanners] = await Promise.all([
-    db.select().from(categories).where(eq(categories.active, true)).orderBy(categories.order).limit(16),
+    db.select().from(categories)
+      .where(and(eq(categories.active, true),
+        sql`EXISTS (SELECT 1 FROM ${products} p WHERE p.category_id = ${categories.id} AND p.active = true)`))
+      .orderBy(categories.order).limit(16),
     db.select().from(products).where(and(eq(products.active, true), eq(products.featured, true))).limit(8),
     db.select().from(products).where(eq(products.active, true)).orderBy(desc(products.orderCount)).limit(10),
     db.select().from(products).where(eq(products.active, true)).orderBy(products.name).limit(40),

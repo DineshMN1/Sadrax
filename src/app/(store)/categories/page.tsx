@@ -22,7 +22,10 @@ async function getCategoriesWithCounts() {
     .groupBy(products.categoryId);
 
   const countMap = new Map(counts.map(c => [c.categoryId, c.count]));
-  return cats.map(c => ({ ...c, productCount: countMap.get(c.id) ?? 0 }));
+  // Only show categories that actually have products in the storefront
+  return cats
+    .map(c => ({ ...c, productCount: countMap.get(c.id) ?? 0 }))
+    .filter(c => c.productCount > 0);
 }
 
 export default async function CategoriesPage() {

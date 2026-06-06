@@ -31,6 +31,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   ]);
 
   const countMap = new Map(counts.map(c => [c.categoryId, c.n]));
+  // Rail shows only non-empty categories (always include the one being viewed)
+  const railCats = allCats.filter(c => c.id === cat.id || (countMap.get(c.id) ?? 0) > 0);
 
   return (
     <div>
@@ -53,7 +55,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
       {/* Mobile category chips — quick switch */}
       <div className="md:hidden flex gap-2 overflow-x-auto px-4 py-3 scrollbar-none [&::-webkit-scrollbar]:hidden border-b border-gray-100/80">
-        {allCats.map(c => {
+        {railCats.map(c => {
           const active = c.slug === cat.slug;
           return (
             <Link key={c.id} href={`/category/${c.slug}`}
@@ -70,7 +72,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <aside className="hidden md:block w-52 shrink-0">
           <div className="sticky top-24 space-y-1">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Categories</p>
-            {allCats.map(c => {
+            {railCats.map(c => {
               const active = c.slug === cat.slug;
               return (
                 <Link key={c.id} href={`/category/${c.slug}`}
