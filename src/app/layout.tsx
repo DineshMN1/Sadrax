@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
-import { Suspense } from "react";
-import { PageViewTracker } from "@/components/providers/pageview-tracker";
 
 const geistSans  = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono  = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -52,7 +50,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <PostHogProvider>
-          <Suspense fallback={null}><PageViewTracker /></Suspense>
           {children}
         </PostHogProvider>
       </body>
