@@ -82,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Notify the store
   const [customer] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
   sendTelegramMessage(
-    `🔁 *Return request* on #${order.orderNumber}\n` +
+    `🔁 <b>Return request</b> on #${order.orderNumber}\n` +
     `Reason: ${RETURN_REASON_LABELS[reason] ?? reason}\n` +
     (description ? `Note: ${String(description).slice(0, 300)}\n` : "") +
     `Photos: ${photos.length}\n` +

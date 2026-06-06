@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (r <= 3) {
       const [customer] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
       sendTelegramMessage(
-        `⭐ *${r}-star feedback* on #${order.orderNumber}\n` +
+        `⭐ <b>${r}-star feedback</b> on #${order.orderNumber}\n` +
         (feedback.comment ? `“${feedback.comment}”\n` : "") +
         `Customer: ${customer?.name ?? "—"}${customer?.phone ? ` (${customer.phone})` : ""}`
       ).catch(() => {});
