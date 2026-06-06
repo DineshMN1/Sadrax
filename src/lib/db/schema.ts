@@ -223,6 +223,23 @@ export const pushSubscriptions = pgTable(
   t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
 );
 
+// Recurring order subscriptions — auto-create an order every period.
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    addressId: integer("address_id").references(() => addresses.id),
+    items: json("items").$type<{ productId: number; quantity: number }[]>().notNull(),
+    frequency: varchar("frequency", { length: 12 }).notNull(), // weekly | biweekly | monthly
+    nextRunAt: timestamp("next_run_at").notNull(),
+    active: boolean("active").default(true).notNull(),
+    lastOrderId: integer("last_order_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("subscriptions_next_run_idx").on(t.nextRunAt)]
+);
+
 // Suppliers / vendors stock is purchased from.
 export const suppliers = pgTable("suppliers", {
   id: serial("id").primaryKey(),
@@ -398,3 +415,4 @@ export type StockAlert        = typeof stockAlerts.$inferSelect;
 export type Offer             = typeof offers.$inferSelect;
 export type Supplier          = typeof suppliers.$inferSelect;
 export type Purchase          = typeof purchases.$inferSelect;
+export type Subscription      = typeof subscriptions.$inferSelect;

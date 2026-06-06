@@ -10,6 +10,7 @@ import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle, Phon
 import { formatDistanceToNow } from "date-fns";
 import { OrderActions } from "./order-actions";
 import { InvoiceButton } from "./invoice-button";
+import { RepeatOrder } from "./repeat-order";
 import { ReturnRequest } from "./return-request";
 import { canRequestReturn } from "@/lib/returns";
 import { OrderStatusWatcher } from "@/components/store/notification-bell";
@@ -194,6 +195,12 @@ export default async function OrderDetailPage({
           couponCode={order.couponCode}
           items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
           address={addressRows[0] ?? null}
+        />
+
+        {/* Recurring order */}
+        <RepeatOrder
+          items={items.filter(i => i.productId).map(i => ({ productId: i.productId as number, quantity: i.quantity }))}
+          addressId={order.addressId ?? null}
         />
 
         {/* Return / refund — delivered orders only */}

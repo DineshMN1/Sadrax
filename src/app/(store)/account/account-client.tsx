@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
-import { Package, MapPin, LogOut, ChevronRight, Phone, Heart, Bell, Navigation, Headphones } from "lucide-react";
+import { Package, MapPin, LogOut, ChevronRight, Phone, Heart, Bell, Navigation, Headphones, Repeat } from "lucide-react";
 import { toast } from "sonner";
 import { PWAInstallButton } from "@/components/store/pwa-install-banner";
 
@@ -92,6 +92,7 @@ export default function AccountClient() {
           { href: "/orders",            icon: Package,    label: "My Orders",       desc: "View & track your orders",       color: "bg-blue-50",   iconColor: "text-blue-600"   },
           { href: "/account/addresses", icon: MapPin,     label: "Saved Addresses", desc: "Manage delivery addresses",      color: "bg-orange-50", iconColor: "text-orange-600" },
           { href: "/wishlist",          icon: Heart,      label: "Wishlist",         desc: "Products you saved for later",   color: "bg-red-50",    iconColor: "text-red-500"    },
+          { href: "/account/subscriptions", icon: Repeat, label: "Recurring Orders", desc: "Manage auto-repeat orders",      color: "bg-green-50",  iconColor: "text-green-600"  },
         ].map(({ href, icon: Icon, label, desc, color, iconColor }) => (
           <Link
             key={href}
