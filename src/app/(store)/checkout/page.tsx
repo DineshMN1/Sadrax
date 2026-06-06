@@ -6,7 +6,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
-import { formatPrice, isDeliverable } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
+import { useStoreConfig } from "@/store/config";
 import { requestCoords, getCachedCoords } from "@/lib/geo";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
@@ -33,6 +34,8 @@ type PaymentMethod = "cod" | "upi";
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, deliveryFee, discount, couponCode, total, clearCart } = useCart();
+  const pincodes = useStoreConfig(s => s.pincodes);
+  const isDeliverable = (pc: string) => pincodes.includes(pc.trim());
   const [addresses, setAddresses]             = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");

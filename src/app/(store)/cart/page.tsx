@@ -9,7 +9,8 @@ import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkle
 import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
-import { formatPrice, DELIVERY_FEE } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
+import { useStoreConfig } from "@/store/config";
 import { primeCoords } from "@/lib/geo";
 import { toast } from "sonner";
 
@@ -53,10 +54,11 @@ export default function CartPage() {
   const hasStockIssue =
     stockLoaded && items.some(i => i.quantity > (stockMap[i.id] ?? 0));
 
+  const cfgDeliveryFee = useStoreConfig(s => s.deliveryFee);
   const sub = subtotal();
   const fee = deliveryFee();
   const tot = total();
-  const savings = discount + (fee === 0 && sub > 0 ? DELIVERY_FEE : 0);
+  const savings = discount + (fee === 0 && sub > 0 ? cfgDeliveryFee : 0);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;

@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { calculateDeliveryFee } from "@/lib/utils";
+import { deliveryFeeFor } from "@/store/config";
 
 export interface CartItem {
   id: number;
@@ -78,7 +78,7 @@ export const useCart = create<CartState>()(
       subtotal: () =>
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
 
-      deliveryFee: () => calculateDeliveryFee(get().subtotal()),
+      deliveryFee: () => deliveryFeeFor(get().subtotal()),
 
       total: () =>
         Math.max(0, get().subtotal() + get().deliveryFee() - get().discount),

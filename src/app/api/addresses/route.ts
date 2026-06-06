@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addresses } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { isDeliverable } from "@/lib/utils";
+import { getStoreSettings, isServiceable } from "@/lib/settings";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  if (!isDeliverable(pincode)) {
+  if (!isServiceable(pincode, await getStoreSettings())) {
     return NextResponse.json({ error: "We don't deliver to this pincode yet" }, { status: 400 });
   }
 
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest) {
     .where(and(eq(addresses.id, Number(id)), eq(addresses.userId, session.user.id))).limit(1);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (pincode && !isDeliverable(pincode)) {
+  if (pincode && !isServiceable(pincode, await getStoreSettings())) {
     return NextResponse.json({ error: "We don't deliver to this pincode yet" }, { status: 400 });
   }
 

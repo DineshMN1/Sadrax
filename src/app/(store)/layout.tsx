@@ -5,6 +5,7 @@ import { SplashScreen } from "@/components/store/splash-screen";
 import { SessionPrompts } from "@/components/store/session-prompts";
 import { FeedbackPrompt } from "@/components/store/feedback-prompt";
 import { SWRegister } from "@/components/store/sw-register";
+import { StoreConfigLoader } from "@/components/store/store-config-loader";
 import { Toaster } from "sonner";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +13,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gray-50">
       <SplashScreen />
       <SWRegister />
+      <StoreConfigLoader />
       <DesktopSidebar />
 
       <div className="md:ml-56 lg:ml-64">

@@ -1,14 +1,16 @@
 "use client";
 
 import { useCart } from "@/store/cart";
-import { formatPrice, FREE_DELIVERY_THRESHOLD } from "@/lib/utils";
+import { useStoreConfig } from "@/store/config";
+import { formatPrice } from "@/lib/utils";
 import { Truck, CheckCircle2 } from "lucide-react";
 
 export function FreeDeliveryBar() {
   const subtotal  = useCart(s => s.subtotal());
-  const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
-  const progress  = Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD) * 100);
-  const isFree    = subtotal >= FREE_DELIVERY_THRESHOLD;
+  const threshold = useStoreConfig(s => s.freeDeliveryThreshold);
+  const remaining = Math.max(0, threshold - subtotal);
+  const progress  = Math.min(100, (subtotal / threshold) * 100);
+  const isFree    = subtotal >= threshold;
 
   if (isFree) {
     return (

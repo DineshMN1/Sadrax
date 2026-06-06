@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Navigation, AlertTriangle, X, CheckCircle2, Loader2, MapPin } from "lucide-react";
+import { useStoreConfig } from "@/store/config";
 
 type State = "idle" | "requesting" | "granted" | "denied" | "unsupported";
 
@@ -53,6 +54,8 @@ export function LocationBanner() {
   const [state, setState]       = useState<State>("idle");
   const [dismissed, setDismiss] = useState(false);
   const [area, setArea]         = useState<string | null>(null);
+  const [serviceable, setServiceable] = useState<boolean | null>(null);
+  const pincodes = useStoreConfig(s => s.pincodes);
 
   /* Reverse-geocode a lat/lng to suburb/city using Nominatim (free, no key needed) */
   const reverseGeocode = async (lat: number, lng: number) => {
@@ -67,6 +70,9 @@ export function LocationBanner() {
         addr?.suburb || addr?.neighbourhood || addr?.village ||
         addr?.town   || addr?.city          || "Your area"
       );
+      // Decide serviceability from the detected pincode against our delivery zone
+      const pin = (addr?.postcode ?? "").toString().trim();
+      setServiceable(pin ? pincodes.includes(pin) : null);
     } catch { /* silently ignore */ }
   };
 
@@ -119,7 +125,20 @@ export function LocationBanner() {
     localStorage.setItem("sadrax_loc_dismiss", "1");
   };
 
-  /* ── Granted: show detected area (non-blocking, no dismiss) ── */
+  /* ── Granted but OUTSIDE our delivery zone — show a clear red warning ── */
+  if (state === "granted" && area && serviceable === false) {
+    return (
+      <div className="mx-4 mt-3 flex items-center gap-2 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-2xl animate-slide-up">
+        <AlertTriangle size={14} className="text-red-500 shrink-0" />
+        <p className="text-xs font-semibold text-red-600 flex-1 min-w-0">
+          We don&apos;t deliver to <span className="font-extrabold">{area}</span> yet
+        </p>
+        <MapPin size={12} className="text-red-400 shrink-0" />
+      </div>
+    );
+  }
+
+  /* ── Granted & serviceable (or pincode unknown): show detected area ── */
   if (state === "granted" && area) {
     return (
       <div className="mx-4 mt-3 flex items-center gap-2 px-3.5 py-2.5 bg-green-50 border border-green-100 rounded-2xl animate-slide-up">

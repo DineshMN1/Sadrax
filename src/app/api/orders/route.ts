@@ -4,7 +4,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders, orderItems, products, coupons, addresses, users } from "@/lib/db/schema";
 import { eq, and, inArray, gte } from "drizzle-orm";
-import { generateOrderNumber, calculateDeliveryFee } from "@/lib/utils";
+import { generateOrderNumber } from "@/lib/utils";
+import { getStoreSettings, computeDeliveryFee } from "@/lib/settings";
 import { restockItems, type StockLine } from "@/lib/inventory";
 // NOT IN PLAN FOR NOW — import { createRazorpayOrder } from "@/lib/razorpay";
 // NOT IN PLAN FOR NOW — import { sendOrderStatusSms } from "@/lib/msg91";
@@ -72,7 +73,8 @@ export async function POST(req: NextRequest) {
   });
 
   const subtotal = orderItemsData.reduce((s: number, i: { total: number }) => s + i.total, 0);
-  const deliveryFee = calculateDeliveryFee(subtotal);
+  const settings = await getStoreSettings();
+  const deliveryFee = computeDeliveryFee(subtotal, settings);
 
   // Validate coupon
   let discount = 0;
