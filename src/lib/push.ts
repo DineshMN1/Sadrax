@@ -15,6 +15,27 @@ export interface PushPayload {
   url?: string;
 }
 
+type Sub = typeof pushSubscriptions.$inferSelect;
+
+// Deliver to a single subscription. Returns true on success. Cleans up
+// subscriptions the push service reports as gone (404/410).
+async function deliver(sub: Sub, payload: PushPayload): Promise<boolean> {
+  try {
+    await webPush.sendNotification(
+      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      JSON.stringify(payload),
+      { TTL: 86400 }
+    );
+    return true;
+  } catch (err: unknown) {
+    const code = (err as { statusCode?: number }).statusCode;
+    if (code === 404 || code === 410) {
+      await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, sub.endpoint));
+    }
+    return false;
+  }
+}
+
 export async function sendPushToUser(userId: string, payload: PushPayload) {
   const subs = await db
     .select()
@@ -22,22 +43,21 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     .where(eq(pushSubscriptions.userId, userId));
 
   if (subs.length === 0) return;
+  await Promise.allSettled(subs.map(sub => deliver(sub, payload)));
+}
 
-  await Promise.allSettled(
-    subs.map(async sub => {
-      try {
-        await webPush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload),
-          { TTL: 86400 }
-        );
-      } catch (err: unknown) {
-        // 410 = subscription expired/unsubscribed — clean it up
-        if ((err as { statusCode?: number }).statusCode === 410) {
-          await db.delete(pushSubscriptions)
-            .where(eq(pushSubscriptions.endpoint, sub.endpoint));
-        }
-      }
-    })
-  );
+// Broadcast to every registered device, in batches to avoid opening too many
+// connections at once. Returns how many sends succeeded / failed.
+export async function sendPushToAll(payload: PushPayload): Promise<{ sent: number; failed: number; total: number }> {
+  const subs = await db.select().from(pushSubscriptions);
+  const BATCH = 50;
+  let sent = 0;
+
+  for (let i = 0; i < subs.length; i += BATCH) {
+    const slice = subs.slice(i, i + BATCH);
+    const results = await Promise.all(slice.map(sub => deliver(sub, payload)));
+    sent += results.filter(Boolean).length;
+  }
+
+  return { sent, failed: subs.length - sent, total: subs.length };
 }
