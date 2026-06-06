@@ -20,15 +20,18 @@ interface Coupon {
 export default function OffersPage() {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [offers, setOffers] = useState<{ id: number; title: string; description: string | null; type: string; bankName: string | null; code: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/coupons")
-      .then(r => r.json())
-      .then(d => setCoupons(d.coupons ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/coupons").then(r => r.json()).catch(() => ({})),
+      fetch("/api/offers").then(r => r.json()).catch(() => ({})),
+    ]).then(([c, o]) => {
+      setCoupons(c.coupons ?? []);
+      setOffers(o.offers ?? []);
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleCopy = (coupon: Coupon) => {
@@ -60,8 +63,25 @@ export default function OffersPage() {
           </>
         )}
 
+        {/* Live promotions (auto-applied + bank offers) */}
+        {!loading && offers.length > 0 && (
+          <div className="space-y-2.5">
+            {offers.map((o) => (
+              <div key={o.id} className={`rounded-2xl border p-4 ${o.type === "bank" ? "bg-indigo-50 border-indigo-100" : "bg-linear-to-r from-green-50 to-emerald-50 border-green-100"}`}>
+                <div className="flex items-center gap-2">
+                  <Tag size={15} className={o.type === "bank" ? "text-indigo-600" : "text-green-600"} />
+                  <p className="font-extrabold text-gray-900 text-sm">{o.title}</p>
+                  {o.type !== "bank" && <span className="text-[10px] font-bold text-green-700 bg-white px-2 py-0.5 rounded-full">Auto-applied</span>}
+                </div>
+                {o.description && <p className="text-xs text-gray-500 mt-1">{o.description}</p>}
+                {o.bankName && <p className="text-xs text-indigo-600 font-semibold mt-1">{o.bankName}{o.code ? ` · Use ${o.code}` : ""}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Empty */}
-        {!loading && coupons.length === 0 && (
+        {!loading && coupons.length === 0 && offers.length === 0 && (
           <div className="flex flex-col items-center justify-center min-h-[55vh] text-center">
             <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mb-5">
               <Tag size={36} className="text-green-300" />

@@ -219,6 +219,29 @@ export const pushSubscriptions = pgTable(
   t => [uniqueIndex("push_sub_endpoint_idx").on(t.endpoint)]
 );
 
+// Promotional offers — auto-applied promos + display-only bank offers.
+export const offers = pgTable(
+  "offers",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title", { length: 120 }).notNull(),
+    description: text("description"),
+    // cart_percent | category_percent | bank
+    type: varchar("type", { length: 20 }).notNull(),
+    categoryId: integer("category_id").references(() => categories.id), // for category_percent
+    percent: integer("percent").default(0),         // % off
+    maxDiscount: integer("max_discount"),           // paise cap
+    minOrder: integer("min_order").default(0),      // paise threshold
+    bankName: varchar("bank_name", { length: 60 }), // for bank offers
+    code: varchar("code", { length: 50 }),          // optional shown code (bank)
+    active: boolean("active").default(true).notNull(),
+    order: integer("order").default(0).notNull(),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("offers_order_idx").on(t.order)]
+);
+
 // "Notify me when back in stock" requests. One per product per user.
 export const stockAlerts = pgTable(
   "stock_alerts",
@@ -343,3 +366,4 @@ export type ReturnRequest     = typeof returnRequests.$inferSelect;
 export type OrderFeedback     = typeof orderFeedback.$inferSelect;
 export type AuditLog          = typeof auditLogs.$inferSelect;
 export type StockAlert        = typeof stockAlerts.$inferSelect;
+export type Offer             = typeof offers.$inferSelect;

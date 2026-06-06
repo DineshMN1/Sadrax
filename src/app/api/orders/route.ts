@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders, orderItems, products, coupons, addresses, users } from "@/lib/db/schema";
+import { orders, orderItems, products, coupons, addresses, users, offers } from "@/lib/db/schema";
+import { bestOfferDiscount } from "@/lib/offers";
 import { eq, and, inArray, gte, ne } from "drizzle-orm";
 import { generateOrderNumber } from "@/lib/utils";
 import { getStoreSettings, computeDeliveryFee, isStoreOpen } from "@/lib/settings";
@@ -118,6 +119,20 @@ export async function POST(req: NextRequest) {
     appliedCoupon = coupon;
   }
 
+  // Auto-apply the best promotional offer when it beats any coupon discount
+  let appliedLabel: string | null = couponCode ?? null;
+  const activeOffers = await db.select().from(offers).where(eq(offers.active, true));
+  const offerLines = orderItemsData.map((i: { productId: number; total: number }) => ({
+    categoryId: dbProducts.find((p) => p.id === i.productId)?.categoryId ?? null,
+    lineTotal: i.total,
+  }));
+  const { discount: offerDiscount, offer: bestOffer } = bestOfferDiscount(activeOffers, offerLines, subtotal);
+  if (offerDiscount > discount) {
+    discount = offerDiscount;
+    appliedCoupon = null; // an auto-offer outranks the coupon; don't bump coupon usage
+    appliedLabel = (bestOffer?.code || bestOffer?.title || "Offer").slice(0, 50);
+  }
+
   // Rider tip (paise) — sanitise to a sane non-negative integer
   const tipAmount = Math.max(0, Math.min(Math.round(Number(tip) || 0), 100000));
   const total = Math.max(0, subtotal + deliveryFee + tipAmount - discount);
@@ -168,7 +183,7 @@ export async function POST(req: NextRequest) {
         deliveryFee,
         discount,
         total,
-        couponCode: couponCode ?? null,
+        couponCode: appliedLabel,
         tip: tipAmount,
         deliveryInstructions: typeof deliveryInstructions === "string" ? deliveryInstructions.slice(0, 300) : null,
         deliverySlot: typeof deliverySlot === "string" ? deliverySlot.slice(0, 60) : null,
