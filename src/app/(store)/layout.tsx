@@ -3,6 +3,7 @@ import { StickyCartBar } from "@/components/store/sticky-cart-bar";
 import { DesktopSidebar } from "@/components/store/desktop-sidebar";
 import { SplashScreen } from "@/components/store/splash-screen";
 import { SessionPrompts } from "@/components/store/session-prompts";
+import { FeedbackPrompt } from "@/components/store/feedback-prompt";
 import { SWRegister } from "@/components/store/sw-register";
 import { Toaster } from "sonner";
 
@@ -22,6 +23,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <StickyCartBar className="md:hidden" />
       <BottomNav />
       <SessionPrompts />
+      <FeedbackPrompt />
 
       <Toaster
         position="top-center"

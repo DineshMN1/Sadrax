@@ -249,6 +249,23 @@ export const returnRequests = pgTable(
   ]
 );
 
+// Post-delivery feedback — one rating per delivered order.
+export const orderFeedback = pgTable(
+  "order_feedback",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(), // 1–5 stars
+    comment: text("comment"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("order_feedback_order_idx").on(t.orderId),
+    index("order_feedback_rating_idx").on(t.rating),
+  ]
+);
+
 // Home-screen promotional banners (admin managed, max 5, ordered by priority)
 export const banners = pgTable(
   "banners",
@@ -282,3 +299,4 @@ export type DeliveryPerson    = typeof deliveryPersons.$inferSelect;
 export type PushSubscription  = typeof pushSubscriptions.$inferSelect;
 export type Banner            = typeof banners.$inferSelect;
 export type ReturnRequest     = typeof returnRequests.$inferSelect;
+export type OrderFeedback     = typeof orderFeedback.$inferSelect;
