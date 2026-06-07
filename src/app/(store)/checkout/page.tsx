@@ -102,13 +102,20 @@ export default function CheckoutPage() {
   }, []);
 
   const handleSaveAddress = async () => {
-    if (!newAddress.name || !newAddress.phone || !newAddress.line1 || !newAddress.pincode) {
-      toast.error("Please fill all required fields");
+    if (!newAddress.name || !newAddress.phone || !newAddress.line1 || !newAddress.line2 || !newAddress.pincode) {
+      toast.error("Please fill all required fields (incl. flat/door no & apartment/street)");
       return;
     }
     if (!isDeliverable(newAddress.pincode)) {
       toast.error("We don't deliver to this pincode yet");
       return;
+    }
+    // Strongly encourage a map pin so the delivery partner can find them easily
+    if (pinLat == null || pinLng == null) {
+      if (confirm("Pin your exact location on the map so our delivery partner can reach you easily? (Recommended)")) {
+        setShowMap(true);
+        return;
+      }
     }
     const res = await fetch("/api/addresses", {
       method: "POST",
@@ -295,14 +302,14 @@ export default function CheckoutPage() {
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${pinLat ? "bg-green-500" : "bg-gray-100"}`}>
                       <Navigation size={14} className={pinLat ? "text-white" : "text-gray-400"} />
                     </div>
-                    {pinLat ? `Pinned ✓ (${pinLat.toFixed(3)}, ${pinLng?.toFixed(3)})` : "Pin location on map (optional)"}
+                    {pinLat ? `Pinned ✓ (${pinLat.toFixed(3)}, ${pinLng?.toFixed(3)})` : "📍 Pin your location (recommended for delivery)"}
                   </button>
                   {(["name", "phone", "line1", "line2", "city", "pincode"] as const).map(field => (
                     <input
                       key={field}
                       placeholder={
-                        field === "line1" ? "Street / Area *"
-                        : field === "line2" ? "Landmark (optional)"
+                        field === "line1" ? "Flat / Door No *"
+                        : field === "line2" ? "Apartment name / Street *"
                         : `${field.charAt(0).toUpperCase() + field.slice(1)}${["name","phone","pincode"].includes(field) ? " *" : ""}`
                       }
                       value={newAddress[field]}

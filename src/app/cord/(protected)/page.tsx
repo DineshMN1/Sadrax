@@ -208,6 +208,28 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`, "_blank");
   };
 
+  // Rich WhatsApp message with the order summary + a thank-you.
+  const whatsappHref = () => {
+    const phone = (order.customerPhone ?? "").replace(/^\+91/, "").replace(/\D/g, "");
+    const itemLines = order.items.map(i => `• ${i.productName}${i.productUnit ? ` (${i.productUnit})` : ""} × ${i.quantity}`).join("\n");
+    const rupee = (p: number) => `₹${(p / 100).toFixed(0)}`;
+    const msg =
+`Hi ${order.address?.name ?? "there"}! 🙏
+
+Thank you for ordering from *Sadrax* — by Malik Stores!
+
+🧾 *Order #${order.orderNumber}*
+${itemLines}
+
+Subtotal: ${rupee(order.subtotal)}
+Delivery: ${order.deliveryFee === 0 ? "FREE" : rupee(order.deliveryFee)}${order.discount > 0 ? `\nDiscount: -${rupee(order.discount)}` : ""}
+*Total: ${rupee(order.total)}* (${order.paymentMethod.toUpperCase()})
+
+Your order is being prepared and will reach you soon. We truly appreciate your support! 💚
+— Team Sadrax`;
+    return `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+  };
+
   const handleAction = async (next: OrderStatus) => {
     if (next === "rejected") { setShowRejectReason(true); return; }
     setUpdating(true);
@@ -366,7 +388,7 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
           {/* WhatsApp */}
           {order.customerPhone && (
             <a
-              href={`https://wa.me/91${order.customerPhone.replace(/^\+91/, "")}?text=Hi! Your Sadrax order %23${order.orderNumber}`}
+              href={whatsappHref()}
               target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-1.5 h-9 px-3 bg-green-50 hover:bg-green-100 rounded-xl text-xs font-semibold text-green-700 transition-colors"
             >

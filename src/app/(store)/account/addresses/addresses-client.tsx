@@ -84,8 +84,15 @@ export default function AddressesClient() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.phone || !form.line1 || !form.pincode) {
-      toast.error("Fill all required fields"); return;
+    if (!form.name || !form.phone || !form.line1 || !form.line2 || !form.pincode) {
+      toast.error("Fill all required fields (incl. flat/door no & apartment/street)"); return;
+    }
+    // Encourage a map pin so the delivery partner can find them easily
+    if (pinLat == null || pinLng == null) {
+      if (confirm("Pin your exact location on the map so our delivery partner can reach you easily? (Recommended)")) {
+        setShowMap(true);
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -190,14 +197,14 @@ export default function AddressesClient() {
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", pinLat ? "bg-green-500" : "bg-gray-100")}>
                 <Navigation size={14} className={pinLat ? "text-white" : "text-gray-400"} />
               </div>
-              {pinLat ? `Pinned ✓ (${pinLat.toFixed(4)}, ${pinLng?.toFixed(4)})` : "Pin on map (optional)"}
+              {pinLat ? `Pinned ✓ (${pinLat.toFixed(4)}, ${pinLng?.toFixed(4)})` : "📍 Pin your location (recommended for delivery)"}
             </button>
 
             {[
               { k: "name",    p: "Full Name *" },
               { k: "phone",   p: "Phone *",          mode: "numeric" as const },
-              { k: "line1",   p: "Street / Area *" },
-              { k: "line2",   p: "Landmark (optional)" },
+              { k: "line1",   p: "Flat / Door No *" },
+              { k: "line2",   p: "Apartment name / Street *" },
               { k: "city",    p: "City" },
               { k: "pincode", p: "Pincode *",         mode: "numeric" as const },
             ].map(({ k, p, mode }) => (
