@@ -385,8 +385,8 @@ export default function CheckoutPage() {
               <Banknote size={18} className={paymentMethod === "cod" ? "text-white" : "text-gray-500"} />
             </div>
             <div className="flex-1 text-left">
-              <p className={`text-sm font-bold ${paymentMethod === "cod" ? "text-green-800" : "text-gray-700"}`}>Cash on Delivery</p>
-              <p className="text-xs text-gray-400 mt-0.5">Pay when your order arrives</p>
+              <p className={`text-sm font-bold ${paymentMethod === "cod" ? "text-green-800" : "text-gray-700"}`}>Cash / UPI on Delivery</p>
+              <p className="text-xs text-gray-400 mt-0.5">Pay by cash or UPI when your order arrives</p>
             </div>
             {paymentMethod === "cod" && <Check size={18} className="text-green-600 shrink-0" />}
           </button>
@@ -490,7 +490,7 @@ export default function CheckoutPage() {
         >
           <span className="text-base flex items-center gap-2">
             {placing && <Loader2 size={18} className="animate-spin" />}
-            {placing ? "Placing order…" : "Place Order (COD)"}
+            {placing ? "Placing order…" : "Place Order (Cash / UPI on Delivery)"}
           </span>
           <span className="text-base font-extrabold">{formatPrice(tot)}</span>
         </button>
