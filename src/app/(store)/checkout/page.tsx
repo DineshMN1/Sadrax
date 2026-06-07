@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
@@ -38,6 +38,7 @@ export default function CheckoutPage() {
   const pincodes = useStoreConfig(s => s.pincodes);
   const minOrderValue = useStoreConfig(s => s.minOrderValue);
   const isDeliverable = (pc: string) => pincodes.includes(pc.trim());
+  const placedRef = useRef(false);
   const [addresses, setAddresses]             = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");
@@ -170,9 +171,10 @@ export default function CheckoutPage() {
         items: items.reduce((n, i) => n + i.quantity, 0),
         payment_method: paymentMethod,
       });
-      clearCart();
-      toast.success("Order placed!", { description: `#${data.orderNumber}` });
+      placedRef.current = true;       // so the empty-cart guard below doesn't hijack the redirect
       router.push("/orders");
+      toast.success("Order placed!", { description: `#${data.orderNumber}` });
+      clearCart();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -180,8 +182,9 @@ export default function CheckoutPage() {
     }
   };
 
+  // Bounce back to /cart if the cart empties — UNLESS we just placed an order.
   useEffect(() => {
-    if (items.length === 0) router.replace("/cart");
+    if (items.length === 0 && !placedRef.current) router.replace("/cart");
   }, [items.length, router]);
 
   if (items.length === 0) return null;

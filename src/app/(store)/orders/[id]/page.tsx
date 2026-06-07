@@ -158,13 +158,7 @@ export default async function OrderDetailPage({
               <p className="text-sm font-bold text-gray-900">{rider.name} is on the way</p>
               <p className="text-xs text-gray-400">Your delivery partner</p>
             </div>
-            {order.riderLat != null && order.riderLng != null && (
-              <a href={`https://www.google.com/maps/search/?api=1&query=${order.riderLat},${order.riderLng}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-3 py-2 rounded-xl">
-                <MapPin size={13} /> Track
-              </a>
-            )}
-            <a href={`tel:${rider.phone}`} className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-xl shrink-0"><Phone size={15} /></a>
+            <a href={`tel:${rider.phone}`} className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-50 px-3 py-2 rounded-xl shrink-0"><Phone size={14} /> Call</a>
           </div>
         )}
 
@@ -183,19 +177,21 @@ export default async function OrderDetailPage({
           }))}
         />
 
-        {/* Invoice */}
-        <InvoiceButton
-          orderNumber={order.orderNumber}
-          createdAt={new Date(order.createdAt).toISOString()}
-          paymentMethod={order.paymentMethod}
-          subtotal={order.subtotal}
-          deliveryFee={order.deliveryFee}
-          discount={order.discount}
-          total={order.total}
-          couponCode={order.couponCode}
-          items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
-          address={addressRows[0] ?? null}
-        />
+        {/* Invoice — only for delivered orders */}
+        {order.status === "delivered" && (
+          <InvoiceButton
+            orderNumber={order.orderNumber}
+            createdAt={new Date(order.createdAt).toISOString()}
+            paymentMethod={order.paymentMethod}
+            subtotal={order.subtotal}
+            deliveryFee={order.deliveryFee}
+            discount={order.discount}
+            total={order.total}
+            couponCode={order.couponCode}
+            items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
+            address={addressRows[0] ?? null}
+          />
+        )}
 
         {/* Recurring order */}
         <RepeatOrder
