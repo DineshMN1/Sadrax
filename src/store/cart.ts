@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { deliveryFeeFor } from "@/store/config";
+import { track } from "@/lib/analytics";
 
 export interface CartItem {
   id: number;
@@ -42,6 +43,7 @@ export const useCart = create<CartState>()(
 
       addItem: (item) =>
         set((state) => {
+          track("add_to_cart", { product_id: item.id, name: item.name, price: item.price / 100 });
           const existing = state.items.find((i) => i.id === item.id);
           if (existing) {
             return {

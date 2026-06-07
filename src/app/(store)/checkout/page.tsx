@@ -8,6 +8,7 @@ import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, Shield
 import { useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { useStoreConfig } from "@/store/config";
+import { track } from "@/lib/analytics";
 import { requestCoords, getCachedCoords } from "@/lib/geo";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
@@ -86,6 +87,7 @@ export default function CheckoutPage() {
   const tot = total();
 
   useEffect(() => {
+    track("checkout_started", { value: subtotal() / 100, items: items.length });
     fetch("/api/addresses")
       .then(r => r.json())
       .then(data => {
@@ -95,6 +97,7 @@ export default function CheckoutPage() {
       })
       .catch(() => toast.error("Could not load addresses"))
       .finally(() => setLoadingAddr(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveAddress = async () => {
@@ -160,6 +163,13 @@ export default function CheckoutPage() {
         toast.error(data.error ?? "Could not place order");
         return;
       }
+      track("order_placed", {
+        order_number: data.orderNumber,
+        revenue: (tot + tip) / 100,
+        value: (tot + tip) / 100,
+        items: items.reduce((n, i) => n + i.quantity, 0),
+        payment_method: paymentMethod,
+      });
       clearCart();
       toast.success("Order placed!", { description: `#${data.orderNumber}` });
       router.push("/orders");

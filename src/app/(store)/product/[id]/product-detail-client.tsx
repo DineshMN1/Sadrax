@@ -17,6 +17,7 @@ export function ProductBackButton() {
 import Image from "next/image";
 import { Plus, Minus, ShoppingCart, Heart, Flame, ChevronLeft, ChevronRight, Share2, Check, Bell, Loader2 } from "lucide-react";
 import { useCart } from "@/store/cart";
+import { track } from "@/lib/analytics";
 import { useWishlist } from "@/store/wishlist";
 import { useRecentlyViewed, type RecentProduct } from "@/store/recently-viewed";
 import { formatPrice } from "@/lib/utils";
@@ -71,6 +72,7 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
   useEffect(() => {
     const p: RecentProduct = { id, name, price, mrp, unit, images, stock };
     addRecent(p);
+    track("product_viewed", { product_id: id, name, price: price / 100, category: category?.name });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

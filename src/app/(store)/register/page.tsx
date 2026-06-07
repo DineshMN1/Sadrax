@@ -3,6 +3,7 @@
 import { Suspense, useState, useRef, useEffect, useCallback, lazy } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { track } from "@/lib/analytics";
 import {
   User, Phone, Mail, ArrowRight, CheckCircle2,
   RefreshCw, ChevronLeft, ShoppingBag, MapPin, Navigation,
@@ -279,6 +280,7 @@ function AddressStep({ userName, userPhone, onDone }: AddressStepProps) {
 
 function DoneStep({ name, redirect, router }: { name: string; redirect: string; router: ReturnType<typeof useRouter> }) {
   useEffect(() => {
+    track("signup", { method: "email_otp" });
     const t = setTimeout(() => { router.push(redirect); router.refresh(); }, 1800);
     return () => clearTimeout(t);
   }, [redirect, router]);

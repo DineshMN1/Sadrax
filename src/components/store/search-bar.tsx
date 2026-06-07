@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 import Image from "next/image";
 
 interface Suggestion {
@@ -75,6 +76,7 @@ export function SearchBar({ className }: { className?: string }) {
     const q = value.trim();
     if (!q) return;
     saveSearch(q);
+    track("search", { query: q });
     setOpen(false);
     inputRef.current?.blur();
     router.push(`/search?q=${encodeURIComponent(q)}`);
