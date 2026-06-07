@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { normalizeIndianPhone } from "@/lib/utils";
 
 export async function PATCH(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -13,7 +14,7 @@ export async function PATCH(req: NextRequest) {
   const updates: Record<string, string> = {};
 
   if (name?.trim()) updates.name = name.trim();
-  if (phone?.trim()) updates.phone = phone.trim();
+  if (phone?.trim()) updates.phone = normalizeIndianPhone(phone);
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

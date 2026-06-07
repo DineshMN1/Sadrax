@@ -314,7 +314,7 @@ export default function CheckoutPage() {
                         : `${field.charAt(0).toUpperCase() + field.slice(1)}${["name","phone","pincode"].includes(field) ? " *" : ""}`
                       }
                       value={newAddress[field]}
-                      onChange={e => setNewAddress(p => ({ ...p, [field]: e.target.value }))}
+                      onChange={e => setNewAddress(p => ({ ...p, [field]: field === "phone" ? e.target.value.replace(/\D/g, "").slice(-10) : e.target.value }))}
                       inputMode={field === "phone" || field === "pincode" ? "numeric" : "text"}
                       className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-all"
                     />

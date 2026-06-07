@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { addresses } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getStoreSettings, isServiceable } from "@/lib/settings";
+import { normalizeIndianPhone } from "@/lib/utils";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const [address] = await db
     .insert(addresses)
-    .values({ userId: session.user.id, name, phone, line1, line2, city, pincode, label: label ?? "home", isDefault,
+    .values({ userId: session.user.id, name, phone: normalizeIndianPhone(phone), line1, line2, city, pincode, label: label ?? "home", isDefault,
       lat: typeof lat === "number" ? lat : null, lng: typeof lng === "number" ? lng : null })
     .returning();
 
@@ -66,7 +67,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const [updated] = await db.update(addresses)
-    .set({ name, phone, line1, line2, city, pincode, label,
+    .set({ name, ...(phone ? { phone: normalizeIndianPhone(phone) } : {}), line1, line2, city, pincode, label,
       ...(isDefault !== undefined ? { isDefault } : {}),
       ...(typeof lat === "number" ? { lat } : {}),
       ...(typeof lng === "number" ? { lng } : {}) })

@@ -243,21 +243,23 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
     const phone = (order.customerPhone ?? "").replace(/\D/g, "").slice(-10); // last 10 digits, strips any +91/91/0 prefix
     const itemLines = order.items.map(i => `• ${i.productName}${i.productUnit ? ` (${i.productUnit})` : ""} × ${i.quantity}`).join("\n");
     const rupee = (p: number) => `₹${(p / 100).toFixed(0)}`;
+    // NOTE: emoji written as \u{...} escapes (ASCII in source) so they survive
+    // any build/runtime locale — raw 4-byte emoji were corrupting to "" on deploy.
     const msg =
-`Hi ${order.address?.name ?? "there"}! 🙏
+`Hi ${order.address?.name ?? "there"}! \u{1F64F}
 
 Thank you for ordering from *Sadrax* — by Malik Stores!
 
-🧾 *Order #${order.orderNumber}*
+\u{1F9FE} *Order #${order.orderNumber}*
 ${itemLines}
 
 Subtotal: ${rupee(order.subtotal)}
 Delivery: ${order.deliveryFee === 0 ? "FREE" : rupee(order.deliveryFee)}${order.discount > 0 ? `\nDiscount: -${rupee(order.discount)}` : ""}
 *Total: ${rupee(order.total)}* (${order.paymentMethod.toUpperCase()})
 
-Your order is being prepared and will reach you soon. We truly appreciate your support! 💚
+Your order is being prepared and will reach you soon. We truly appreciate your support! \u{1F49A}
 
-🧾 Invoice: ${APP_URL}/orders/${order.id}/invoice
+\u{1F9FE} Invoice: ${APP_URL}/orders/${order.id}/invoice
 — Team Sadrax`;
     return `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
   };

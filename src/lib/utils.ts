@@ -78,3 +78,12 @@ export const DELIVERY_PINCODES = [
 export function isDeliverable(pincode: string): boolean {
   return DELIVERY_PINCODES.includes(pincode.trim());
 }
+
+// Normalize an Indian phone to a consistent "+91XXXXXXXXXX" using the LAST 10
+// digits — robust against leading 0, "91", "+91" or pasted country codes.
+// (Using the last 10 fixes the old "first-10" bug that turned 9940652142 into
+// 9199406521 when "91" had been prepended.)
+export function normalizeIndianPhone(raw: string | null | undefined): string {
+  const last10 = (raw ?? "").replace(/\D/g, "").slice(-10);
+  return last10.length === 10 ? `+91${last10}` : (raw ?? "").trim();
+}

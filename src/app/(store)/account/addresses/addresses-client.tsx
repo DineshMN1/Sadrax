@@ -210,7 +210,7 @@ export default function AddressesClient() {
             ].map(({ k, p, mode }) => (
               <input key={k} placeholder={p} inputMode={mode}
                 value={(form as Record<string,string>)[k]}
-                onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+                onChange={e => setForm(f => ({ ...f, [k]: k === "phone" ? e.target.value.replace(/\D/g, "").slice(-10) : e.target.value }))}
                 className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/20 transition-all"
               />
             ))}
