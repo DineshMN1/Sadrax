@@ -180,6 +180,7 @@ export default async function OrderDetailPage({
         {/* Invoice — only for delivered orders */}
         {order.status === "delivered" && (
           <InvoiceButton
+            orderId={order.id}
             orderNumber={order.orderNumber}
             createdAt={new Date(order.createdAt).toISOString()}
             paymentMethod={order.paymentMethod}

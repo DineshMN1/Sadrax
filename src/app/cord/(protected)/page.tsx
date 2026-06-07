@@ -8,6 +8,9 @@ import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, Refres
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { PanelSwitcher } from "@/components/panel-switcher";
+import { invoiceNumber } from "@/lib/invoice";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
 interface OrderItem {
   id: number;
@@ -96,7 +99,8 @@ function printBill(order: Order) {
     <h1>Sadrax Grocery</h1>
     <p class="center muted" style="margin:2px 0 8px">Bill / Receipt</p>
     <hr>
-    <div class="row"><span class="muted">Order</span><strong>#${order.orderNumber}</strong></div>
+    <div class="row"><span class="muted">Invoice</span><strong>${invoiceNumber(order.id)}</strong></div>
+    <div class="row"><span class="muted">Order</span><span>#${order.orderNumber}</span></div>
     <div class="row"><span class="muted">Date</span><span>${date}</span></div>
     <div class="row"><span class="muted">Status</span><span>${escapeHtml(STATUS_LABELS[order.status as OrderStatus] ?? order.status)}</span></div>
     <div class="row"><span class="muted">Payment</span><span>${order.paymentMethod.toUpperCase()}</span></div>
@@ -226,6 +230,8 @@ Delivery: ${order.deliveryFee === 0 ? "FREE" : rupee(order.deliveryFee)}${order.
 *Total: ${rupee(order.total)}* (${order.paymentMethod.toUpperCase()})
 
 Your order is being prepared and will reach you soon. We truly appreciate your support! 💚
+
+🧾 Invoice: ${APP_URL}/orders/${order.id}/invoice
 — Team Sadrax`;
     return `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
   };
