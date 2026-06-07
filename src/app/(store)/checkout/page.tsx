@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/utils";
 import { useStoreConfig } from "@/store/config";
 import { track } from "@/lib/analytics";
 import { requestCoords, getCachedCoords } from "@/lib/geo";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
 
@@ -39,6 +40,7 @@ export default function CheckoutPage() {
   const minOrderValue = useStoreConfig(s => s.minOrderValue);
   const isDeliverable = (pc: string) => pincodes.includes(pc.trim());
   const placedRef = useRef(false);
+  const [authChecked, setAuthChecked]         = useState(false);
   const [addresses, setAddresses]             = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");
@@ -55,6 +57,19 @@ export default function CheckoutPage() {
   const [newAddress, setNewAddress]           = useState({
     name: "", phone: "", line1: "", line2: "", city: "Sadras", pincode: "", label: "home",
   });
+
+  // Require login before checkout — bounce to login and come straight back here.
+  useEffect(() => {
+    let active = true;
+    authClient.getSession()
+      .then(res => {
+        if (!active) return;
+        if (res?.data) setAuthChecked(true);
+        else router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
+      })
+      .catch(() => { if (active) router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`); });
+    return () => { active = false; };
+  }, [router]);
 
   // Live stock re-check (cart is persisted and can go stale; also guards
   // against deep-linking straight to /checkout past the cart's block)
@@ -88,6 +103,7 @@ export default function CheckoutPage() {
   const tot = total();
 
   useEffect(() => {
+    if (!authChecked) return;
     track("checkout_started", { value: subtotal() / 100, items: items.length });
     fetch("/api/addresses")
       .then(r => r.json())
@@ -96,10 +112,10 @@ export default function CheckoutPage() {
         const def = data.addresses?.find((a: Address) => a.isDefault);
         if (def) setSelectedAddress(def.id);
       })
-      .catch(() => toast.error("Could not load addresses"))
+      .catch(() => toast.error("Couldn't load your saved addresses. Please check your connection and try again."))
       .finally(() => setLoadingAddr(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authChecked]);
 
   const handleSaveAddress = async () => {
     if (!newAddress.name || !newAddress.phone || !newAddress.line1 || !newAddress.line2 || !newAddress.pincode) {
@@ -117,19 +133,28 @@ export default function CheckoutPage() {
         return;
       }
     }
-    const res = await fetch("/api/addresses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newAddress, lat: pinLat, lng: pinLng }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setAddresses(prev => [...prev, data.address]);
-      setSelectedAddress(data.address.id);
-      setShowAddAddress(false);
-      toast.success("Address saved successfully");
-    } else {
-      toast.error(data.error ?? "Could not save address");
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newAddress, lat: pinLat, lng: pinLng }),
+      });
+      if (res.status === 401) {
+        toast.error("Please sign in to save your address — taking you to login.");
+        router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        setAddresses(prev => [...prev, data.address]);
+        setSelectedAddress(data.address.id);
+        setShowAddAddress(false);
+        toast.success("Address saved");
+      } else {
+        toast.error(data.error ?? "We couldn't save this address. Please check the details and try again.");
+      }
+    } catch {
+      toast.error("Network problem — please check your connection and try again.");
     }
   };
 
@@ -166,9 +191,15 @@ export default function CheckoutPage() {
           deliverySlot: slot || null,
         }),
       });
+      if (res.status === 401) {
+        toast.error("Your session expired — please sign in again to place your order.");
+        router.replace(`/login?redirect=${encodeURIComponent("/checkout")}`);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Could not place order");
+        // Server messages here are already specific (e.g. "Only 2 left", min order, store closed)
+        toast.error(data.error ?? "We couldn't place your order. Please try again.");
         return;
       }
       track("order_placed", {
@@ -183,7 +214,7 @@ export default function CheckoutPage() {
       toast.success("Order placed!", { description: `#${data.orderNumber}` });
       clearCart();
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.error("Couldn't place your order — please check your connection and try again.");
     } finally {
       setPlacing(false);
     }
@@ -196,10 +227,21 @@ export default function CheckoutPage() {
 
   if (items.length === 0) return null;
 
-  // Full-screen map overlay
+  // Verifying login before showing checkout
+  if (!authChecked) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-gray-400">
+        <Loader2 size={28} className="animate-spin text-green-600" />
+        <p className="text-sm">Getting your checkout ready…</p>
+      </div>
+    );
+  }
+
+  // Full-screen map overlay — fixed + above the bottom nav (z-40) so the
+  // Confirm button isn't hidden behind it.
   if (showMap) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="fixed inset-0 z-50 flex flex-col bg-white">
         <div className="px-4 pt-4 pb-2 glass border-b border-gray-100">
           <div className="flex items-center gap-3">
             <button onClick={() => setShowMap(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">

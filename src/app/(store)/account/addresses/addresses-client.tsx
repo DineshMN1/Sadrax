@@ -136,7 +136,7 @@ export default function AddressesClient() {
 
   if (showMap) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="fixed inset-0 z-50 flex flex-col bg-white">
         <div className="px-4 pt-4 pb-2 glass border-b border-gray-100">
           <div className="flex items-center gap-3">
             <button onClick={() => setShowMap(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">

@@ -11,70 +11,58 @@ interface Props {
   onClose?: () => void;
 }
 
-// Leaflet is browser-only — load dynamically to avoid SSR issues
+// Leaflet is browser-only — load dynamically to avoid SSR issues.
+// UX: a FIXED pin sits at the map centre and the user pans the map under it
+// (much easier on mobile than dragging a marker).
 export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const leafletRef = useRef<unknown>(null);
   const mapInstanceRef = useRef<unknown>(null);
-  const markerRef = useRef<unknown>(null);
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [position, setPosition] = useState<LatLng>(
     defaultCenter ?? { lat: 12.5574, lng: 80.1842 } // Sadras default
   );
   const [displayAddr, setDisplayAddr] = useState("");
   const [locating, setLocating] = useState(false);
   const [ready, setReady] = useState(false);
+  const [moving, setMoving] = useState(false);
 
-  // Initialise Leaflet after mount.
-  // We use mapInstanceRef (a stable ref) in the cleanup so the
-  // async initialiser and the cleanup always share the same value —
-  // fixing the StrictMode double-invoke "already initialized" error.
   useEffect(() => {
-    let destroyed = false; // guard: don't set state after cleanup
+    let destroyed = false;
 
     (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const L: any = (await import("leaflet")).default;
-
-      // Fix default icon paths broken by webpack/turbopack bundling
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      });
-
       if (!mapRef.current || destroyed) return;
 
-      // If the container already has a map from a previous StrictMode run, remove it first
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((mapRef.current as any)._leaflet_id) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (L.map as any)(mapRef.current).remove?.();
       }
 
-      const map = L.map(mapRef.current).setView([position.lat, position.lng], 16);
+      const map = L.map(mapRef.current, { zoomControl: true, attributionControl: true })
+        .setView([position.lat, position.lng], 16);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
       }).addTo(map);
 
-      const marker = L.marker([position.lat, position.lng], { draggable: true }).addTo(map);
-      marker.on("dragend", () => {
-        const { lat, lng } = marker.getLatLng();
-        setPosition({ lat, lng });
-        reverseGeocode(lat, lng);
+      // The pin = the map centre. Track it live while panning, reverse-geocode on stop.
+      map.on("movestart", () => setMoving(true));
+      map.on("move", () => {
+        const c = map.getCenter();
+        setPosition({ lat: c.lat, lng: c.lng });
       });
-      map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
-        const { lat, lng } = e.latlng;
-        marker.setLatLng([lat, lng]);
-        setPosition({ lat, lng });
-        reverseGeocode(lat, lng);
+      map.on("moveend", () => {
+        setMoving(false);
+        const c = map.getCenter();
+        if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
+        geocodeTimer.current = setTimeout(() => reverseGeocode(c.lat, c.lng), 350);
       });
 
-      // Store in refs so cleanup and sibling handlers always see the live instance
-      leafletRef.current   = L;
       mapInstanceRef.current = map;
-      markerRef.current    = marker;
+      // Leaflet sometimes needs a nudge to size correctly inside a flex/overlay
+      setTimeout(() => map.invalidateSize(), 100);
 
       if (!destroyed) {
         setReady(true);
@@ -84,13 +72,11 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
 
     return () => {
       destroyed = true;
-      // Destroy via ref — local vars in the IIFE may not be set yet when StrictMode
-      // unmounts the first render, so the ref is the only reliable handle.
+      if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
       if (mapInstanceRef.current) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (mapInstanceRef.current as any).remove();
         mapInstanceRef.current = null;
-        markerRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,15 +88,14 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
       );
       const data = await res.json();
-      const addr = data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      setDisplayAddr(addr);
+      setDisplayAddr(data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
     } catch {
       setDisplayAddr(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
     }
   };
 
   const handleLocateMe = () => {
-    if (!navigator.geolocation) { alert("Geolocation not supported"); return; }
+    if (!navigator.geolocation) { alert("Geolocation not supported on this device"); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
@@ -118,18 +103,15 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
         setPosition({ lat, lng });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (mapInstanceRef.current as any)?.setView([lat, lng], 17);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (markerRef.current as any)?.setLatLng([lat, lng]);
         reverseGeocode(lat, lng);
         setLocating(false);
       },
-      () => { setLocating(false); alert("Could not get location. Drop pin manually."); },
+      () => { setLocating(false); alert("Couldn't get your location. Pan the map to set the pin manually."); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  // Auto-locate the user the moment the map is ready (unless we were given a
-  // saved pin to edit) so it lands on their live location, not the store default.
+  // Auto-locate on open (unless editing a saved pin) so it lands on live location.
   const autoLocatedRef = useRef(false);
   useEffect(() => {
     if (ready && !defaultCenter && !autoLocatedRef.current) {
@@ -145,32 +127,49 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
       <div className="relative flex-1 min-h-0">
         <div ref={mapRef} className="w-full h-full" />
 
-        {/* Center crosshair hint */}
         {!ready && (
-          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-[1200]">
             <Loader2 className="animate-spin text-green-600" size={28} />
           </div>
         )}
 
-        {/* Locate me button */}
+        {/* Fixed centre pin — tip points at the exact map centre */}
+        {ready && (
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[1000] -translate-x-1/2 -translate-y-full transition-transform" style={{ marginTop: moving ? -6 : 0 }}>
+            <MapPin size={42} className="text-green-600 drop-shadow-md" fill="#16a34a" stroke="#ffffff" strokeWidth={1.5} />
+          </div>
+        )}
+        {/* tiny dot at the exact centre point */}
+        {ready && (
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[999] -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-green-700/70" />
+        )}
+
+        {/* hint */}
+        {ready && (
+          <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full">
+            Move the map to position the pin
+          </div>
+        )}
+
+        {/* Locate me */}
         <button
           onClick={handleLocateMe}
           disabled={locating}
-          className="absolute top-3 right-3 z-1000 bg-white shadow-md rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+          className="absolute bottom-3 right-3 z-[1000] bg-white shadow-md rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
         >
           {locating ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} className="text-green-600" />}
-          {locating ? "Locating…" : "Use my location"}
+          {locating ? "Locating…" : "My location"}
         </button>
       </div>
 
       {/* Bottom sheet */}
-      <div className="bg-white border-t border-gray-100 p-4 space-y-3">
+      <div className="bg-white border-t border-gray-100 p-4 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-start gap-3">
           <MapPin size={18} className="text-green-600 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Delivery location</p>
             <p className="text-sm text-gray-800 leading-snug line-clamp-2">
-              {displayAddr || "Move the pin to your delivery location"}
+              {displayAddr || "Move the map to your delivery location"}
             </p>
           </div>
         </div>

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkles, AlertTriangle } from "lucide-react";
+import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkles, AlertTriangle, Truck } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
@@ -56,11 +56,15 @@ export default function CartPage() {
 
   const cfgDeliveryFee = useStoreConfig(s => s.deliveryFee);
   const minOrderValue  = useStoreConfig(s => s.minOrderValue);
+  const freeDeliveryThreshold = useStoreConfig(s => s.freeDeliveryThreshold);
   const sub = subtotal();
   const fee = deliveryFee();
   const tot = total();
   const savings = discount + (fee === 0 && sub > 0 ? cfgDeliveryFee : 0);
   const belowMin = sub > 0 && sub < minOrderValue;
+  // Non-blocking nudge: eligible to check out, but a bit more unlocks free delivery
+  const freeDeliveryGap = !belowMin && !hasStockIssue && fee > 0 && sub > 0 ? freeDeliveryThreshold - sub : 0;
+  const unlockedFreeDelivery = !belowMin && !hasStockIssue && fee === 0 && sub > 0;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -266,6 +270,22 @@ export default function CartPage() {
             <AlertTriangle size={15} className="text-amber-500 shrink-0" />
             <p className="text-xs font-semibold text-amber-700">
               Add {formatPrice(minOrderValue - sub)} more to reach the {formatPrice(minOrderValue)} minimum order.
+            </p>
+          </div>
+        )}
+        {freeDeliveryGap > 0 && (
+          <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-3.5 py-2.5">
+            <Truck size={15} className="text-green-600 shrink-0" />
+            <p className="text-xs font-semibold text-green-700">
+              Add {formatPrice(freeDeliveryGap)} more to get <span className="font-extrabold">FREE delivery!</span>
+            </p>
+          </div>
+        )}
+        {unlockedFreeDelivery && (
+          <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-3.5 py-2.5">
+            <Truck size={15} className="text-green-600 shrink-0" />
+            <p className="text-xs font-semibold text-green-700">
+              You&rsquo;ve unlocked <span className="font-extrabold">FREE delivery</span> on this order!
             </p>
           </div>
         )}
