@@ -1,11 +1,36 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRecentlyViewed } from "@/store/recently-viewed";
 import { ProductCard } from "@/components/store/product-card";
 import { Clock } from "lucide-react";
 
 export function RecentlyViewedSection() {
   const { items, clear } = useRecentlyViewed();
+  const shown = items.slice(0, 4);
+
+  // Recently-viewed is persisted in localStorage, so its stock is frozen at
+  // view time. Re-fetch live stock so a now-out-of-stock item shows correctly
+  // (and can't be added). Products missing from the response = inactive → 0.
+  const idsKey = useMemo(() => shown.map(p => p.id).sort((a, b) => a - b).join(","), [shown]);
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!idsKey) { setLoaded(true); return; }
+    let active = true;
+    fetch(`/api/products?ids=${idsKey}`)
+      .then(r => r.json())
+      .then((d: { products?: { id: number; stock: number }[] }) => {
+        if (!active) return;
+        const m: Record<number, number> = {};
+        for (const p of d.products ?? []) m[p.id] = p.stock;
+        setStockMap(m);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setLoaded(true); });
+    return () => { active = false; };
+  }, [idsKey]);
 
   if (items.length === 0) return null;
 
@@ -23,7 +48,7 @@ export function RecentlyViewedSection() {
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {items.slice(0, 4).map(p => (
+        {shown.map(p => (
           <ProductCard
             key={p.id}
             id={p.id}
@@ -32,7 +57,7 @@ export function RecentlyViewedSection() {
             mrp={p.mrp}
             unit={p.unit}
             images={p.images}
-            stock={p.stock}
+            stock={loaded ? (stockMap[p.id] ?? 0) : p.stock}
           />
         ))}
       </div>
