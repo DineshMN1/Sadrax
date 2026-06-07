@@ -20,6 +20,9 @@ export function formatNewOrderMessage(order: {
   customerName?: string | null;
   phone?: string | null;
   total: number;
+  subtotal?: number;
+  deliveryFee?: number;
+  discount?: number;
   items: { name: string; qty: number; price: number }[]; // price = unit price in paise
   address?: string;
   paymentMethod: string;
@@ -30,12 +33,19 @@ export function formatNewOrderMessage(order: {
     .map(i => `  • ${i.name} × ${i.qty} — ${rupee(i.price * i.qty)} <i>(${rupee(i.price)} ea)</i>`)
     .join("\n");
 
+  const bill: string[] = [];
+  if (order.subtotal != null) bill.push(`Subtotal: ${rupee(order.subtotal)}`);
+  if (order.deliveryFee != null) bill.push(`🚚 Delivery: ${order.deliveryFee === 0 ? "FREE" : rupee(order.deliveryFee)}`);
+  if (order.discount) bill.push(`Discount: -${rupee(order.discount)}`);
+  const billBlock = bill.length ? `\n${bill.join("\n")}` : "";
+
   return `🛒 <b>New Order #${order.orderNumber}</b>
 
 👤 ${order.customerName ?? "Customer"} · ${order.phone ?? "—"}
 📍 ${order.address ?? "—"}
-💳 ${order.paymentMethod.toUpperCase()} · <b>${rupee(order.total)}</b>
 
 <b>Items:</b>
-${itemLines}${order.cordUrl ? `\n\n🔗 <a href="${order.cordUrl}">Open in Cord →</a>` : ""}`;
+${itemLines}
+${billBlock}
+💳 ${order.paymentMethod.toUpperCase()} · <b>Total ${rupee(order.total)}</b>${order.cordUrl ? `\n\n🔗 <a href="${order.cordUrl}">Open in Cord →</a>` : ""}`;
 }

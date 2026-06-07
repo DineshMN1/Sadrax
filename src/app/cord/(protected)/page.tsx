@@ -240,7 +240,7 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
 
   // Rich WhatsApp message with the order summary + a thank-you.
   const whatsappHref = () => {
-    const phone = (order.customerPhone ?? "").replace(/^\+91/, "").replace(/\D/g, "");
+    const phone = (order.customerPhone ?? "").replace(/\D/g, "").slice(-10); // last 10 digits, strips any +91/91/0 prefix
     const itemLines = order.items.map(i => `• ${i.productName}${i.productUnit ? ` (${i.productUnit})` : ""} × ${i.quantity}`).join("\n");
     const rupee = (p: number) => `₹${(p / 100).toFixed(0)}`;
     const msg =
@@ -415,7 +415,7 @@ Your order is being prepared and will reach you soon. We truly appreciate your s
           {/* Call customer */}
           {order.customerPhone && (
             <a
-              href={`tel:${order.customerPhone}`}
+              href={`tel:+91${order.customerPhone.replace(/\D/g, "").slice(-10)}`}
               className="flex items-center justify-center gap-1.5 h-9 px-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors"
             >
               <Phone size={13} /> Call
@@ -459,7 +459,7 @@ Your order is being prepared and will reach you soon. We truly appreciate your s
               value={freeInput}
               onChange={e => setFreeInput(e.target.value)}
               placeholder="Note for customer (e.g. On the house! 🎉)"
-              className="flex-1 h-9 px-3 bg-white border border-pink-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+              className="flex-1 h-9 px-3 bg-white border border-pink-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-pink-400"
             />
             <button onClick={makeFree} disabled={freeing}
               className="h-9 px-3 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 shrink-0">

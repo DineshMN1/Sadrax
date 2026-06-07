@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Clock, IndianRupee, Package } from "lucide-react";
+import { Search, ShoppingBag, Clock, IndianRupee, Package, FileText } from "lucide-react";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, ORDER_STATUSES, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -88,7 +88,7 @@ export function OrdersManager({ orders }: { orders: AdminOrder[] }) {
         <table className="w-full text-sm min-w-150">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              {["Order", "Customer", "Items", "Status", "Payment", "Total", "Time"].map((h) => (
+              {["Order", "Customer", "Items", "Status", "Payment", "Total", "Time", "Invoice"].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -114,10 +114,16 @@ export function OrdersManager({ orders }: { orders: AdminOrder[] }) {
                 <td className="px-4 py-3 text-gray-500 uppercase text-xs">{o.paymentMethod}</td>
                 <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatPrice(o.total)}</td>
                 <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDistanceToNow(new Date(o.createdAt), { addSuffix: true })}</td>
+                <td className="px-4 py-3">
+                  <a href={`/orders/${o.id}/invoice`} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-700 hover:underline whitespace-nowrap">
+                    <FileText size={12} /> View
+                  </a>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-400 text-sm">
+              <tr><td colSpan={8} className="px-4 py-12 text-center text-gray-400 text-sm">
                 {orders.length === 0 ? "No orders yet" : "No orders match this filter"}
               </td></tr>
             )}

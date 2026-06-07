@@ -16,10 +16,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
+  // Admin/staff can view any invoice; customers only their own.
+  const isStaff = ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
   const [order] = await db
     .select()
     .from(orders)
-    .where(and(eq(orders.id, Number(id)), eq(orders.userId, session.user.id)))
+    .where(isStaff
+      ? eq(orders.id, Number(id))
+      : and(eq(orders.id, Number(id)), eq(orders.userId, session.user.id)))
     .limit(1);
   if (!order) return new NextResponse("Invoice not found", { status: 404 });
 

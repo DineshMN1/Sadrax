@@ -293,6 +293,7 @@ export default function CheckoutPage() {
               ) : (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3 animate-slide-up">
                   <h3 className="text-sm font-extrabold text-gray-900">New Address</h3>
+                  <p className="text-xs text-gray-400 -mt-1">Ordering for someone else? Enter <span className="font-semibold text-gray-500">their</span> name, phone &amp; pin their location.</p>
                   <button
                     onClick={() => setShowMap(true)}
                     className={`w-full flex items-center gap-2.5 p-3 rounded-xl border-2 text-sm font-medium transition-all ${

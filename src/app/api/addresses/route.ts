@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, phone, line1, line2, city, pincode, label } = body;
+  const { name, phone, line1, line2, city, pincode, label, lat, lng } = body;
 
   if (!name || !phone || !line1 || !pincode) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
 
   const [address] = await db
     .insert(addresses)
-    .values({ userId: session.user.id, name, phone, line1, line2, city, pincode, label: label ?? "home", isDefault })
+    .values({ userId: session.user.id, name, phone, line1, line2, city, pincode, label: label ?? "home", isDefault,
+      lat: typeof lat === "number" ? lat : null, lng: typeof lng === "number" ? lng : null })
     .returning();
 
   return NextResponse.json({ address });
@@ -46,7 +47,7 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { id, name, phone, line1, line2, city, pincode, label, isDefault } = body;
+  const { id, name, phone, line1, line2, city, pincode, label, isDefault, lat, lng } = body;
 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
@@ -65,7 +66,10 @@ export async function PATCH(req: NextRequest) {
   }
 
   const [updated] = await db.update(addresses)
-    .set({ name, phone, line1, line2, city, pincode, label, ...(isDefault !== undefined ? { isDefault } : {}) })
+    .set({ name, phone, line1, line2, city, pincode, label,
+      ...(isDefault !== undefined ? { isDefault } : {}),
+      ...(typeof lat === "number" ? { lat } : {}),
+      ...(typeof lng === "number" ? { lng } : {}) })
     .where(eq(addresses.id, Number(id)))
     .returning();
 

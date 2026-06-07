@@ -128,6 +128,17 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
     );
   };
 
+  // Auto-locate the user the moment the map is ready (unless we were given a
+  // saved pin to edit) so it lands on their live location, not the store default.
+  const autoLocatedRef = useRef(false);
+  useEffect(() => {
+    if (ready && !defaultCenter && !autoLocatedRef.current) {
+      autoLocatedRef.current = true;
+      handleLocateMe();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Map */}

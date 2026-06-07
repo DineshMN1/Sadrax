@@ -10,6 +10,7 @@ import { CheckCircle2, Package, Truck, MapPin, Clock, ChevronLeft, XCircle, Phon
 import { formatDistanceToNow } from "date-fns";
 import { OrderActions } from "./order-actions";
 import { InvoiceButton } from "./invoice-button";
+import { FreeDeliveryPopper } from "@/components/store/free-delivery-popper";
 import { RepeatOrder } from "./repeat-order";
 import { ReturnRequest } from "./return-request";
 import { canRequestReturn } from "@/lib/returns";
@@ -243,6 +244,9 @@ export default async function OrderDetailPage({
             ))}
           </div>
         </div>
+
+        {/* Free delivery celebration */}
+        {order.deliveryFee === 0 && <FreeDeliveryPopper />}
 
         {/* Bill */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">
