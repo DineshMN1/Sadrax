@@ -55,10 +55,12 @@ export default function CartPage() {
     stockLoaded && items.some(i => i.quantity > (stockMap[i.id] ?? 0));
 
   const cfgDeliveryFee = useStoreConfig(s => s.deliveryFee);
+  const minOrderValue  = useStoreConfig(s => s.minOrderValue);
   const sub = subtotal();
   const fee = deliveryFee();
   const tot = total();
   const savings = discount + (fee === 0 && sub > 0 ? cfgDeliveryFee : 0);
+  const belowMin = sub > 0 && sub < minOrderValue;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -259,12 +261,20 @@ export default function CartPage() {
             </p>
           </div>
         )}
-        {hasStockIssue ? (
+        {!hasStockIssue && belowMin && (
+          <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5">
+            <AlertTriangle size={15} className="text-amber-500 shrink-0" />
+            <p className="text-xs font-semibold text-amber-700">
+              Add {formatPrice(minOrderValue - sub)} more to reach the {formatPrice(minOrderValue)} minimum order.
+            </p>
+          </div>
+        )}
+        {hasStockIssue || belowMin ? (
           <div
             aria-disabled
             className="flex items-center justify-between w-full bg-gray-300 text-white px-5 py-4 rounded-2xl font-bold cursor-not-allowed select-none"
           >
-            <span className="text-base">Proceed to Checkout</span>
+            <span className="text-base">{belowMin && !hasStockIssue ? `Minimum ${formatPrice(minOrderValue)}` : "Proceed to Checkout"}</span>
             <span className="text-base font-extrabold">{formatPrice(tot)}</span>
           </div>
         ) : (

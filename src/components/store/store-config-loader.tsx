@@ -15,6 +15,7 @@ export function StoreConfigLoader() {
         hydrate({
           deliveryFee: d.deliveryFee,
           freeDeliveryThreshold: d.freeDeliveryThreshold,
+          minOrderValue: d.minOrderValue,
           deliveryEta: d.deliveryEta,
           pincodes: Array.isArray(d.pincodes) ? d.pincodes : undefined,
           storeOpen: d.storeOpen,

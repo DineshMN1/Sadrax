@@ -10,6 +10,7 @@ interface Settings {
   close_time: string;
   free_delivery_threshold: string;
   delivery_fee: string;
+  min_order_value: string;
   delivery_eta: string;
   delivery_pincodes: string;
   store_name: string;
@@ -23,7 +24,8 @@ const DEFAULTS: Settings = {
   close_time: "21:00",
   free_delivery_threshold: "20000",
   delivery_fee: "2900",
-  delivery_eta: "30–45 min",
+  min_order_value: "5000",
+  delivery_eta: "15–25 min",
   delivery_pincodes: "603102,603104,603103,603105",
   store_name: "Sadrax Grocery",
   store_address: "Sadras, Tamil Nadu",
@@ -125,11 +127,19 @@ export default function SettingsPage() {
               onChange={e => set("free_delivery_threshold")(String(Math.round(parseFloat(e.target.value) * 100)))}
               className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
           </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 mb-1 block">Minimum Order Value (₹)</label>
+            <input type="number" step="0.01"
+              value={(parseInt(settings.min_order_value || "0") / 100).toString()}
+              onChange={e => set("min_order_value")(String(Math.round(parseFloat(e.target.value) * 100)))}
+              className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
+            <p className="text-xs text-gray-400 mt-1">Customers must order at least this much</p>
+          </div>
         </div>
         <div>
           <label className="text-xs font-semibold text-gray-500 mb-1 block">Estimated Delivery Time</label>
           <input value={settings.delivery_eta} onChange={e => set("delivery_eta")(e.target.value)}
-            placeholder="e.g. 30–45 min"
+            placeholder="e.g. 15–25 min"
             className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
           <p className="text-xs text-gray-400 mt-1">Shown to customers on checkout and order pages</p>
         </div>

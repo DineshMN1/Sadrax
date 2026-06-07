@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, deliveryFee, discount, couponCode, total, clearCart } = useCart();
   const pincodes = useStoreConfig(s => s.pincodes);
+  const minOrderValue = useStoreConfig(s => s.minOrderValue);
   const isDeliverable = (pc: string) => pincodes.includes(pc.trim());
   const [addresses, setAddresses]             = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
@@ -43,7 +44,7 @@ export default function CheckoutPage() {
   const [termsAccepted, setTermsAccepted]     = useState(false);
   const [tip, setTip]                         = useState(0);            // paise
   const [instructions, setInstructions]       = useState("");
-  const [slot, setSlot]                       = useState("Now (30–45 min)");
+  const [slot, setSlot]                       = useState("Now (15–25 min)");
   const [loadingAddr, setLoadingAddr]         = useState(true);
   const [showAddAddress, setShowAddAddress]   = useState(false);
   const [showMap, setShowMap]                 = useState(false);
@@ -124,6 +125,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!selectedAddress) { toast.error("Please select a delivery address"); return; }
     if (items.length === 0) { toast.error("Your cart is empty"); return; }
+    if (subtotal() < minOrderValue) { toast.error(`Minimum order value is ${formatPrice(minOrderValue)}`); return; }
     if (hasStockIssue) return; // inline banner already explains what to fix
     if (!termsAccepted) { toast.error("Please accept the Terms & Conditions"); return; }
 
@@ -314,7 +316,7 @@ export default function CheckoutPage() {
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Delivery time</label>
             <div className="flex flex-wrap gap-2">
-              {["Now (30–45 min)", "Today 5–7 PM", "Today 7–9 PM"].map((s) => (
+              {["Now (15–25 min)", "Today 5–7 PM", "Today 7–9 PM"].map((s) => (
                 <button key={s} onClick={() => setSlot(s)}
                   className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${slot === s ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-200 text-gray-600"}`}>
                   {s}

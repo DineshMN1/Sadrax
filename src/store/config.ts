@@ -9,6 +9,7 @@ import { DELIVERY_FEE, FREE_DELIVERY_THRESHOLD, DELIVERY_PINCODES } from "@/lib/
 interface StoreConfig {
   deliveryFee: number;
   freeDeliveryThreshold: number;
+  minOrderValue: number;
   deliveryEta: string;
   pincodes: string[];
   storeOpen: boolean;
@@ -21,7 +22,8 @@ interface StoreConfig {
 export const useStoreConfig = create<StoreConfig>((set) => ({
   deliveryFee: DELIVERY_FEE,
   freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
-  deliveryEta: "30–45 min",
+  minOrderValue: 5000, // ₹50
+  deliveryEta: "15–25 min",
   pincodes: DELIVERY_PINCODES,
   storeOpen: true,
   storeName: "Sadrax Grocery",

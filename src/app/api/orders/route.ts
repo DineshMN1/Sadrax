@@ -87,6 +87,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sorry, the store is currently closed. Please try again during opening hours." }, { status: 403 });
   }
 
+  // Enforce the minimum order value
+  if (subtotal < settings.minOrderValue) {
+    return NextResponse.json(
+      { error: `Minimum order value is ₹${(settings.minOrderValue / 100).toFixed(0)}. Please add more items.` },
+      { status: 400 },
+    );
+  }
+
   const deliveryFee = computeDeliveryFee(subtotal, settings);
 
   // Validate coupon

@@ -11,6 +11,7 @@ export interface StoreSettings {
   closeTime: string;
   deliveryFee: number;             // paise
   freeDeliveryThreshold: number;   // paise
+  minOrderValue: number;           // paise — minimum cart subtotal to order
   deliveryEta: string;
   pincodes: string[];
   storeName: string;
@@ -32,7 +33,8 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
     closeTime: m.close_time || "21:00",
     deliveryFee: num(m.delivery_fee, DELIVERY_FEE),
     freeDeliveryThreshold: num(m.free_delivery_threshold, FREE_DELIVERY_THRESHOLD),
-    deliveryEta: m.delivery_eta || "30–45 min",
+    minOrderValue: num(m.min_order_value, 5000), // default ₹50
+    deliveryEta: m.delivery_eta || "15–25 min",
     pincodes: (m.delivery_pincodes || DELIVERY_PINCODES.join(","))
       .split(",").map((s) => s.trim()).filter(Boolean),
     storeName: m.store_name || "Sadrax Grocery",
@@ -66,6 +68,7 @@ export function publicSettings(s: StoreSettings) {
   return {
     deliveryFee: s.deliveryFee,
     freeDeliveryThreshold: s.freeDeliveryThreshold,
+    minOrderValue: s.minOrderValue,
     deliveryEta: s.deliveryEta,
     pincodes: s.pincodes,
     storeOpen: s.storeOpen,

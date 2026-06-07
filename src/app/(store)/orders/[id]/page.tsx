@@ -58,7 +58,7 @@ export default async function OrderDetailPage({
     ? (await db.select().from(deliveryPersons).where(eq(deliveryPersons.id, order.deliveryPersonId)).limit(1))[0] ?? null
     : null;
 
-  const eta = etaSetting[0]?.value ?? "30–45 min";
+  const eta = etaSetting[0]?.value ?? "15–25 min";
   const currentIdx = TRACKING_STEPS.findIndex(s => s.status === order.status);
   const isTerminal = ["rejected", "cancelled"].includes(order.status);
 
