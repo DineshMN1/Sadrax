@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
     customerName: customer[0]?.name,
     phone: customer[0]?.phone,
     total: order.total,
-    items: items.map(i => ({ name: i.productName, qty: i.quantity })),
+    items: items.map(i => ({ name: i.productName, qty: i.quantity, price: i.price })),
     paymentMethod: order.paymentMethod,
+    cordUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/cord`,
   }));
 
   return NextResponse.json({ success: true });

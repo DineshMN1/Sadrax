@@ -20,19 +20,22 @@ export function formatNewOrderMessage(order: {
   customerName?: string | null;
   phone?: string | null;
   total: number;
-  items: { name: string; qty: number }[];
+  items: { name: string; qty: number; price: number }[]; // price = unit price in paise
   address?: string;
   paymentMethod: string;
+  cordUrl?: string;
 }): string {
-  const itemLines = order.items.map(i => `  • ${i.name} × ${i.qty}`).join("\n");
-  const total = `₹${(order.total / 100).toFixed(0)}`;
+  const rupee = (p: number) => `₹${(p / 100).toFixed(0)}`;
+  const itemLines = order.items
+    .map(i => `  • ${i.name} × ${i.qty} — ${rupee(i.price * i.qty)} <i>(${rupee(i.price)} ea)</i>`)
+    .join("\n");
 
   return `🛒 <b>New Order #${order.orderNumber}</b>
 
 👤 ${order.customerName ?? "Customer"} · ${order.phone ?? "—"}
 📍 ${order.address ?? "—"}
-💳 ${order.paymentMethod.toUpperCase()} · <b>${total}</b>
+💳 ${order.paymentMethod.toUpperCase()} · <b>${rupee(order.total)}</b>
 
 <b>Items:</b>
-${itemLines}`;
+${itemLines}${order.cordUrl ? `\n\n🔗 <a href="${order.cordUrl}">Open in Cord →</a>` : ""}`;
 }

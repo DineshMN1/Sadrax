@@ -231,9 +231,10 @@ export async function POST(req: NextRequest) {
     customerName: customer?.name,
     phone: customer?.phone,
     total,
-    items: orderItemsData.map((i: { productName: string; quantity: number }) => ({ name: i.productName, qty: i.quantity })),
+    items: orderItemsData.map((i: { productName: string; quantity: number; price: number }) => ({ name: i.productName, qty: i.quantity, price: i.price })),
     address: address ? `${address.line1}${address.line2 ? ", " + address.line2 : ""}, ${address.city ?? ""} ${address.pincode}` : undefined,
     paymentMethod,
+    cordUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/cord`,
   })).catch(() => {});
 
   return NextResponse.json({ orderId: order.id, orderNumber });
