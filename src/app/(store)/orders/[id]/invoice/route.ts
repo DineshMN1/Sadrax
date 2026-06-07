@@ -38,6 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     discount: order.discount,
     total: order.total,
     couponCode: order.couponCode,
+    freeNote: order.freeNote,
     items: items.map((i) => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total })),
     address: addr[0] ?? null,
   });

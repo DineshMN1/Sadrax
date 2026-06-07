@@ -154,6 +154,7 @@ export const orders = pgTable(
     total: integer("total").notNull(),
     couponCode: varchar("coupon_code", { length: 50 }),
     notes: text("notes"),
+    freeNote: text("free_note"),                            // set when staff marks the order free (on the house)
     tip: integer("tip").default(0).notNull(),               // rider tip in paise
     deliveryInstructions: text("delivery_instructions"),    // "leave at door" etc.
     deliverySlot: varchar("delivery_slot", { length: 60 }), // chosen time slot label

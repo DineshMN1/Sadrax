@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut, Zap, Navigation, Eye, EyeOff, Send } from "lucide-react";
+import { Phone, MessageSquare, Printer, Check, X, Package, Truck, MapPin, RefreshCw, LogOut, Zap, Navigation, Eye, EyeOff, Send, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { PanelSwitcher } from "@/components/panel-switcher";
@@ -41,6 +41,7 @@ interface Order {
   discount: number;
   createdAt: string;
   notes?: string;
+  freeNote?: string | null;
   tip?: number;
   deliveryInstructions?: string | null;
   deliverySlot?: string | null;
@@ -140,6 +141,31 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
   const [riderId, setRiderId]           = useState<string>(order.deliveryPersonId ? String(order.deliveryPersonId) : "");
   const [sharing, setSharing]           = useState(false);
   const watchRef                        = useRef<number | null>(null);
+
+  // "On the house" — make the order free with a note
+  const [showFree, setShowFree]         = useState(false);
+  const [freeInput, setFreeInput]       = useState("");
+  const [freeing, setFreeing]           = useState(false);
+  const [freedNote, setFreedNote]       = useState<string | null>(order.freeNote ?? null);
+  const isFree = freedNote != null || order.total === 0;
+
+  const makeFree = async () => {
+    setFreeing(true);
+    try {
+      const res = await fetch(`/api/cord/orders/${order.id}/free`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: freeInput.trim() }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setFreedNote(d.order?.freeNote ?? freeInput.trim() ?? "Your order is on us 🎉");
+        setShowFree(false);
+        toast.success("Order marked FREE — customer notified");
+      } else toast.error("Couldn't mark free");
+    } finally {
+      setFreeing(false);
+    }
+  };
 
   // Directions: route to the customer's pinned GPS spot when we have it, else the typed address.
   const hasPinned = order.deliveryLat != null && order.deliveryLng != null;
@@ -336,8 +362,13 @@ Your order is being prepared and will reach you soon. We truly appreciate your s
         {/* Total */}
         <div className="flex justify-between font-extrabold text-base border-t border-gray-100 pt-2.5">
           <span className="text-gray-900">Total</span>
-          <span className="text-green-600">{formatPrice(order.total)}</span>
+          {isFree
+            ? <span className="text-green-600">FREE <span className="text-xs text-gray-400 line-through font-semibold">{formatPrice(order.total || order.subtotal + order.deliveryFee)}</span></span>
+            : <span className="text-green-600">{formatPrice(order.total)}</span>}
         </div>
+        {isFree && freedNote && (
+          <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2">🎁 {freedNote}</p>
+        )}
 
         {/* View / Direction / Telegram / Contact buttons */}
         <div className="flex gap-2 flex-wrap">
@@ -409,7 +440,34 @@ Your order is being prepared and will reach you soon. We truly appreciate your s
           >
             <Printer size={13} /> Print
           </button>
+
+          {/* Make the order free */}
+          {!isFree && (
+            <button
+              onClick={() => setShowFree(v => !v)}
+              className="flex items-center gap-1.5 h-9 px-3 bg-pink-50 hover:bg-pink-100 rounded-xl text-xs font-semibold text-pink-700 transition-colors"
+            >
+              <Gift size={13} /> Free
+            </button>
+          )}
         </div>
+
+        {/* Free order — note input + confirm */}
+        {showFree && !isFree && (
+          <div className="flex items-center gap-2 bg-pink-50 border border-pink-100 rounded-xl p-2">
+            <input
+              value={freeInput}
+              onChange={e => setFreeInput(e.target.value)}
+              placeholder="Note for customer (e.g. On the house! 🎉)"
+              className="flex-1 h-9 px-3 bg-white border border-pink-200 rounded-lg text-sm focus:outline-none focus:border-pink-400"
+            />
+            <button onClick={makeFree} disabled={freeing}
+              className="h-9 px-3 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 shrink-0">
+              {freeing ? "…" : "Confirm"}
+            </button>
+            <button onClick={() => setShowFree(false)} className="h-9 w-9 flex items-center justify-center text-gray-400 shrink-0"><X size={14} /></button>
+          </div>
+        )}
 
         {/* Expanded items view */}
         {expanded && (

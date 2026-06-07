@@ -189,6 +189,7 @@ export default async function OrderDetailPage({
             discount={order.discount}
             total={order.total}
             couponCode={order.couponCode}
+            freeNote={order.freeNote}
             items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
             address={addressRows[0] ?? null}
           />
