@@ -42,6 +42,8 @@ interface Order {
   deliveryInstructions?: string | null;
   deliverySlot?: string | null;
   deliveryPersonId?: number | null;
+  deliveryLat?: number | null;
+  deliveryLng?: number | null;
   items: OrderItem[];
   address?: OrderAddress;
   customerPhone?: string;
@@ -135,6 +137,10 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
   const [sharing, setSharing]           = useState(false);
   const watchRef                        = useRef<number | null>(null);
 
+  // Directions: route to the customer's pinned GPS spot when we have it, else the typed address.
+  const hasPinned = order.deliveryLat != null && order.deliveryLng != null;
+  const [destMode, setDestMode]         = useState<"pinned" | "address">(hasPinned ? "pinned" : "address");
+
   const assignRider = async (val: string) => {
     setRiderId(val);
     await fetch(`/api/cord/orders/${order.id}/assign`, {
@@ -187,13 +193,19 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
     }
   };
 
+  // Opens Google Maps directions FROM the rider's current location (origin
+  // omitted = device location) TO either the pinned GPS spot or the address.
   const openDirections = () => {
-    if (order.address) {
-      const q = encodeURIComponent(
+    let destination = "";
+    if (destMode === "pinned" && hasPinned) {
+      destination = `${order.deliveryLat},${order.deliveryLng}`;
+    } else if (order.address) {
+      destination = encodeURIComponent(
         `${order.address.line1}${order.address.line2 ? " " + order.address.line2 : ""}, ${order.address.pincode}`
       );
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${q}`, "_blank");
     }
+    if (!destination) return;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`, "_blank");
   };
 
   const handleAction = async (next: OrderStatus) => {
@@ -310,14 +322,26 @@ function OrderCard({ order, onUpdate, riders }: { order: Order; onUpdate: (id: n
             {expanded ? "Hide" : "View"}
           </button>
 
-          {/* Direction button */}
-          {order.address && (
-            <button
-              onClick={openDirections}
-              className="flex items-center gap-1.5 h-9 px-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-xs font-semibold text-blue-700 transition-colors"
-            >
-              <Navigation size={13} /> Direction
-            </button>
+          {/* Direction button (routes from rider's current location) */}
+          {(order.address || hasPinned) && (
+            <div className="flex items-center rounded-xl bg-blue-50 overflow-hidden">
+              <button
+                onClick={openDirections}
+                className="flex items-center gap-1.5 h-9 px-3 hover:bg-blue-100 text-xs font-semibold text-blue-700 transition-colors"
+              >
+                <Navigation size={13} /> Direction
+              </button>
+              {/* Switch destination: pinned GPS ↔ address (only when a pin exists) */}
+              {hasPinned && order.address && (
+                <button
+                  onClick={() => setDestMode(m => (m === "pinned" ? "address" : "pinned"))}
+                  title="Switch destination"
+                  className="h-9 px-2.5 border-l border-blue-100 text-[11px] font-bold text-blue-600 hover:bg-blue-100 transition-colors"
+                >
+                  {destMode === "pinned" ? "📍 Live pin" : "🏠 Address"}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Telegram notify */}
