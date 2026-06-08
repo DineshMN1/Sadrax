@@ -15,9 +15,10 @@ export function StickyCartBar({ className }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Don't show on cart or checkout pages
+  // Hide on cart/checkout, the auth flow (login/register/OTP), and account/orders
+  const HIDE_ON = ["/cart", "/checkout", "/login", "/register", "/account", "/orders"];
   if (!mounted || itemCount === 0) return null;
-  if (pathname === "/cart" || pathname === "/checkout") return null;
+  if (HIDE_ON.some(p => pathname === p || pathname.startsWith(p + "/"))) return null;
 
   return (
     <div className={cn("fixed bottom-16 left-0 right-0 z-30 px-4 pb-1.5", className)}>

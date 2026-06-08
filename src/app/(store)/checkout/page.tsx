@@ -535,7 +535,7 @@ export default function CheckoutPage() {
             {placing && <Loader2 size={18} className="animate-spin" />}
             {placing ? "Placing order…" : "Place Order (Cash / UPI on Delivery)"}
           </span>
-          <span className="text-base font-extrabold">{formatPrice(tot)}</span>
+          <span className="text-base font-extrabold">{formatPrice(tot + tip)}</span>
         </button>
       </div>
     </div>
