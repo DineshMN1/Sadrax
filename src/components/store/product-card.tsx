@@ -188,8 +188,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
               className={cn(
                 "w-full h-8 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all active:scale-90",
                 notifyState === "done"
-                  ? "bg-violet-50 border border-violet-200 text-violet-700"
-                  : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300"
+                  ? "bg-violet-100 border border-violet-300 text-violet-700"
+                  : "bg-violet-50 border border-violet-200 text-violet-600 hover:bg-violet-100 hover:border-violet-300"
               )}
             >
               {notifyState === "loading" ? (

@@ -74,7 +74,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <div className="flex flex-1 min-h-0">
 
         {/* Left rail — narrow on mobile, wider on desktop */}
-        <aside className="w-20 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto sticky top-28 self-start max-h-[calc(100dvh-7rem)]">
+        <aside className="w-16 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto sticky top-28 self-start max-h-[calc(100dvh-7rem)] pb-28">
           <p className="hidden md:block text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 pt-3 pb-1">Categories</p>
           {railCats.map(c => {
             const active = c.slug === cat.slug;
@@ -89,10 +89,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 }`}
               >
                 {/* Icon */}
-                <span className="w-9 h-9 md:w-8 md:h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                <span className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
                   {c.image
-                    ? <Image src={c.image} alt={c.name} width={36} height={36} className="w-full h-full object-cover" />
-                    : <span className="text-lg md:text-base">{getCategoryEmoji(c.slug)}</span>}
+                    ? <Image src={c.image} alt={c.name} width={32} height={32} className="w-full h-full object-cover" />
+                    : <span className="text-base">{getCategoryEmoji(c.slug)}</span>}
                 </span>
                 {/* Name */}
                 <span className={`text-center md:text-left text-[10px] md:text-sm leading-tight line-clamp-2 md:flex-1 md:min-w-0 md:truncate ${

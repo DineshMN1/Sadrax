@@ -26,6 +26,8 @@ export default function CategoriesPage() {
   const [uploading, setUploading] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", slug: "" });
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
 
   const fetchCategories = async () => {
     const res = await fetch("/api/admin/categories");
@@ -86,6 +88,27 @@ export default function CategoriesPage() {
     fetchCategories();
   };
 
+  const handleReorder = async (reordered: Category[]) => {
+    setCategories(reordered.map((c, i) => ({ ...c, order: i })));
+    const res = await fetch("/api/admin/categories/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: reordered.map(c => c.id) }),
+    });
+    if (!res.ok) { toast.error("Failed to save order"); fetchCategories(); }
+    else toast.success("Order saved");
+  };
+
+  const onDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) return;
+    const reordered = [...sorted];
+    const [item] = reordered.splice(dragIdx, 1);
+    reordered.splice(toIdx, 0, item);
+    setDragIdx(null);
+    setDropIdx(null);
+    handleReorder(reordered);
+  };
+
   const startEdit = (cat: Category) => { setEditingId(cat.id); setEditForm({ name: cat.name, slug: cat.slug }); };
   const handleEditSave = async (id: number) => {
     setSaving(true);
@@ -144,12 +167,26 @@ export default function CategoriesPage() {
       ) : (
         <div className="space-y-2.5">
           {sorted.map((cat, i) => (
-            <div key={cat.id} className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
-              {/* Reorder */}
-              <div className="flex flex-col text-gray-300">
-                <button onClick={() => move(cat, -1)} disabled={i === 0} className="hover:text-gray-600 disabled:opacity-30 leading-none text-xs">▲</button>
-                <GripVertical size={14} className="my-0.5 self-center" />
-                <button onClick={() => move(cat, 1)} disabled={i === sorted.length - 1} className="hover:text-gray-600 disabled:opacity-30 leading-none text-xs">▼</button>
+            <div
+              key={cat.id}
+              draggable
+              onDragStart={() => setDragIdx(i)}
+              onDragOver={(e) => { e.preventDefault(); setDropIdx(i); }}
+              onDrop={() => onDrop(i)}
+              onDragEnd={() => { setDragIdx(null); setDropIdx(null); }}
+              className={`flex items-center gap-3 bg-white rounded-2xl border shadow-sm p-3 transition-all select-none ${
+                dragIdx === i
+                  ? "opacity-40 scale-[0.98] border-gray-200"
+                  : dropIdx === i && dragIdx !== i
+                  ? "border-green-400 bg-green-50/50 shadow-green-100"
+                  : "border-gray-100"
+              }`}
+            >
+              {/* Reorder — drag handle + ▲▼ fallback */}
+              <div className="flex flex-col items-center text-gray-300 cursor-grab active:cursor-grabbing shrink-0">
+                <button onClick={() => move(cat, -1)} disabled={i === 0} className="hover:text-gray-600 disabled:opacity-20 leading-none text-xs">▲</button>
+                <GripVertical size={14} className="my-0.5 hover:text-gray-500 transition-colors" />
+                <button onClick={() => move(cat, 1)} disabled={i === sorted.length - 1} className="hover:text-gray-600 disabled:opacity-20 leading-none text-xs">▼</button>
               </div>
 
               {/* Image */}

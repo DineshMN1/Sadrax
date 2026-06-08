@@ -8,6 +8,8 @@ const EMOJI_FALLBACKS: Record<string, string> = {
   oil: "🫙", ghee: "🧈", clean: "🧹", "personal-care": "🧴", care: "🧴",
   bakery: "🍞", bread: "🍞", egg: "🥚", meat: "🍗", chicken: "🍗",
   sauce: "🥫", jam: "🍯", chocolate: "🍫", candy: "🍬", water: "💧",
+  household: "🏠", home: "🏠", kitchen: "🍳", pickle: "🥒", soap: "🧼",
+  toothpaste: "🦷", tooth: "🦷", shampoo: "🧴", noodle: "🍜", pasta: "🍝",
 };
 
 export function getCategoryEmoji(slug: string): string {

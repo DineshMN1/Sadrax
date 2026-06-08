@@ -13,13 +13,13 @@ const spaceGrotesk = Space_Grotesk({
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://sadrax.in";
 const STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME ?? "Sadrax Grocery";
-const DEFAULT_DESC = "Sadras & Kalpakam-ல் fresh groceries — fast local delivery from your neighbourhood store. Order online in 2 taps.";
+const DEFAULT_DESC = "Sadras & Kalpakkam-ல் fresh groceries — fast local delivery from your neighbourhood store. Order online in 2 taps.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: { default: STORE_NAME, template: `%s — ${STORE_NAME}` },
   description: DEFAULT_DESC,
-  keywords: ["grocery delivery", "Sadras grocery", "Kalpakam grocery", "online grocery", "சாதரஸ் கிரசரி", "local delivery", "kirana store", "Sadras", "Kalpakam"],
+  keywords: ["grocery delivery", "Sadras grocery", "Kalpakkam grocery", "online grocery", "சாதரஸ் கிரசரி", "local delivery", "kirana store", "Sadras", "Kalpakkam"],
   creator: STORE_NAME,
   publisher: STORE_NAME,
   other: { copyright: `© 2026 ${STORE_NAME}. All Rights Reserved.` },

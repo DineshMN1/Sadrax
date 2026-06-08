@@ -204,7 +204,7 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
             <button
               onClick={notifyMe}
               disabled={notifying || notified}
-              className="w-full h-13 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold text-base rounded-2xl active:scale-[0.98] transition-all disabled:opacity-60"
+              className="w-full h-13 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-violet-600/30 active:scale-[0.98] transition-all disabled:opacity-70"
             >
               {notifying ? <Loader2 size={18} className="animate-spin" /> : <Bell size={17} />}
               {notified ? "We'll notify you" : "Notify me when back in stock"}
