@@ -25,6 +25,7 @@ export async function runDueSubscriptions(now: Date = new Date()): Promise<{ pla
 
   for (const sub of due) {
     const next = advance(sub.nextRunAt < now ? now : sub.nextRunAt, sub.frequency);
+    const reserved: StockLine[] = [];
     try {
       if (!isStoreOpen(settings, now)) { await bump(sub.id, next); skipped++; continue; }
 
@@ -42,7 +43,6 @@ export async function runDueSubscriptions(now: Date = new Date()): Promise<{ pla
       }
 
       // Reserve stock atomically with compensation
-      const reserved: StockLine[] = [];
       let ok = true;
       for (const l of lines as { p: typeof products.$inferSelect; qty: number }[]) {
         const r = await db.update(products)
@@ -74,6 +74,7 @@ export async function runDueSubscriptions(now: Date = new Date()): Promise<{ pla
       sendPushToUser(sub.userId, { title: "Recurring order placed 🔁", body: `#${order.orderNumber} is on its way.`, url: `/orders/${order.id}` }).catch(() => {});
       placed++;
     } catch {
+      if (reserved.length > 0) await restockItems(reserved);
       await bump(sub.id, next); skipped++;
     }
   }

@@ -134,7 +134,10 @@ export default function CheckoutPage() {
     if (!authChecked) return;
     track("checkout_started", { value: subtotal() / 100, items: items.length });
     fetch("/api/addresses")
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
       .then(data => {
         setAddresses(data.addresses ?? []);
         const def = data.addresses?.find((a: Address) => a.isDefault);

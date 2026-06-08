@@ -331,13 +331,13 @@ function RegisterContent() {
     return () => clearTimeout(t);
   }, [resendCooldown]);
 
-  const validateDetails = () => {
+  const validateDetails = useCallback(() => {
     if (!name.trim() || name.trim().length < 2) { toast.error("Enter your full name"); return false; }
     const ph = phone.replace(/\D/g, "");
     if (ph.length !== 10) { toast.error("Enter a valid 10-digit mobile number"); return false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error("Enter a valid email address"); return false; }
     return true;
-  };
+  }, [name, phone, email]);
 
   const handleSendOtp = useCallback(async () => {
     if (!validateDetails()) return;
@@ -356,8 +356,7 @@ function RegisterContent() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, phone, email]);
+  }, [validateDetails, email]);
 
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) { toast.error("Enter the 6-digit OTP"); return; }
@@ -370,11 +369,14 @@ function RegisterContent() {
       if (res.error) { toast.error(res.error.message ?? "Invalid OTP"); return; }
 
       // Update profile with name + phone
-      await fetch("/api/user/profile", {
+      const profileRes = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone: `+91${phone.replace(/\D/g, "")}` }),
       });
+      if (!profileRes.ok) {
+        toast.error("Couldn't save your profile — you can update it later in Account.");
+      }
 
       setStep("address");
     } catch {

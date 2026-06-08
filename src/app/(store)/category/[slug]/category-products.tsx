@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ProductCard } from "@/components/store/product-card";
-import { ChevronDown, ArrowUpDown, X, Check } from "lucide-react";
+import { ArrowUpDown, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SortKey = "popular" | "price_asc" | "price_desc" | "discount";
@@ -21,11 +21,11 @@ interface Product {
   veg?: string | null;
 }
 
-const SORT_OPTIONS: { value: SortKey; label: string; short: string }[] = [
-  { value: "popular",    label: "Popular",           short: "Popular"   },
-  { value: "price_asc",  label: "Price: Low → High", short: "Price ↑"  },
-  { value: "price_desc", label: "Price: High → Low", short: "Price ↓"  },
-  { value: "discount",   label: "Highest Discount",  short: "Discount" },
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "popular",    label: "Popular"           },
+  { value: "price_asc",  label: "Price: Low → High" },
+  { value: "price_desc", label: "Price: High → Low" },
+  { value: "discount",   label: "Highest Discount"  },
 ];
 
 export function CategoryProducts({ initialItems }: { initialItems: Product[] }) {
@@ -69,7 +69,6 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   }, [initialItems, sort, filters, brand]);
 
   const activeFilters = filters.size;
-  const currentSort  = SORT_OPTIONS.find(o => o.value === sort)!;
 
   if (initialItems.length === 0) {
     return (
@@ -93,18 +92,19 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
             <button
               onClick={() => setShowSort(v => !v)}
               className={cn(
-                "flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+                "relative flex items-center gap-1 h-9 w-9 justify-center rounded-xl border transition-all",
                 sort !== "popular"
                   ? "bg-gray-900 border-gray-900 text-white"
                   : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
               )}
             >
-              <ArrowUpDown size={12} />
-              {currentSort.short}
-              <ChevronDown size={11} className={cn("transition-transform", showSort && "rotate-180")} />
+              <ArrowUpDown size={15} />
+              {sort !== "popular" && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+              )}
             </button>
             {showSort && (
-              <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 min-w-48 animate-slide-up">
+              <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 w-44 animate-slide-up">
                 {SORT_OPTIONS.map(o => (
                   <button
                     key={o.value}

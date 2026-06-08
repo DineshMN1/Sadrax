@@ -56,6 +56,9 @@ export async function POST(req: NextRequest) {
 
   // Check stock
   for (const item of cartItems) {
+    if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+      return NextResponse.json({ error: "Invalid item quantity" }, { status: 400 });
+    }
     const p = dbProducts.find((p) => p.id === item.productId);
     if (!p || p.stock < item.quantity) {
       const msg = !p || p.stock === 0
