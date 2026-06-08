@@ -9,6 +9,7 @@ const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
 import { SearchBar } from "@/components/store/search-bar";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreClosedBanner } from "@/components/store/store-closed-banner";
+import { ActiveOrderBanner } from "@/components/store/active-order-banner";
 import { LocationBanner } from "@/components/store/location-banner";
 import { GreetingHeader } from "@/components/store/greeting-header";
 import { RecentlyViewedSection } from "@/components/store/recently-viewed-section";
@@ -32,11 +33,19 @@ async function getHomeData() {
     getStoreSettings(),
     db.select().from(banners).where(eq(banners.active, true)).orderBy(banners.order, banners.id).limit(5),
   ]);
-  return { cats, featured, topOrdered, allProducts, isOpen: isStoreOpen(settings), pincodes: settings.pincodes, promoBanners };
+  return {
+    cats, featured, topOrdered, allProducts,
+    isOpen: isStoreOpen(settings),
+    pincodes: settings.pincodes,
+    promoBanners,
+    storeClosedMessage: settings.storeClosedMessage,
+    openTime: settings.openTime,
+    closeTime: settings.closeTime,
+  };
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, allProducts, isOpen, pincodes, promoBanners } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen, pincodes, promoBanners, storeClosedMessage, openTime, closeTime } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -69,7 +78,24 @@ export default async function HomePage() {
       <LocationBanner />
 
       <div className="px-4 md:px-6 py-4 space-y-7">
-        {!isOpen && <StoreClosedBanner />}
+        {/* Active order tracker — server rendered, no extra client fetch */}
+        <Suspense fallback={null}>
+          <ActiveOrderBanner />
+        </Suspense>
+
+        {!isOpen && (
+          <StoreClosedBanner
+            openTime={(() => {
+              const [h, m] = openTime.split(":").map(Number);
+              return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+            })()}
+            closeTime={(() => {
+              const [h, m] = closeTime.split(":").map(Number);
+              return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+            })()}
+            message={storeClosedMessage || undefined}
+          />
+        )}
 
         {/* ── Hero banner(s) ────────────────────────────────────────────── */}
         {promoBanners.length > 0 ? (

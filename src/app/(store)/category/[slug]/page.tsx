@@ -32,11 +32,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   ]);
 
   const countMap = new Map(counts.map(c => [c.categoryId, c.n]));
-  // Rail shows only non-empty categories (always include the one being viewed)
   const railCats = allCats.filter(c => c.id === cat.id || (countMap.get(c.id) ?? 0) > 0);
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       {/* Sticky header */}
       <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-3 pb-3 space-y-3">
         <div className="flex items-center gap-3">
@@ -54,47 +53,50 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <Suspense><SearchBar /></Suspense>
       </div>
 
-      {/* Mobile category chips — quick switch */}
-      <div className="md:hidden flex gap-2 overflow-x-auto px-4 py-3 scrollbar-none [&::-webkit-scrollbar]:hidden border-b border-gray-100/80">
-        {railCats.map(c => {
-          const active = c.slug === cat.slug;
-          return (
-            <Link key={c.id} href={`/category/${c.slug}`}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${active ? "bg-green-600 border-green-600 text-white" : "bg-white border-gray-200 text-gray-600"}`}>
-              <span className="text-sm">{getCategoryEmoji(c.slug)}</span>{c.name}
-            </Link>
-          );
-        })}
-      </div>
+      {/* Rail + Products — two-column on ALL screen sizes */}
+      <div className="flex flex-1 min-h-0">
 
-      {/* Desktop: left rail + products | Mobile: products only */}
-      <div className="md:flex md:gap-5 md:px-5 md:py-5">
-        {/* Left rail */}
-        <aside className="hidden md:block w-52 shrink-0">
-          <div className="sticky top-24 space-y-1">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Categories</p>
-            {railCats.map(c => {
-              const active = c.slug === cat.slug;
-              return (
-                <Link key={c.id} href={`/category/${c.slug}`}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${active ? "bg-green-50 text-green-700" : "text-gray-600 hover:bg-gray-50"}`}>
-                  <span className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                    {c.image
-                      ? <Image src={c.image} alt={c.name} width={32} height={32} className="w-full h-full object-cover" />
-                      : <span className="text-base">{getCategoryEmoji(c.slug)}</span>}
-                  </span>
-                  <span className="flex-1 min-w-0 truncate">{c.name}</span>
-                  <span className={`text-[11px] ${active ? "text-green-500" : "text-gray-300"}`}>{countMap.get(c.id) ?? 0}</span>
-                </Link>
-              );
-            })}
-          </div>
+        {/* Left rail — narrow on mobile, wider on desktop */}
+        <aside className="w-20 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto sticky top-28 self-start max-h-[calc(100dvh-7rem)]">
+          <p className="hidden md:block text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 pt-3 pb-1">Categories</p>
+          {railCats.map(c => {
+            const active = c.slug === cat.slug;
+            return (
+              <Link
+                key={c.id}
+                href={`/category/${c.slug}`}
+                className={`flex flex-col md:flex-row items-center md:items-center gap-0.5 md:gap-2.5 px-1.5 md:px-3 py-2.5 md:py-2 transition-colors border-l-2 ${
+                  active
+                    ? "border-green-500 bg-green-50"
+                    : "border-transparent hover:bg-gray-50"
+                }`}
+              >
+                {/* Icon */}
+                <span className="w-9 h-9 md:w-8 md:h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                  {c.image
+                    ? <Image src={c.image} alt={c.name} width={36} height={36} className="w-full h-full object-cover" />
+                    : <span className="text-lg md:text-base">{getCategoryEmoji(c.slug)}</span>}
+                </span>
+                {/* Name */}
+                <span className={`text-center md:text-left text-[10px] md:text-sm leading-tight line-clamp-2 md:flex-1 md:min-w-0 md:truncate ${
+                  active ? "font-bold text-green-700" : "font-medium text-gray-600"
+                }`}>
+                  {c.name}
+                </span>
+                {/* Count — desktop only */}
+                <span className={`hidden md:block text-[11px] ${active ? "text-green-500" : "text-gray-300"}`}>
+                  {countMap.get(c.id) ?? 0}
+                </span>
+              </Link>
+            );
+          })}
         </aside>
 
         {/* Products */}
-        <div className="flex-1 min-w-0 px-4 py-4 md:p-0">
+        <div className="flex-1 min-w-0 px-3 py-3 md:px-5 md:py-5">
           <CategoryProducts initialItems={items} />
         </div>
+
       </div>
     </div>
   );

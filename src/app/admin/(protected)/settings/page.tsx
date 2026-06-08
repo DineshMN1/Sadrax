@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Store, Truck, Clock, MapPin } from "lucide-react";
+import { Save, Store, Truck, Clock, MapPin, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 interface Settings {
@@ -16,6 +16,7 @@ interface Settings {
   store_name: string;
   store_address: string;
   store_phone: string;
+  store_closed_message: string;
 }
 
 const DEFAULTS: Settings = {
@@ -30,12 +31,32 @@ const DEFAULTS: Settings = {
   store_name: "Sadrax Grocery",
   store_address: "Sadras, Tamil Nadu",
   store_phone: "",
+  store_closed_message: "",
 };
+
+function fmt12(hhmm: string) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function computeIsOpen(s: Settings): boolean {
+  if (s.store_open !== "true") return false;
+  const now = new Date();
+  const cur = now.toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const { open_time: o, close_time: c } = s;
+  if (!o || !c) return true;
+  return o <= c ? cur >= o && cur < c : cur >= o || cur < c;
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     fetch("/api/admin/settings")
@@ -44,6 +65,12 @@ export default function SettingsPage() {
         setSettings(s => ({ ...s, ...data.settings }));
         setLoading(false);
       });
+  }, []);
+
+  // Tick every minute so the live status badge stays accurate
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   const handleSave = async () => {
@@ -64,6 +91,12 @@ export default function SettingsPage() {
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin" /></div>;
 
+  const liveOpen = computeIsOpen({ ...settings });
+  void now; // consumed only to trigger re-render on tick
+
+  const isManualOff = settings.store_open !== "true";
+  const isTimeClosed = settings.store_open === "true" && !computeIsOpen(settings);
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
@@ -80,10 +113,29 @@ export default function SettingsPage() {
           <Store size={16} className="text-green-600" />
           <h2 className="font-semibold text-gray-900">Store Status</h2>
         </div>
-        <div className="flex items-center justify-between py-2">
+
+        {/* Live status badge */}
+        <div className={`flex items-center gap-2.5 rounded-xl px-4 py-3 ${liveOpen ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${liveOpen ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-bold ${liveOpen ? "text-green-800" : "text-red-800"}`}>
+              {liveOpen ? "Orders are open" : "Orders are paused"}
+            </p>
+            <p className={`text-xs mt-0.5 ${liveOpen ? "text-green-600" : "text-red-600"}`}>
+              {isManualOff
+                ? "Toggle is OFF — all new orders paused"
+                : isTimeClosed
+                ? `Outside hours · Opens at ${fmt12(settings.open_time)}`
+                : `Open ${fmt12(settings.open_time)} – ${fmt12(settings.close_time)}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle row */}
+        <div className="flex items-center justify-between py-1">
           <div>
-            <p className="text-sm font-semibold text-gray-900">Store is Open</p>
-            <p className="text-xs text-gray-400">Toggle to pause all new orders</p>
+            <p className="text-sm font-semibold text-gray-900">Accept new orders</p>
+            <p className="text-xs text-gray-400">Turn off to pause all new orders instantly</p>
           </div>
           <button
             onClick={() => set("store_open")(settings.store_open === "true" ? "false" : "true")}
@@ -92,6 +144,8 @@ export default function SettingsPage() {
             <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.store_open === "true" ? "left-6" : "left-0.5"}`} />
           </button>
         </div>
+
+        {/* Open/close hours */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1 block">Opens at</label>
@@ -103,6 +157,21 @@ export default function SettingsPage() {
             <input type="time" value={settings.close_time} onChange={e => set("close_time")(e.target.value)}
               className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none" />
           </div>
+        </div>
+
+        {/* Closed message for customers */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <MessageSquare size={13} className="text-gray-400" />
+            <label className="text-xs font-semibold text-gray-500">Message when closed (shown to customers)</label>
+          </div>
+          <input
+            value={settings.store_closed_message}
+            onChange={e => set("store_closed_message")(e.target.value)}
+            placeholder="e.g. We'll be back tomorrow at 8 AM! 🙏"
+            className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none"
+          />
+          <p className="text-xs text-gray-400 mt-1">Leave blank to show default open-hours message</p>
         </div>
       </div>
 

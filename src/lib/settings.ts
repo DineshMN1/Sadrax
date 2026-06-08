@@ -17,6 +17,7 @@ export interface StoreSettings {
   storeName: string;
   storeAddress: string;
   storePhone: string;
+  storeClosedMessage: string;
 }
 
 // Cached per request so multiple callers share one DB read.
@@ -40,6 +41,7 @@ export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
     storeName: m.store_name || "Sadrax Grocery",
     storeAddress: m.store_address || "Sadras, Tamil Nadu",
     storePhone: m.store_phone || "",
+    storeClosedMessage: m.store_closed_message || "",
   };
 });
 
@@ -74,6 +76,7 @@ export function publicSettings(s: StoreSettings) {
     storeOpen: s.storeOpen,
     storeName: s.storeName,
     storePhone: s.storePhone,
+    storeClosedMessage: s.storeClosedMessage,
   };
 }
 export type PublicSettings = ReturnType<typeof publicSettings>;
