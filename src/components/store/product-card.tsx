@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 
-type VariantItem = { unit: string; price: number; mrp?: number | null; stock: number };
+type VariantItem = { unit: string; price: number; mrp?: number | null; stock: number; image?: string | null };
 
 interface ProductCardProps {
   id: number;
@@ -42,8 +42,9 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     return { price, mrp: mrp ?? null, stock, unit: unit ?? "" };
   }, [hasVariants, variants, selectedIdx, price, mrp, stock, unit]);
 
-  const variantIdx = hasVariants ? selectedIdx : 0;
-  const cartItem  = items.find(i => i.id === id && i.variantIdx === variantIdx);
+  const variantIdx    = hasVariants ? selectedIdx : 0;
+  const displayThumb  = (active as VariantItem).image || thumb;
+  const cartItem      = items.find(i => i.id === id && i.variantIdx === variantIdx);
   const qty       = cartItem?.quantity ?? 0;
   const discount  = active.mrp && active.mrp > active.price ? Math.round(((active.mrp - active.price) / active.mrp) * 100) : null;
   const outOfStock = active.stock === 0;
@@ -58,7 +59,7 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     if (outOfStock) return;
-    addItem({ id, variantIdx, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: thumb });
+    addItem({ id, variantIdx, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: displayThumb });
     fireFlash("added");
   };
 
@@ -99,9 +100,9 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     >
       {/* Image */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {thumb ? (
+        {displayThumb ? (
           <Image
-            src={thumb}
+            src={displayThumb}
             alt={name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"

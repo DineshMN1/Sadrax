@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ChevronLeft, Upload, Trash2, AlertTriangle, Plus, Save, Loader2 } from "lucide-react";
+import { ChevronLeft, Upload, Trash2, AlertTriangle, Plus, Save, Loader2, ImagePlus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -10,14 +10,14 @@ import { toSlug } from "@/lib/utils";
 
 interface Category { id: number; name: string }
 
-type Variant = { unit: string; price: string; mrp: string; stock: string };
+type Variant = { unit: string; price: string; mrp: string; stock: string; image: string };
 
 interface Product {
   id: number; name: string; slug: string; description: string | null;
   price: number; mrp: number | null; unit: string | null; stock: number;
   categoryId: number | null; images: string[]; active: boolean; featured: boolean;
   brand: string | null; veg: string | null;
-  variants: { unit: string; price: number; mrp: number | null; stock: number }[];
+  variants: { unit: string; price: number; mrp: number | null; stock: number; image?: string | null }[];
 }
 
 export default function EditProductPage() {
@@ -25,19 +25,19 @@ export default function EditProductPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [uploading, setUploading]   = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [deleting, setDeleting]     = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [images, setImages]         = useState<string[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [categories, setCategories]           = useState<Category[]>([]);
+  const [uploading, setUploading]             = useState(false);
+  const [uploadingIdx, setUploadingIdx]       = useState<number | null>(null);
+  const [saving, setSaving]                   = useState(false);
+  const [deleting, setDeleting]               = useState(false);
+  const [confirmDelete, setConfirmDelete]     = useState(false);
+  const [images, setImages]                   = useState<string[]>([]);
+  const [loading, setLoading]                 = useState(true);
   const [form, setForm] = useState({
     name: "", slug: "", description: "", price: "", mrp: "",
     unit: "", stock: "0", categoryId: "", brand: "", veg: "", featured: false, active: true,
   });
 
-  // Embedded variants (Blinkit/Zepto pattern)
   const [variantRows, setVariantRows] = useState<Variant[]>([]);
 
   useEffect(() => {
@@ -56,12 +56,12 @@ export default function EditProductPage() {
         categoryId: p.categoryId?.toString() ?? "", brand: p.brand ?? "",
         veg: p.veg ?? "", featured: p.featured, active: p.active,
       });
-      const dbVariants = p.variants ?? [];
-      setVariantRows(dbVariants.map(v => ({
+      setVariantRows((p.variants ?? []).map(v => ({
         unit: v.unit,
         price: (v.price / 100).toString(),
         mrp: v.mrp ? (v.mrp / 100).toString() : "",
         stock: v.stock.toString(),
+        image: v.image ?? "",
       })));
       setLoading(false);
     });
@@ -73,13 +73,14 @@ export default function EditProductPage() {
     setVariantRows(prev => prev.map((r, idx) => idx === i ? { ...r, [k]: v } : r));
 
   const addVariant = () =>
-    setVariantRows(prev => [...prev, { unit: "", price: form.price, mrp: form.mrp, stock: "0" }]);
+    setVariantRows(prev => [...prev, { unit: "", price: form.price, mrp: form.mrp, stock: "0", image: "" }]);
 
   const removeVariant = (i: number) =>
     setVariantRows(prev => prev.filter((_, idx) => idx !== i));
 
   const enableVariants = () => {
-    setVariantRows([{ unit: form.unit, price: form.price, mrp: form.mrp, stock: form.stock }]);
+    const firstImg = images[0] ?? "";
+    setVariantRows([{ unit: form.unit, price: form.price, mrp: form.mrp, stock: form.stock, image: firstImg }]);
   };
 
   const buildVariantsPayload = () =>
@@ -90,6 +91,7 @@ export default function EditProductPage() {
         price: Math.round(parseFloat(v.price) * 100),
         mrp: v.mrp ? Math.round(parseFloat(v.mrp) * 100) : null,
         stock: parseInt(v.stock) || 0,
+        image: v.image || null,
       }));
 
   const handleSaveVariants = async () => {
@@ -122,6 +124,23 @@ export default function EditProductPage() {
       if (res.ok) setImages(prev => [...prev, data.medium]);
       else toast.error(data.error ?? "Upload failed");
     } finally { setUploading(false); }
+  };
+
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset so re-selecting same file triggers onChange
+    e.target.value = "";
+    setUploadingIdx(idx);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "products");
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok) updateVariant(idx, "image", data.medium);
+      else toast.error(data.error ?? "Upload failed");
+    } finally { setUploadingIdx(null); }
   };
 
   const handleSave = async () => {
@@ -317,6 +336,7 @@ export default function EditProductPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-100">
+                  <th className="text-left pb-2 font-semibold w-12">Image</th>
                   <th className="text-left pb-2 font-semibold">Unit / Size</th>
                   <th className="text-left pb-2 font-semibold">Price (₹)</th>
                   <th className="text-left pb-2 font-semibold">MRP (₹)</th>
@@ -326,7 +346,42 @@ export default function EditProductPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {variantRows.map((row, i) => (
-                  <tr key={i}>
+                  <tr key={i} className="align-middle">
+                    {/* Image cell */}
+                    <td className="py-2 pr-3">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <label className="relative w-11 h-11 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer group shrink-0 flex items-center justify-center">
+                          {uploadingIdx === i ? (
+                            <Loader2 size={14} className="animate-spin text-gray-400" />
+                          ) : row.image ? (
+                            <>
+                              <Image src={row.image} alt="" fill className="object-cover" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                <ImagePlus size={13} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </>
+                          ) : (
+                            <ImagePlus size={15} className="text-gray-300 group-hover:text-green-400 transition-colors" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={e => handleVariantImageUpload(e, i)}
+                            disabled={uploadingIdx !== null}
+                          />
+                        </label>
+                        {row.image && (
+                          <button
+                            onClick={() => updateVariant(i, "image", "")}
+                            className="text-[9px] text-gray-300 hover:text-red-500 transition-colors leading-none"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-2 pr-3">
                       <input value={row.unit} onChange={e => updateVariant(i, "unit", e.target.value)}
                         placeholder="e.g. 500g"

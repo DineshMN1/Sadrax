@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type SortKey = "popular" | "price_asc" | "price_desc" | "discount";
 type FilterKey = "instock" | "has_discount";
-type Variant = { unit: string; price: number; mrp: number | null; stock: number };
+type Variant = { unit: string; price: number; mrp: number | null; stock: number; image?: string | null };
 
 interface Product {
   id: number;

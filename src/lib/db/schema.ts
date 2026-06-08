@@ -101,7 +101,7 @@ export const products = pgTable(
     // products sharing a variantGroup are sizes/weights of the same item (legacy)
     variantGroup: varchar("variant_group", { length: 100 }),
     // embedded variants: [{unit, price, mrp, stock}] — Blinkit/Zepto style
-    variants: json("variants").$type<{ unit: string; price: number; mrp: number | null; stock: number }[]>().default([]).notNull(),
+    variants: json("variants").$type<{ unit: string; price: number; mrp: number | null; stock: number; image?: string | null }[]>().default([]).notNull(),
     images: json("images").$type<string[]>().default([]),
     active: boolean("active").default(true).notNull(),
     featured: boolean("featured").default(false),
