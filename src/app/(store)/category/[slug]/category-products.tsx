@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ProductCard } from "@/components/store/product-card";
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ArrowUpDown, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SortKey = "popular" | "price_asc" | "price_desc" | "discount";
@@ -84,79 +84,107 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   return (
     <div>
       {/* Sort + Filter bar */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
-        {/* Sort dropdown */}
-        <div className="relative shrink-0">
+      <div className="mb-3">
+        {/* Scrollable chips row */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+
+          {/* Sort */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowSort(v => !v)}
+              className={cn(
+                "flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+                sort !== "popular"
+                  ? "bg-gray-900 border-gray-900 text-white"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
+              )}
+            >
+              <ArrowUpDown size={12} />
+              {currentSort.short}
+              <ChevronDown size={11} className={cn("transition-transform", showSort && "rotate-180")} />
+            </button>
+            {showSort && (
+              <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 min-w-48 animate-slide-up">
+                {SORT_OPTIONS.map(o => (
+                  <button
+                    key={o.value}
+                    onClick={() => { setSort(o.value); setShowSort(false); }}
+                    className={cn(
+                      "w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2",
+                      sort === o.value ? "font-bold text-green-700 bg-green-50" : "text-gray-700 hover:bg-gray-50"
+                    )}
+                  >
+                    {sort === o.value ? <Check size={13} className="shrink-0" /> : <span className="w-3.25" />}
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-gray-200 shrink-0" />
+
+          {/* In stock */}
           <button
-            onClick={() => setShowSort(v => !v)}
-            className="flex items-center gap-1.5 h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors whitespace-nowrap"
+            onClick={() => toggleFilter("instock")}
+            className={cn(
+              "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+              filters.has("instock")
+                ? "bg-green-500 border-green-500 text-white"
+                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+            )}
           >
-            <SlidersHorizontal size={13} className="text-gray-500" />
-            {currentSort.short}
-            <ChevronDown size={12} className={cn("transition-transform", showSort && "rotate-180")} />
+            In stock
           </button>
-          {showSort && (
-            <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 min-w-48 animate-slide-up">
-              {SORT_OPTIONS.map(o => (
+
+          {/* On sale */}
+          <button
+            onClick={() => toggleFilter("has_discount")}
+            className={cn(
+              "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+              filters.has("has_discount")
+                ? "bg-orange-500 border-orange-500 text-white"
+                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+            )}
+          >
+            On sale
+          </button>
+
+          {/* Brand pills — each brand visible as a scrollable chip */}
+          {brands.length > 0 && (
+            <>
+              <div className="w-px h-5 bg-gray-200 shrink-0" />
+              {brands.map(b => (
                 <button
-                  key={o.value}
-                  onClick={() => { setSort(o.value); setShowSort(false); }}
+                  key={b}
+                  onClick={() => setBrand(brand === b ? "all" : b)}
                   className={cn(
-                    "w-full text-left px-4 py-2.5 text-sm transition-colors",
-                    sort === o.value ? "font-bold text-green-700 bg-green-50" : "text-gray-700 hover:bg-gray-50"
+                    "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+                    brand === b
+                      ? "bg-violet-500 border-violet-500 text-white"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                   )}
                 >
-                  {o.value === sort && "✓ "}{o.label}
+                  {b}
                 </button>
               ))}
-            </div>
+            </>
           )}
         </div>
 
-        {/* Filter chips */}
-        <button
-          onClick={() => toggleFilter("instock")}
-          className={cn(
-            "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
-            filters.has("instock")
-              ? "bg-green-500 border-green-500 text-white"
-              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+        {/* Count + reset — below the scroll row, always visible */}
+        <div className="flex items-center justify-between mt-2 px-0.5">
+          <span className="text-xs text-gray-400 font-medium">{processed.length} item{processed.length !== 1 ? "s" : ""}</span>
+          {(activeFilters > 0 || brand !== "all" || sort !== "popular") && (
+            <button
+              onClick={() => { setFilters(new Set()); setBrand("all"); setSort("popular"); }}
+              className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-500 transition-colors"
+            >
+              <X size={11} /> Reset all
+            </button>
           )}
-        >
-          In stock
-        </button>
-        <button
-          onClick={() => toggleFilter("has_discount")}
-          className={cn(
-            "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
-            filters.has("has_discount")
-              ? "bg-orange-500 border-orange-500 text-white"
-              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-          )}
-        >
-          On sale
-        </button>
-
-        {/* Brand filter */}
-        {brands.length > 0 && (
-          <select value={brand} onChange={(e) => setBrand(e.target.value)}
-            className={cn(
-              "shrink-0 h-9 px-2.5 rounded-xl text-xs font-semibold border bg-white transition-all focus:outline-none",
-              brand !== "all" ? "border-green-500 text-green-700" : "border-gray-200 text-gray-600"
-            )}>
-            <option value="all">All brands</option>
-            {brands.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
-        )}
-
-        {/* Item count + clear */}
-        <span className="shrink-0 ml-auto text-xs text-gray-400 font-medium whitespace-nowrap">{processed.length} items</span>
-        {activeFilters > 0 && (
-          <button onClick={() => setFilters(new Set())}
-            className="shrink-0 flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
-            <X size={12} /> Clear
-          </button>
-        )}
+        </div>
       </div>
 
       {/* Close sort on outside click */}
