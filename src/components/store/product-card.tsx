@@ -7,7 +7,9 @@ import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+type VariantItem = { id: number; unit: string; price: number; mrp?: number | null; stock: number };
 
 interface ProductCardProps {
   id: number;
@@ -19,21 +21,33 @@ interface ProductCardProps {
   stock: number;
   veg?: string | null;
   className?: string;
+  variants?: VariantItem[];
 }
 
-export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, className }: ProductCardProps) {
+export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, className, variants }: ProductCardProps) {
   const { items, addItem, updateQuantity, removeItem } = useCart();
   const { toggle, has } = useWishlist();
-  const cartItem = items.find(i => i.id === id);
-  const qty      = cartItem?.quantity ?? 0;
-  const thumb    = images?.[0];
-  const discount = mrp && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : null;
-  const outOfStock = stock === 0;
-  const isHot    = discount && discount >= 20;
-  const wished   = has(id);
+  const thumb = images?.[0];
+  const wished = has(id);
 
-  const [flash, setFlash]           = useState<"idle" | "added" | "inc" | "dec">("idle");
+  const [selectedId, setSelectedId] = useState(id);
+  const [flash, setFlash]             = useState<"idle" | "added" | "inc" | "dec">("idle");
   const [notifyState, setNotifyState] = useState<"idle" | "loading" | "done">("idle");
+
+  // Derive active variant data
+  const active = useMemo((): VariantItem => {
+    if (variants && variants.length > 0) {
+      return variants.find(v => v.id === selectedId) ?? variants[0];
+    }
+    return { id, price, mrp: mrp ?? null, stock, unit: unit ?? "" };
+  }, [variants, selectedId, id, price, mrp, stock, unit]);
+
+  const cartItem  = items.find(i => i.id === active.id);
+  const qty       = cartItem?.quantity ?? 0;
+  const discount  = active.mrp && active.mrp > active.price ? Math.round(((active.mrp - active.price) / active.mrp) * 100) : null;
+  const outOfStock = active.stock === 0;
+  const atMax     = qty >= active.stock;
+  const isHot     = discount && discount >= 20;
 
   const fireFlash = (type: "added" | "inc" | "dec") => {
     setFlash(type);
@@ -43,13 +57,12 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     if (outOfStock) return;
-    addItem({ id, name, price, mrp: mrp ?? undefined, unit: unit ?? undefined, image: thumb });
+    addItem({ id: active.id, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: thumb });
     fireFlash("added");
   };
 
-  const atMax    = qty >= stock;
-  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, qty + 1); fireFlash("inc"); };
-  const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(id) : updateQuantity(id, qty - 1); fireFlash("dec"); };
+  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(active.id, qty + 1); fireFlash("inc"); };
+  const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(active.id) : updateQuantity(active.id, qty - 1); fireFlash("dec"); };
   const handleWish = (e: React.MouseEvent) => { e.preventDefault(); toggle(id); };
 
   const handleNotify = async (e: React.MouseEvent) => {
@@ -60,10 +73,10 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
       const res = await fetch("/api/stock-alert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: id }),
+        body: JSON.stringify({ productId: active.id }),
       });
       if (res.status === 401) {
-        window.location.href = `/login?redirect=/product/${id}`;
+        window.location.href = `/login?redirect=/product/${active.id}`;
         return;
       }
       setNotifyState("done");
@@ -72,9 +85,11 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     }
   };
 
+  const hasVariants = variants && variants.length > 1;
+
   return (
     <Link
-      href={`/product/${id}`}
+      href={`/product/${selectedId}`}
       className={cn(
         "group relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-200",
         "hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5",
@@ -124,10 +139,10 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
           <Heart size={12} className={cn(wished ? "text-white fill-white" : "text-gray-400")} />
         </button>
 
-        {/* Low stock badge — stays visible even after adding to cart */}
-        {stock > 0 && stock <= 5 && (
+        {/* Low stock badge */}
+        {active.stock > 0 && active.stock <= 5 && (
           <div className="absolute bottom-2 left-2 bg-orange-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-            Only {stock} left!
+            Only {active.stock} left!
           </div>
         )}
 
@@ -169,16 +184,40 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
               <span className={`w-1.5 h-1.5 rounded-full ${veg === "veg" ? "bg-green-600" : "bg-red-600"}`} />
             </span>
           )}
-          {unit && <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{unit}</p>}
+          {!hasVariants && active.unit && (
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{active.unit}</p>
+          )}
         </div>
         <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">{name}</p>
 
         <div className="flex items-baseline gap-1.5 mt-0.5">
-          <span className="text-sm font-extrabold text-gray-900">{formatPrice(price)}</span>
-          {mrp && mrp > price && (
-            <span className="text-[11px] text-gray-400 line-through">{formatPrice(mrp)}</span>
+          <span className="text-sm font-extrabold text-gray-900">{formatPrice(active.price)}</span>
+          {active.mrp && active.mrp > active.price && (
+            <span className="text-[11px] text-gray-400 line-through">{formatPrice(active.mrp)}</span>
           )}
         </div>
+
+        {/* Variant pills */}
+        {hasVariants && (
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-0.5 px-0.5 mt-0.5">
+            {variants!.map(v => (
+              <button
+                key={v.id}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedId(v.id); }}
+                className={cn(
+                  "shrink-0 h-6 px-2 rounded-lg text-[10px] font-bold border transition-all whitespace-nowrap",
+                  v.id === selectedId
+                    ? "bg-green-500 border-green-500 text-white"
+                    : v.stock === 0
+                    ? "bg-gray-50 border-gray-200 text-gray-300 line-through"
+                    : "bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300"
+                )}
+              >
+                {v.unit}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Stepper / Add / Notify */}
         <div className="mt-1.5">

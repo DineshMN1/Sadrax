@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 type SortKey = "popular" | "price_asc" | "price_desc" | "discount";
 type FilterKey = "instock" | "has_discount";
+type VariantItem = { id: number; unit: string; price: number; mrp: number | null; stock: number };
 
 interface Product {
   id: number;
@@ -19,6 +20,7 @@ interface Product {
   orderCount: number;
   brand?: string | null;
   veg?: string | null;
+  variantGroup?: string | null;
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -69,6 +71,27 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   }, [initialItems, sort, filters, brand]);
 
   const activeFilters = filters.size;
+
+  // Deduplicate variants — show ONE card per variantGroup with all siblings as pills
+  const dedupedItems = useMemo(() => {
+    const groupMap = new Map<string, VariantItem[]>();
+    for (const p of processed) {
+      if (!p.variantGroup) continue;
+      const arr = groupMap.get(p.variantGroup) ?? [];
+      arr.push({ id: p.id, unit: p.unit ?? "", price: p.price, mrp: p.mrp, stock: p.stock });
+      groupMap.set(p.variantGroup, arr);
+    }
+    const seen = new Set<string>();
+    return processed.filter(p => {
+      const key = p.variantGroup ?? `__${p.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).map(p => ({
+      ...p,
+      variantList: p.variantGroup ? (groupMap.get(p.variantGroup) ?? []) : [],
+    }));
+  }, [processed]);
 
   if (initialItems.length === 0) {
     return (
@@ -175,7 +198,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
 
         {/* Count + reset — below the scroll row, always visible */}
         <div className="flex items-center justify-between mt-2 px-0.5">
-          <span className="text-xs text-gray-400 font-medium">{processed.length} item{processed.length !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-gray-400 font-medium">{dedupedItems.length} item{dedupedItems.length !== 1 ? "s" : ""}</span>
           {(activeFilters > 0 || brand !== "all" || sort !== "popular") && (
             <button
               onClick={() => { setFilters(new Set()); setBrand("all"); setSort("popular"); }}
@@ -188,9 +211,9 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
       </div>
 
       {/* Close sort on outside click */}
-      {showSort && <div className="fixed inset-0 z-[5]" onClick={() => setShowSort(false)} />}
+      {showSort && <div className="fixed inset-0 z-5" onClick={() => setShowSort(false)} />}
 
-      {processed.length === 0 ? (
+      {dedupedItems.length === 0 ? (
         <div className="flex flex-col items-center py-16 text-center">
           <span className="text-4xl mb-3">🔍</span>
           <p className="font-semibold text-gray-700">No products match your filters</p>
@@ -200,7 +223,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-          {processed.map(p => (
+          {dedupedItems.map(p => (
             <ProductCard
               key={p.id}
               id={p.id}
@@ -211,6 +234,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               images={p.images as string[]}
               stock={p.stock}
               veg={p.veg}
+              variants={p.variantList.length > 1 ? p.variantList : undefined}
             />
           ))}
         </div>
