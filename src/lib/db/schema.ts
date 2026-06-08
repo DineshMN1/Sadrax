@@ -155,6 +155,11 @@ export const orders = pgTable(
     couponCode: varchar("coupon_code", { length: 50 }),
     notes: text("notes"),
     freeNote: text("free_note"),                            // set when staff marks the order free (on the house)
+    // Staff edited the order after placement (customer call). originalItems is a
+    // snapshot of the line items at the first edit, used to render the struck/added diff.
+    edited: boolean("edited").default(false).notNull(),
+    editedAt: timestamp("edited_at"),
+    originalItems: json("original_items"),                  // [{ productId, productName, productUnit, price, quantity }]
     tip: integer("tip").default(0).notNull(),               // rider tip in paise
     deliveryInstructions: text("delivery_instructions"),    // "leave at door" etc.
     deliverySlot: varchar("delivery_slot", { length: 60 }), // chosen time slot label

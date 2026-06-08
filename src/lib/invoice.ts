@@ -13,6 +13,7 @@ export interface InvoiceData {
   total: number;
   couponCode?: string | null;
   freeNote?: string | null;
+  edited?: boolean;
   items: InvoiceItem[];
   address?: { name: string; phone: string; line1: string; line2?: string | null; city?: string | null; pincode: string } | null;
 }
@@ -67,6 +68,7 @@ export function buildInvoiceHtml(d: InvoiceData): string {
     <div class="row"><span class="muted">Order</span><span>#${esc(d.orderNumber)}</span></div>
     <div class="row"><span class="muted">Date</span><span>${date}</span></div>
     <div class="row"><span class="muted">Payment</span><span>${esc(d.paymentMethod.toUpperCase())}</span></div>
+    ${d.edited ? `<p class="center muted" style="margin:6px 0 0;font-size:11px">* This order was edited by the store. Final items shown.</p>` : ""}
     ${d.freeNote ? `<div class="free">
       <p style="margin:0;font-weight:800;color:#15803d;font-size:13px">🎁 Your order is FREE!</p>
       <p style="margin:3px 0 0;color:#16a34a;font-size:11px">${esc(d.freeNote)}</p>

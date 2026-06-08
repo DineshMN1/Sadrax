@@ -12,6 +12,7 @@ import { OrderActions } from "./order-actions";
 import { InvoiceButton } from "./invoice-button";
 import { FreeDeliveryPopper } from "@/components/store/free-delivery-popper";
 import { FreeOrderBanner } from "@/components/store/free-order-banner";
+import { computeOrderDiff, type DiffItem } from "@/lib/order-diff";
 import { RepeatOrder } from "./repeat-order";
 import { ReturnRequest } from "./return-request";
 import { canRequestReturn } from "@/lib/returns";
@@ -198,6 +199,7 @@ export default async function OrderDetailPage({
             total={order.total}
             couponCode={order.couponCode}
             freeNote={order.freeNote}
+            edited={order.edited}
             items={items.map(i => ({ name: i.productName, unit: i.productUnit, quantity: i.quantity, price: i.price, total: i.total }))}
             address={addressRows[0] ?? null}
           />
@@ -235,20 +237,35 @@ export default async function OrderDetailPage({
           <span className="text-xs font-bold text-green-600 group-hover:underline">Call Now</span>
         </a>
 
-        {/* Items */}
+        {/* Items (shows the struck/added diff if the store edited the order) */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <h2 className="text-sm font-extrabold text-gray-900 mb-3">Items ({items.length})</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-extrabold text-gray-900">Items ({items.length})</h2>
+            {order.edited && <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">UPDATED BY STORE</span>}
+          </div>
           <div className="space-y-2.5 divide-y divide-gray-50">
-            {items.map(item => (
-              <div key={item.id} className="flex justify-between items-center text-sm pt-2.5 first:pt-0">
-                <div className="flex-1 min-w-0">
-                  <span className="text-gray-800 font-medium">{item.productName}</span>
-                  {item.productUnit && <span className="text-gray-400 text-xs ml-1">({item.productUnit})</span>}
-                  <span className="text-gray-400"> × {item.quantity}</span>
+            {(order.edited
+              ? computeOrderDiff(items, order.originalItems as DiffItem[] | null)
+              : items.map(i => ({ ...i, state: "same" as const }))
+            ).map((line, idx) => {
+              const removed = line.state === "removed";
+              const added = line.state === "added";
+              const changed = line.state === "changed";
+              return (
+                <div key={`${line.productId ?? "x"}-${idx}`} className="flex justify-between items-center text-sm pt-2.5 first:pt-0">
+                  <div className="flex-1 min-w-0">
+                    <span className={`font-medium ${removed ? "line-through text-gray-400" : "text-gray-800"}`}>{line.productName}</span>
+                    {line.productUnit && <span className="text-gray-400 text-xs ml-1">({line.productUnit})</span>}
+                    {changed
+                      ? <span className="text-gray-400"> × <span className="line-through">{line.oldQuantity}</span> {line.quantity}</span>
+                      : <span className={removed ? "text-gray-300" : "text-gray-400"}> × {line.quantity}</span>}
+                    {added && <span className="ml-1.5 text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Added</span>}
+                    {removed && <span className="ml-1.5 text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">Removed</span>}
+                  </div>
+                  {!removed && <span className="font-bold text-gray-900 shrink-0 ml-2">{formatPrice(line.price * line.quantity)}</span>}
                 </div>
-                <span className="font-bold text-gray-900 shrink-0 ml-2">{formatPrice(item.total)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
