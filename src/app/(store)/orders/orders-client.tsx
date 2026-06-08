@@ -109,8 +109,16 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 font-mono">#{order.orderNumber}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400">
+                      <div className="flex items-center gap-2">
+                        {isActive && (
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                          </span>
+                        )}
+                        <p className="text-xs font-bold text-gray-500 font-mono">#{order.orderNumber}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
                         <Clock size={11} />
                         {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
                       </div>

@@ -79,7 +79,7 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
         "group relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-200",
         "hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5",
         flash === "added" && "ring-2 ring-green-400",
-        outOfStock && "opacity-70",
+        outOfStock && "border-gray-100",
         className
       )}
     >
@@ -153,8 +153,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
 
         {/* Out of stock */}
         {outOfStock && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] flex items-center justify-center">
-            <span className="text-[11px] font-bold text-gray-500 bg-white/95 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-[3px] flex items-center justify-center">
+            <span className="text-[11px] font-bold text-gray-400 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
               Out of stock
             </span>
           </div>
