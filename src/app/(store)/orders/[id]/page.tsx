@@ -197,6 +197,7 @@ export default async function OrderDetailPage({
             deliveryFee={order.deliveryFee}
             discount={order.discount}
             total={order.total}
+            status={order.status}
             couponCode={order.couponCode}
             freeNote={order.freeNote}
             edited={order.edited}

@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { verifyPaymentSignature } from "@/lib/razorpay";
 
 export async function POST(req: NextRequest) {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   await db
     .update(orders)
     .set({ paymentStatus: "paid", razorpayPaymentId })
-    .where(eq(orders.id, Number(orderId)));
+    .where(and(eq(orders.id, Number(orderId)), eq(orders.userId, session.user.id)));
 
   return NextResponse.json({ success: true });
 }
