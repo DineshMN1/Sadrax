@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Eye, EyeOff, Percent, Landmark, Tag } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 
@@ -125,7 +127,7 @@ export default function PromotionsPage() {
       )}
 
       {loading ? (
-        <div className="py-16 text-center text-gray-400"><Loader2 className="animate-spin mx-auto" /></div>
+        <div className="py-4 flex justify-center"><LottiePlayer animationData={loadingAnim} loop className="w-28 h-28" /></div>
       ) : (
         <div className="space-y-2.5">
           {offers.map((o) => (

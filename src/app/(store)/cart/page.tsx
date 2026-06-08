@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Trash2, Plus, Minus, Tag, ShoppingBag, ArrowRight, Sparkles, AlertTriangle, Truck } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import emptyBoxAnim from "@/lottie/empty-box.json";
 import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
@@ -93,8 +95,8 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <div className="w-24 h-24 bg-linear-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mb-5 text-5xl shadow-sm">
-          🛒
+        <div className="w-44 h-44 mb-1">
+          <LottiePlayer animationData={emptyBoxAnim} loop className="w-full h-full" />
         </div>
         <h2 className="text-xl font-extrabold text-gray-900 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 text-sm mb-6 max-w-xs">Add some groceries to get started on your order</p>

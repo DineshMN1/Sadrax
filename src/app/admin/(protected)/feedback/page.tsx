@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Star, Loader2 } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
 import { formatDistanceToNow } from "date-fns";
 
 interface Row {
@@ -43,7 +45,7 @@ export default function FeedbackPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-gray-400"><Loader2 className="animate-spin mx-auto" /></div>
+        <div className="py-4 flex justify-center"><LottiePlayer animationData={loadingAnim} loop className="w-28 h-28" /></div>
       ) : (
         <>
           {/* Summary */}

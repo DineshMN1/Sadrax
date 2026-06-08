@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import Link from "next/link";
+import { ActiveOrderIcon } from "@/components/store/active-order-icon";
 
 const ACTIVE_STATUSES = ["pending", "accepted", "packed", "out_for_delivery"];
 
@@ -34,7 +35,7 @@ export async function ActiveOrderBanner() {
       href={`/orders/${order.id}`}
       className={`flex items-center gap-3.5 border rounded-2xl px-4 py-3.5 hover:opacity-90 active:scale-[0.98] transition-all ${meta.color}`}
     >
-      <span className="text-2xl shrink-0">{meta.icon}</span>
+      <ActiveOrderIcon status={order.status} emoji={meta.icon} />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Active Order · #{order.orderNumber}</p>
         <p className="text-sm font-extrabold text-gray-900 mt-0.5">{meta.label}</p>

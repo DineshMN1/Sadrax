@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Check, X, Loader2, RotateCcw, Package } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
 import { formatPrice } from "@/lib/utils";
 import { RETURN_REASON_LABELS, RETURN_STATUS_META } from "@/lib/returns";
 
@@ -80,7 +82,7 @@ export default function ReturnsPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-gray-400"><Loader2 className="animate-spin mx-auto" /></div>
+        <div className="py-4 flex justify-center"><LottiePlayer animationData={loadingAnim} loop className="w-28 h-28" /></div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 px-4 py-12 text-center text-gray-400 text-sm">
           No {tab === "all" ? "" : tab} requests.

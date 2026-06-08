@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2, Truck, PackagePlus, Building2 } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 
@@ -109,7 +111,7 @@ export default function InventoryPage() {
       {/* Recent purchases */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-3"><Truck size={16} className="text-gray-600" /><h2 className="font-semibold text-gray-900">Recent stock-ins</h2></div>
-        {loading ? <div className="py-6 text-center text-gray-400"><Loader2 className="animate-spin mx-auto" /></div> : (
+        {loading ? <div className="py-2 flex justify-center"><LottiePlayer animationData={loadingAnim} loop className="w-24 h-24" /></div> : (
           <div className="divide-y divide-gray-50">
             {purchases.map((p) => (
               <div key={p.id} className="flex items-center justify-between py-2.5 text-sm">

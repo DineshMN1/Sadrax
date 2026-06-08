@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
 import { formatDistanceToNow } from "date-fns";
 
 interface Log {
@@ -68,7 +70,7 @@ export default function AuditPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-gray-400"><Loader2 className="animate-spin mx-auto" /></div>
+        <div className="py-4 flex justify-center"><LottiePlayer animationData={loadingAnim} loop className="w-28 h-28" /></div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
           <table className="w-full text-sm min-w-150">

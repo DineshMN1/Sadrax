@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { Package, ChevronRight, ShoppingBag, Clock } from "lucide-react";
+import { ChevronRight, ShoppingBag, Clock } from "lucide-react";
+import { LottiePlayer } from "@/components/lottie-player";
+import emptyBoxAnim from "@/lottie/empty-box.json";
+import deliveryAnim from "@/lottie/delivery.json";
 import { cn } from "@/lib/utils";
 
 type Tab = "all" | "active" | "delivered" | "cancelled";
@@ -41,8 +44,8 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <div className="w-24 h-24 bg-linear-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mb-5 shadow-sm">
-          <Package size={36} className="text-gray-300" />
+        <div className="w-44 h-44 mb-1">
+          <LottiePlayer animationData={emptyBoxAnim} loop className="w-full h-full" />
         </div>
         <h2 className="text-xl font-extrabold text-gray-900 mb-2">No orders yet</h2>
         <p className="text-gray-500 text-sm mb-6 max-w-xs">Your order history will appear here once you place your first order.</p>
