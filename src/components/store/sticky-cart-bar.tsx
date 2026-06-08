@@ -16,7 +16,7 @@ export function StickyCartBar({ className }: { className?: string }) {
   useEffect(() => setMounted(true), []);
 
   // Hide on cart/checkout, the auth flow (login/register/OTP), and account/orders
-  const HIDE_ON = ["/cart", "/checkout", "/login", "/register", "/account", "/orders"];
+  const HIDE_ON = ["/cart", "/checkout", "/login", "/register", "/account", "/orders", "/product"];
   if (!mounted || itemCount === 0) return null;
   if (HIDE_ON.some(p => pathname === p || pathname.startsWith(p + "/"))) return null;
 

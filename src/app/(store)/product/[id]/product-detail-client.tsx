@@ -15,6 +15,7 @@ export function ProductBackButton() {
   );
 }
 import Image from "next/image";
+import Link from "next/link";
 import { Plus, Minus, ShoppingCart, Heart, Flame, ChevronLeft, ChevronRight, Share2, Check, Bell, Loader2 } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { track } from "@/lib/analytics";
@@ -46,6 +47,8 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
 
   const cartItem = items.find(i => i.id === id);
   const qty      = cartItem?.quantity ?? 0;
+  const cartCount = items.reduce((n, i) => n + i.quantity, 0);
+  const cartTotal = useCart(s => s.total());
   const wished   = has(id);
   const [imgIdx, setImgIdx] = useState(0);
   const [flash, setFlash]   = useState(false);
@@ -243,6 +246,21 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
             Only {stock} left!
           </p>
         ) : null}
+
+        {/* View Cart — inline (product page hides the global floating bar) */}
+        {cartCount > 0 && (
+          <Link
+            href="/cart"
+            className="w-full h-12 flex items-center justify-between bg-green-50 border border-green-200 rounded-2xl px-4 active:scale-[0.98] transition-all"
+          >
+            <span className="flex items-center gap-2 text-sm font-bold text-green-700">
+              <ShoppingCart size={16} /> View Cart · {cartCount} item{cartCount > 1 ? "s" : ""}
+            </span>
+            <span className="flex items-center gap-2 text-sm font-extrabold text-green-700">
+              {formatPrice(cartTotal)} <ChevronRight size={16} />
+            </span>
+          </Link>
+        )}
       </div>
 
       {/* Description */}
