@@ -97,8 +97,8 @@ export default async function OrderDetailPage({
       <OrderStatusWatcher orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
 
       <div className="px-4 py-4 space-y-4">
-        {/* Free order celebration (store made it free) */}
-        {order.freeNote && <FreeOrderBanner note={order.freeNote} />}
+        {/* Free order celebration (store made it free) — not for rejected/cancelled */}
+        {order.freeNote && !isTerminal && <FreeOrderBanner note={order.freeNote} />}
 
         {/* ETA chip (active orders) */}
         {!isTerminal && order.status !== "delivered" && (
@@ -144,13 +144,16 @@ export default async function OrderDetailPage({
             </div>
           </div>
         ) : (
-          <div className={`rounded-2xl border p-4 flex items-center gap-3 ${order.status === "rejected" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"}`}>
-            <XCircle size={20} className={order.status === "rejected" ? "text-red-500 shrink-0" : "text-gray-500 shrink-0"} />
-            <div>
-              <p className={`text-sm font-bold ${order.status === "rejected" ? "text-red-700" : "text-gray-700"}`}>
-                Order {order.status}
+          <div className={`rounded-2xl border p-4 flex items-start gap-3 ${order.status === "rejected" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"}`}>
+            <XCircle size={22} className={`mt-0.5 shrink-0 ${order.status === "rejected" ? "text-red-500" : "text-gray-500"}`} />
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-extrabold ${order.status === "rejected" ? "text-red-700" : "text-gray-700"}`}>
+                {order.status === "rejected" ? "Order rejected" : "Order cancelled"}
               </p>
-              {order.rejectionReason && <p className="text-xs text-gray-500 mt-0.5">{order.rejectionReason}</p>}
+              {order.rejectionReason && (
+                <p className="text-xs text-gray-600 mt-1"><span className="font-semibold">Reason:</span> {order.rejectionReason}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1.5">You haven&apos;t been charged. You can reorder below, or call us if you need help.</p>
             </div>
           </div>
         )}
@@ -250,7 +253,7 @@ export default async function OrderDetailPage({
         </div>
 
         {/* Free delivery celebration (only when it's not a fully-free order) */}
-        {order.deliveryFee === 0 && !order.freeNote && <FreeDeliveryPopper />}
+        {order.deliveryFee === 0 && !order.freeNote && !isTerminal && <FreeDeliveryPopper />}
 
         {/* Bill */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">

@@ -14,6 +14,7 @@ import { authClient } from "@/lib/auth-client";
 import { LottiePlayer } from "@/components/lottie-player";
 import loadingAnim from "@/lottie/loading.json";
 import successAnim from "@/lottie/success.json";
+import popperAnim from "@/lottie/popper.json";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
 
@@ -233,10 +234,17 @@ export default function CheckoutPage() {
   // we clear the cart on success)
   if (justPlaced) {
     return (
-      <div className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-white gap-2 px-8 text-center">
-        <div className="w-44 h-44"><LottiePlayer animationData={successAnim} loop={false} /></div>
-        <p className="text-xl font-extrabold text-gray-900">Order placed!</p>
-        <p className="text-sm text-gray-500">Taking you to your orders…</p>
+      <div className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-white px-8 text-center overflow-hidden">
+        {/* confetti across the whole screen */}
+        <div className="pointer-events-none absolute inset-0">
+          <LottiePlayer animationData={popperAnim} loop className="w-full h-full" />
+        </div>
+        {/* big centred success tick */}
+        <div className="relative w-64 h-64 sm:w-72 sm:h-72 max-w-[70vw] max-h-[70vw]">
+          <LottiePlayer animationData={successAnim} loop={false} className="w-full h-full" />
+        </div>
+        <p className="relative text-2xl font-extrabold text-gray-900 mt-2">Order placed!</p>
+        <p className="relative text-sm text-gray-500 mt-1">Taking you to your orders…</p>
       </div>
     );
   }
