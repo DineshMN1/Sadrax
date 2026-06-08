@@ -7,6 +7,7 @@ import { FeedbackPrompt } from "@/components/store/feedback-prompt";
 import { SWRegister } from "@/components/store/sw-register";
 import { StoreConfigLoader } from "@/components/store/store-config-loader";
 import { PostHogIdentify } from "@/components/store/posthog-identify";
+import { PWAInstallBanner } from "@/components/store/pwa-install-banner";
 import { Toaster } from "sonner";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <BottomNav />
       <SessionPrompts />
       <FeedbackPrompt />
+      <PWAInstallBanner />
 
       <Toaster
         position="top-center"
