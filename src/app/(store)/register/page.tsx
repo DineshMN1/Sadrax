@@ -124,10 +124,12 @@ function Field({
 interface AddressStepProps {
   userName: string;
   userPhone: string;
+  redirect: string;
   onDone: () => void;
 }
 
-function AddressStep({ userName, userPhone, onDone }: AddressStepProps) {
+function AddressStep({ userName, userPhone, redirect, onDone }: AddressStepProps) {
+  const isCheckout = redirect.includes("checkout");
   const [showMap, setShowMap] = useState(false);
   const [pinLat, setPinLat] = useState<number | null>(null);
   const [pinLng, setPinLng] = useState<number | null>(null);
@@ -264,14 +266,14 @@ function AddressStep({ userName, userPhone, onDone }: AddressStepProps) {
           onClick={onDone}
           className="h-12 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-500"
         >
-          Skip for now
+          {isCheckout ? "Skip, add at checkout" : "Skip for now"}
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
           className="h-12 rounded-2xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save Address"}
+          {saving ? "Saving…" : isCheckout ? "Save & Checkout →" : "Save Address"}
         </button>
       </div>
     </div>
@@ -279,6 +281,7 @@ function AddressStep({ userName, userPhone, onDone }: AddressStepProps) {
 }
 
 function DoneStep({ name, redirect, router }: { name: string; redirect: string; router: ReturnType<typeof useRouter> }) {
+  const isCheckout = redirect.includes("checkout");
   useEffect(() => {
     track("signup", { method: "email_otp" });
     const t = setTimeout(() => { router.push(redirect); router.refresh(); }, 1800);
@@ -292,7 +295,7 @@ function DoneStep({ name, redirect, router }: { name: string; redirect: string; 
       </div>
       <div>
         <h1 className="text-2xl font-extrabold text-gray-900">All set, {name.split(" ")[0]}!</h1>
-        <p className="text-gray-500 text-sm mt-2">Taking you to the store…</p>
+        <p className="text-gray-500 text-sm mt-2">{isCheckout ? "Taking you to checkout…" : "Taking you to the store…"}</p>
       </div>
       <div className="w-8 h-1 bg-green-200 rounded-full overflow-hidden">
         <div className="h-full bg-green-600 rounded-full animate-[grow_1.8s_ease-in-out_forwards]" />
@@ -453,7 +456,7 @@ function RegisterContent() {
                 </h1>
                 <p className="text-gray-500 text-sm mt-1.5">
                   Already have one?{" "}
-                  <Link href="/login" className="text-green-600 font-semibold hover:underline">Sign in</Link>
+                  <Link href={`/login${redirect !== "/" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="text-green-600 font-semibold hover:underline">Sign in</Link>
                 </p>
               </div>
 
@@ -576,7 +579,15 @@ function RegisterContent() {
             <AddressStep
               userName={name.split(" ")[0]}
               userPhone={`+91${phone.replace(/\D/g, "")}`}
-              onDone={() => setStep("done")}
+              redirect={redirect}
+              onDone={() => {
+                if (redirect !== "/") {
+                  router.push(redirect);
+                  router.refresh();
+                } else {
+                  setStep("done");
+                }
+              }}
             />
           )}
 
