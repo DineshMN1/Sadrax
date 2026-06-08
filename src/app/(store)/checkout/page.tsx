@@ -3,6 +3,24 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+
+function getISTHour(): number {
+  const now = new Date();
+  const istMs = now.getTime() + (now.getTimezoneOffset() + 330) * 60000;
+  const ist = new Date(istMs);
+  return ist.getHours() + ist.getMinutes() / 60;
+}
+
+// cutoff = slot end minus 30 min — after that the slot is hidden
+const ALL_SLOTS = [
+  { label: "Now (15–25 min)",   cutoff: 24   },
+  { label: "Today 8–10 AM",    cutoff: 9.5  },
+  { label: "Today 10 AM–12 PM", cutoff: 11.5 },
+  { label: "Today 12–2 PM",    cutoff: 13.5 },
+  { label: "Today 2–4 PM",     cutoff: 15.5 },
+  { label: "Today 4–6 PM",     cutoff: 17.5 },
+  { label: "Today 6–9 PM",     cutoff: 20.5 },
+] as const;
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
@@ -54,6 +72,11 @@ export default function CheckoutPage() {
   const [tip, setTip]                         = useState(0);            // paise
   const [instructions, setInstructions]       = useState("");
   const [slot, setSlot]                       = useState("Now (15–25 min)");
+  const availableSlots = useMemo(
+    () => ALL_SLOTS.filter(s => getISTHour() < s.cutoff).map(s => s.label),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const [loadingAddr, setLoadingAddr]         = useState(true);
   const [showAddAddress, setShowAddAddress]   = useState(false);
   const [showMap, setShowMap]                 = useState(false);
@@ -403,7 +426,7 @@ export default function CheckoutPage() {
           <div>
             <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Delivery time</label>
             <div className="flex flex-wrap gap-2">
-              {["Now (15–25 min)", "Today 5–7 PM", "Today 7–9 PM"].map((s) => (
+              {availableSlots.map((s) => (
                 <button key={s} onClick={() => setSlot(s)}
                   className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${slot === s ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-200 text-gray-600"}`}>
                   {s}

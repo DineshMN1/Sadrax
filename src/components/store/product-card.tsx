@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Flame, Check, Heart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Flame, Check, Heart, Bell, BellRing, Loader2 } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { formatPrice } from "@/lib/utils";
@@ -32,7 +32,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const isHot    = discount && discount >= 20;
   const wished   = has(id);
 
-  const [flash, setFlash] = useState<"idle" | "added" | "inc" | "dec">("idle");
+  const [flash, setFlash]           = useState<"idle" | "added" | "inc" | "dec">("idle");
+  const [notifyState, setNotifyState] = useState<"idle" | "loading" | "done">("idle");
 
   const fireFlash = (type: "added" | "inc" | "dec") => {
     setFlash(type);
@@ -50,6 +51,26 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, qty + 1); fireFlash("inc"); };
   const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(id) : updateQuantity(id, qty - 1); fireFlash("dec"); };
   const handleWish = (e: React.MouseEvent) => { e.preventDefault(); toggle(id); };
+
+  const handleNotify = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (notifyState !== "idle") return;
+    setNotifyState("loading");
+    try {
+      const res = await fetch("/api/stock-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: id }),
+      });
+      if (res.status === 401) {
+        window.location.href = `/login?redirect=/product/${id}`;
+        return;
+      }
+      setNotifyState("done");
+    } catch {
+      setNotifyState("idle");
+    }
+  };
 
   return (
     <Link
@@ -159,17 +180,33 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
           )}
         </div>
 
-        {/* Stepper / Add */}
+        {/* Stepper / Add / Notify */}
         <div className="mt-1.5">
-          {qty === 0 ? (
+          {outOfStock ? (
+            <button
+              onClick={handleNotify}
+              className={cn(
+                "w-full h-8 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all active:scale-90",
+                notifyState === "done"
+                  ? "bg-violet-50 border border-violet-200 text-violet-700"
+                  : "bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300"
+              )}
+            >
+              {notifyState === "loading" ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : notifyState === "done" ? (
+                <><BellRing size={11} /> Notified</>
+              ) : (
+                <><Bell size={11} /> Notify me</>
+              )}
+            </button>
+          ) : qty === 0 ? (
             <button
               onClick={handleAdd}
-              disabled={outOfStock}
               className={cn(
                 "w-full h-8 flex items-center justify-center gap-1 rounded-xl text-sm font-bold transition-all active:scale-90",
                 "bg-green-50 border border-green-300 text-green-700",
                 "hover:bg-green-500 hover:text-white hover:border-green-500 hover:shadow-md hover:shadow-green-500/25",
-                "disabled:opacity-40 disabled:pointer-events-none"
               )}
             >
               <Plus size={13} strokeWidth={3} />
