@@ -11,8 +11,8 @@ interface Props {
 
 export function StoreClosedBanner({ openTime = "8:00 AM", closeTime = "9:00 PM", message }: Props) {
   return (
-    <div className="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-      <div className="w-16 h-16 shrink-0">
+    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-4">
+      <div className="w-24 h-24 shrink-0">
         <LottiePlayer animationData={storeClosedAnim} loop className="w-full h-full" />
       </div>
       <div className="flex-1 min-w-0">

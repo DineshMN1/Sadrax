@@ -6,6 +6,8 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { Package, MapPin, LogOut, ChevronRight, Phone, Heart, Bell, Navigation, Headphones, Repeat } from "lucide-react";
 import { toast } from "sonner";
 import { PWAInstallButton } from "@/components/store/pwa-install-banner";
+import { LottiePlayer } from "@/components/lottie-player";
+import signInAnim from "@/lottie/sign-in.json";
 
 const STORE_PHONE    = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
 const VAPID_KEY      = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
@@ -44,8 +46,8 @@ export default function AccountClient() {
   if (!session) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mb-5 text-4xl shadow-sm">
-          👤
+        <div className="w-48 h-48 mb-1">
+          <LottiePlayer animationData={signInAnim} loop className="w-full h-full" />
         </div>
         <h2 className="text-xl font-extrabold text-gray-900 mb-2">Sign in to continue</h2>
         <p className="text-gray-500 text-sm mb-6 max-w-xs">Track orders, save addresses, and get a personalised experience</p>
