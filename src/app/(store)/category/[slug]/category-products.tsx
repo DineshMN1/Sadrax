@@ -21,11 +21,11 @@ interface Product {
   veg?: string | null;
 }
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "popular",    label: "Popular"       },
-  { value: "price_asc",  label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
-  { value: "discount",   label: "Highest Discount"  },
+const SORT_OPTIONS: { value: SortKey; label: string; short: string }[] = [
+  { value: "popular",    label: "Popular",           short: "Popular"   },
+  { value: "price_asc",  label: "Price: Low → High", short: "Price ↑"  },
+  { value: "price_desc", label: "Price: High → Low", short: "Price ↓"  },
+  { value: "discount",   label: "Highest Discount",  short: "Discount" },
 ];
 
 export function CategoryProducts({ initialItems }: { initialItems: Product[] }) {
@@ -84,15 +84,15 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   return (
     <div>
       {/* Sort + Filter bar */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
         {/* Sort dropdown */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowSort(v => !v)}
-            className="flex items-center gap-1.5 h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors whitespace-nowrap"
           >
             <SlidersHorizontal size={13} className="text-gray-500" />
-            {currentSort.label}
+            {currentSort.short}
             <ChevronDown size={12} className={cn("transition-transform", showSort && "rotate-180")} />
           </button>
           {showSort && (
@@ -117,7 +117,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
         <button
           onClick={() => toggleFilter("instock")}
           className={cn(
-            "h-9 px-3 rounded-xl text-xs font-semibold border transition-all",
+            "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
             filters.has("instock")
               ? "bg-green-500 border-green-500 text-white"
               : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
@@ -128,7 +128,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
         <button
           onClick={() => toggleFilter("has_discount")}
           className={cn(
-            "h-9 px-3 rounded-xl text-xs font-semibold border transition-all",
+            "shrink-0 h-9 px-3 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
             filters.has("has_discount")
               ? "bg-orange-500 border-orange-500 text-white"
               : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
@@ -141,7 +141,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
         {brands.length > 0 && (
           <select value={brand} onChange={(e) => setBrand(e.target.value)}
             className={cn(
-              "h-9 px-2.5 rounded-xl text-xs font-semibold border bg-white transition-all focus:outline-none",
+              "shrink-0 h-9 px-2.5 rounded-xl text-xs font-semibold border bg-white transition-all focus:outline-none",
               brand !== "all" ? "border-green-500 text-green-700" : "border-gray-200 text-gray-600"
             )}>
             <option value="all">All brands</option>
@@ -149,15 +149,14 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
           </select>
         )}
 
-        {/* Clear filters */}
+        {/* Item count + clear */}
+        <span className="shrink-0 ml-auto text-xs text-gray-400 font-medium whitespace-nowrap">{processed.length} items</span>
         {activeFilters > 0 && (
           <button onClick={() => setFilters(new Set())}
-            className="ml-auto flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors">
+            className="shrink-0 flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
             <X size={12} /> Clear
           </button>
         )}
-
-        <span className="ml-auto text-xs text-gray-400 font-medium">{processed.length} items</span>
       </div>
 
       {/* Close sort on outside click */}

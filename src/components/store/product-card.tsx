@@ -153,7 +153,7 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
 
         {/* Out of stock */}
         {outOfStock && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-[3px] flex items-center justify-center">
+          <div className="absolute inset-0 flex items-end justify-center pb-2">
             <span className="text-[11px] font-bold text-gray-400 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
               Out of stock
             </span>
