@@ -27,7 +27,16 @@ const nextConfig: NextConfig = {
     ),
   },
   experimental: {
-    serverActions: { allowedOrigins: ["localhost:3000"] },
+    serverActions: {
+      allowedOrigins: (() => {
+        const origins = ["localhost:3000"];
+        try {
+          const { host } = new URL(process.env.NEXT_PUBLIC_APP_URL ?? "");
+          if (host && !origins.includes(host)) origins.push(host);
+        } catch {}
+        return origins;
+      })(),
+    },
   },
 };
 

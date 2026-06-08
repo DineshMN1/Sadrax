@@ -1,5 +1,18 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Online Grocery Delivery — Sadras & Kalpakam",
+  description: "Order fresh groceries online from Sadras & Kalpakam's local store. Fast delivery to your doorstep. Vegetables, fruits, dairy, snacks & more.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Sadrax — Local Grocery Delivery",
+    description: "Order fresh groceries online. Fast delivery in Sadras & Kalpakam.",
+    url: "/",
+    type: "website",
+  },
+};
+
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, ChevronRight, Zap, Sparkles, TrendingUp, Phone, Headphones } from "lucide-react";

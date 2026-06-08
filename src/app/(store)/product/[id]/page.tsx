@@ -15,14 +15,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const [p] = await db.select().from(products).where(eq(products.id, Number(id))).limit(1);
   if (!p) return { title: "Product — Sadrax" };
-  const desc = p.description ?? `Buy ${p.name} online from Sadrax grocery store.`;
+  const desc = p.description ?? `Buy ${p.name} online from Sadrax grocery store. Fast delivery in Sadras & Kalpakam.`;
   const image = (p.images as string[])?.[0] ?? null;
   return {
-    title: `${p.name} — Sadrax`,
+    title: p.name,
     description: desc,
+    alternates: { canonical: `/product/${p.id}` },
     openGraph: {
       title: p.name,
       description: desc,
+      url: `/product/${p.id}`,
+      type: "website",
       ...(image ? { images: [{ url: image, width: 400, height: 400, alt: p.name }] } : {}),
     },
     twitter: {

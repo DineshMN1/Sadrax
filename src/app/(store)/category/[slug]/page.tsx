@@ -14,7 +14,24 @@ import { getCategoryEmoji } from "@/lib/category-emoji";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [cat] = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
-  return { title: cat ? `${cat.name} — Sadrax` : "Category" };
+  if (!cat) return { title: "Category" };
+  const desc = `Buy ${cat.name} online in Sadras & Kalpakam. Fresh stock, fast local delivery from Sadrax grocery store.`;
+  return {
+    title: cat.name,
+    description: desc,
+    alternates: { canonical: `/category/${slug}` },
+    openGraph: {
+      title: `${cat.name} — Sadrax`,
+      description: desc,
+      url: `/category/${slug}`,
+      ...(cat.image ? { images: [{ url: cat.image, width: 400, height: 400, alt: cat.name }] } : {}),
+    },
+    twitter: {
+      card: "summary",
+      title: `${cat.name} — Sadrax`,
+      description: desc,
+    },
+  };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {

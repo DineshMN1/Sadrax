@@ -11,13 +11,33 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["500", "600", "700"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://sadrax.in";
+const STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME ?? "Sadrax Grocery";
+const DEFAULT_DESC = "Sadras & Kalpakam-ல் fresh groceries — fast local delivery from your neighbourhood store. Order online in 2 taps.";
+
 export const metadata: Metadata = {
-  title: { default: "Sadrax Grocery", template: "%s — Sadrax" },
-  description: "Sadras & Kalpakam-ல் fresh groceries — வீட்டுக்கே delivery!",
-  creator: "Sadrax",
-  publisher: "Sadrax",
-  other: { copyright: "© 2026 Sadrax. All Rights Reserved." },
+  metadataBase: new URL(APP_URL),
+  title: { default: STORE_NAME, template: `%s — ${STORE_NAME}` },
+  description: DEFAULT_DESC,
+  keywords: ["grocery delivery", "Sadras grocery", "Kalpakam grocery", "online grocery", "சாதரஸ் கிரசரி", "local delivery", "kirana store", "Sadras", "Kalpakam"],
+  creator: STORE_NAME,
+  publisher: STORE_NAME,
+  other: { copyright: `© 2026 ${STORE_NAME}. All Rights Reserved.` },
   manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: STORE_NAME,
+    title: STORE_NAME,
+    description: DEFAULT_DESC,
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: STORE_NAME }],
+  },
+  twitter: {
+    card: "summary",
+    title: STORE_NAME,
+    description: DEFAULT_DESC,
+    images: ["/icons/icon-512.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

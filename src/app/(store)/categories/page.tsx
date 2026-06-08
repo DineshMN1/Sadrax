@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "All Categories",
+  description: "Browse all grocery categories — vegetables, fruits, dairy, snacks, beverages and more. Shop from Sadras & Kalpakam's local store.",
+  alternates: { canonical: "/categories" },
+  openGraph: { title: "Shop by Category — Sadrax", description: "All grocery categories available for local delivery.", url: "/categories" },
+};
+
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
