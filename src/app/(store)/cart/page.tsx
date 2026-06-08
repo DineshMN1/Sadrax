@@ -59,6 +59,7 @@ export default function CartPage() {
   const cfgDeliveryFee = useStoreConfig(s => s.deliveryFee);
   const minOrderValue  = useStoreConfig(s => s.minOrderValue);
   const freeDeliveryThreshold = useStoreConfig(s => s.freeDeliveryThreshold);
+  const storeOpen      = useStoreConfig(s => s.storeOpen);
   const sub = subtotal();
   const fee = deliveryFee();
   const tot = total();
@@ -291,7 +292,15 @@ export default function CartPage() {
             </p>
           </div>
         )}
-        {hasStockIssue || belowMin ? (
+        {!storeOpen ? (
+          <div
+            aria-disabled
+            className="flex items-center justify-between w-full bg-amber-100 border border-amber-200 text-amber-700 px-5 py-4 rounded-2xl font-bold cursor-not-allowed select-none"
+          >
+            <span className="text-base">Store is closed</span>
+            <span className="text-xs font-semibold opacity-70">Orders paused</span>
+          </div>
+        ) : hasStockIssue || belowMin ? (
           <div
             aria-disabled
             className="flex items-center justify-between w-full bg-gray-300 text-white px-5 py-4 rounded-2xl font-bold cursor-not-allowed select-none"
