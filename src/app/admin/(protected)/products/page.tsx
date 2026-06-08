@@ -24,7 +24,7 @@ export default async function ProductsPage() {
     image: (p.images as string[])[0] ?? null,
     categoryId: p.categoryId,
     categoryName: c?.name ?? null,
-    variantGroup: p.variantGroup ?? null,
+    variantCount: (p.variants as unknown[])?.length ?? 0,
   }));
 
   return <ProductsManager initialProducts={initial} categories={cats} />;

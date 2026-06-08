@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type SortKey = "popular" | "price_asc" | "price_desc" | "discount";
 type FilterKey = "instock" | "has_discount";
-type VariantItem = { id: number; unit: string; price: number; mrp: number | null; stock: number };
+type Variant = { unit: string; price: number; mrp: number | null; stock: number };
 
 interface Product {
   id: number;
@@ -20,7 +20,7 @@ interface Product {
   orderCount: number;
   brand?: string | null;
   veg?: string | null;
-  variantGroup?: string | null;
+  variants?: Variant[] | null;
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -51,12 +51,21 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
   const processed = useMemo(() => {
     let list = [...initialItems];
 
-    // Filter
-    if (filters.has("instock"))     list = list.filter(p => p.stock > 0);
-    if (filters.has("has_discount")) list = list.filter(p => p.mrp && p.mrp > p.price);
-    if (brand !== "all")            list = list.filter(p => p.brand === brand);
+    // For variant products, consider any variant in-stock as in-stock
+    const hasStock = (p: Product) =>
+      p.variants && p.variants.length > 0
+        ? p.variants.some(v => v.stock > 0)
+        : p.stock > 0;
 
-    // Sort
+    const hasDiscount = (p: Product) =>
+      p.variants && p.variants.length > 0
+        ? p.variants.some(v => v.mrp && v.mrp > v.price)
+        : !!(p.mrp && p.mrp > p.price);
+
+    if (filters.has("instock"))      list = list.filter(hasStock);
+    if (filters.has("has_discount")) list = list.filter(hasDiscount);
+    if (brand !== "all")             list = list.filter(p => p.brand === brand);
+
     switch (sort) {
       case "price_asc":  list.sort((a, b) => a.price - b.price); break;
       case "price_desc": list.sort((a, b) => b.price - a.price); break;
@@ -72,27 +81,6 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
 
   const activeFilters = filters.size;
 
-  // Deduplicate variants — show ONE card per variantGroup with all siblings as pills
-  const dedupedItems = useMemo(() => {
-    const groupMap = new Map<string, VariantItem[]>();
-    for (const p of processed) {
-      if (!p.variantGroup) continue;
-      const arr = groupMap.get(p.variantGroup) ?? [];
-      arr.push({ id: p.id, unit: p.unit ?? "", price: p.price, mrp: p.mrp, stock: p.stock });
-      groupMap.set(p.variantGroup, arr);
-    }
-    const seen = new Set<string>();
-    return processed.filter(p => {
-      const key = p.variantGroup ?? `__${p.id}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).map(p => ({
-      ...p,
-      variantList: p.variantGroup ? (groupMap.get(p.variantGroup) ?? []) : [],
-    }));
-  }, [processed]);
-
   if (initialItems.length === 0) {
     return (
       <div className="flex flex-col items-center py-20 text-center">
@@ -107,7 +95,6 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
     <div>
       {/* Sort + Filter bar */}
       <div className="mb-3">
-        {/* Scrollable chips row */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
 
           {/* Sort */}
@@ -174,7 +161,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
             On sale
           </button>
 
-          {/* Brand pills — each brand visible as a scrollable chip */}
+          {/* Brand pills */}
           {brands.length > 0 && (
             <>
               <div className="w-px h-5 bg-gray-200 shrink-0" />
@@ -196,9 +183,8 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
           )}
         </div>
 
-        {/* Count + reset — below the scroll row, always visible */}
         <div className="flex items-center justify-between mt-2 px-0.5">
-          <span className="text-xs text-gray-400 font-medium">{dedupedItems.length} item{dedupedItems.length !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-gray-400 font-medium">{processed.length} item{processed.length !== 1 ? "s" : ""}</span>
           {(activeFilters > 0 || brand !== "all" || sort !== "popular") && (
             <button
               onClick={() => { setFilters(new Set()); setBrand("all"); setSort("popular"); }}
@@ -213,7 +199,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
       {/* Close sort on outside click */}
       {showSort && <div className="fixed inset-0 z-5" onClick={() => setShowSort(false)} />}
 
-      {dedupedItems.length === 0 ? (
+      {processed.length === 0 ? (
         <div className="flex flex-col items-center py-16 text-center">
           <span className="text-4xl mb-3">🔍</span>
           <p className="font-semibold text-gray-700">No products match your filters</p>
@@ -223,7 +209,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-          {dedupedItems.map(p => (
+          {processed.map(p => (
             <ProductCard
               key={p.id}
               id={p.id}
@@ -234,7 +220,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               images={p.images as string[]}
               stock={p.stock}
               veg={p.veg}
-              variants={p.variantList.length > 1 ? p.variantList : undefined}
+              variants={p.variants && p.variants.length > 1 ? p.variants : undefined}
             />
           ))}
         </div>

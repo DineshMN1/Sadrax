@@ -214,7 +214,7 @@ export default function CheckoutPage() {
           addressId: selectedAddress,
           paymentMethod,
           couponCode,
-          items: items.map(i => ({ productId: i.id, quantity: i.quantity })),
+          items: items.map(i => ({ productId: i.id, variantIdx: i.variantIdx ?? 0, quantity: i.quantity })),
           deliveryLat: coords?.lat ?? null,
           deliveryLng: coords?.lng ?? null,
           tip,

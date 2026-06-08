@@ -10,14 +10,18 @@ function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
   return session && ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!isAdmin(session)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const rows = await db
-    .select({ product: products, category: categories })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id));
+  const vg = new URL(req.url).searchParams.get("variantGroup");
+
+  const rows = vg
+    ? await db.select().from(products).where(eq(products.variantGroup, vg))
+    : await db
+        .select({ product: products, category: categories })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id));
 
   return NextResponse.json({ products: rows });
 }

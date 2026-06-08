@@ -31,7 +31,7 @@ export function OrderActions({ orderId, orderNumber, status, items }: Props) {
   const handleReorder = () => {
     items.forEach(item => {
       for (let i = 0; i < item.quantity; i++) {
-        addItem({ id: item.id, name: item.name, price: item.price, unit: item.unit, image: item.image });
+        addItem({ id: item.id, variantIdx: 0, name: item.name, price: item.price, unit: item.unit, image: item.image });
       }
     });
     toast.success("Items added to cart!", { description: `${items.length} product${items.length !== 1 ? "s" : ""}` });

@@ -22,39 +22,39 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState("");
   const [applying, setApplying] = useState(false);
 
-  // Live stock for the products in the cart. The cart is persisted in
-  // localStorage and can go stale, so we re-check against the server.
-  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  type StockProduct = { id: number; stock: number; variants?: { stock: number }[] | null };
+  const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [stockLoaded, setStockLoaded] = useState(false);
 
-  // Refetch only when the *set* of product ids changes (not on qty change)
   const idsKey = useMemo(
     () => [...new Set(items.map(i => i.id))].sort((a, b) => a - b).join(","),
     [items]
   );
 
   useEffect(() => {
-    if (!idsKey) { setStockMap({}); setStockLoaded(true); return; }
+    if (!idsKey) { setStockProducts([]); setStockLoaded(true); return; }
     let cancelled = false;
     fetch(`/api/products?ids=${idsKey}`)
       .then(r => r.json())
-      .then((d: { products?: { id: number; stock: number }[] }) => {
+      .then((d: { products?: StockProduct[] }) => {
         if (cancelled) return;
-        const m: Record<number, number> = {};
-        for (const p of d.products ?? []) m[p.id] = p.stock;
-        setStockMap(m);
+        setStockProducts(d.products ?? []);
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setStockLoaded(true); });
     return () => { cancelled = true; };
   }, [idsKey]);
 
-  // Once loaded, a product missing from the response is unavailable (stock 0)
-  const stockOf = (id: number): number | undefined =>
-    stockLoaded ? (stockMap[id] ?? 0) : undefined;
+  const stockOf = (item: { id: number; variantIdx?: number }): number | undefined => {
+    if (!stockLoaded) return undefined;
+    const p = stockProducts.find(sp => sp.id === item.id);
+    if (!p) return 0;
+    if (p.variants && p.variants.length > 0) return p.variants[item.variantIdx ?? 0]?.stock ?? 0;
+    return p.stock;
+  };
 
   const hasStockIssue =
-    stockLoaded && items.some(i => i.quantity > (stockMap[i.id] ?? 0));
+    stockLoaded && items.some(i => i.quantity > (stockOf(i) ?? 0));
 
   const cfgDeliveryFee = useStoreConfig(s => s.deliveryFee);
   const minOrderValue  = useStoreConfig(s => s.minOrderValue);
@@ -133,13 +133,13 @@ export default function CartPage() {
         {/* Items */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
           {items.map(item => {
-            const stock = stockOf(item.id);
+            const stock = stockOf(item);
             const out  = stock !== undefined && stock === 0;
             const over = stock !== undefined && stock > 0 && item.quantity > stock;
             const low  = stock !== undefined && stock > 0 && stock <= 5;
             const atMax = stock !== undefined && item.quantity >= stock;
             return (
-            <div key={item.id} className="flex items-center gap-3 p-3 group">
+            <div key={`${item.id}-${item.variantIdx}`} className="flex items-center gap-3 p-3 group">
               <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100">
                 {item.image
                   ? <Image src={item.image} alt={item.name} width={56} height={56} className="w-full h-full object-cover" />
@@ -165,14 +165,14 @@ export default function CartPage() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  onClick={() => item.quantity === 1 ? removeItem(item.id) : updateQuantity(item.id, item.quantity - 1)}
+                  onClick={() => item.quantity === 1 ? removeItem(item.id, item.variantIdx) : updateQuantity(item.id, item.quantity - 1, item.variantIdx)}
                   className="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-200 text-gray-600 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 active:scale-90 transition-all"
                 >
                   {item.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} strokeWidth={3} />}
                 </button>
                 <span className="w-7 text-center text-sm font-extrabold tabular-nums">{item.quantity}</span>
                 <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  onClick={() => updateQuantity(item.id, item.quantity + 1, item.variantIdx)}
                   disabled={atMax}
                   className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all shadow-sm shadow-green-500/30 disabled:opacity-40 disabled:pointer-events-none"
                 >

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Plus, Upload, Search, Minus, Trash2, Loader2, Pencil, Copy,
+  Plus, Upload, Search, Minus, Trash2, Loader2, Pencil,
   Package, PackageX, AlertTriangle, Boxes, X, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ interface Product {
   image: string | null;
   categoryId: number | null;
   categoryName: string | null;
-  variantGroup: string | null;
+  variantCount: number;
 }
 
 interface Cat { id: number; name: string }
@@ -40,55 +40,6 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
 
   const setRowBusy = (id: number, on: boolean) =>
     setBusy((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
-
-  const handleDuplicate = async (p: Product) => {
-    setRowBusy(p.id, true);
-    try {
-      const res = await fetch("/api/admin/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `Copy of ${p.name}`,
-          price: p.price,
-          mrp: p.mrp,
-          unit: p.unit,
-          stock: 0,
-          categoryId: p.categoryId,
-          images: p.image ? [p.image] : [],
-          active: false,
-          variantGroup: p.variantGroup,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      const copy: Product = {
-        id: data.product.id,
-        name: data.product.name,
-        unit: data.product.unit,
-        price: data.product.price,
-        mrp: data.product.mrp,
-        stock: data.product.stock ?? 0,
-        active: data.product.active,
-        image: (data.product.images as string[])[0] ?? null,
-        categoryId: data.product.categoryId,
-        categoryName: p.categoryName,
-        variantGroup: data.product.variantGroup,
-      };
-      setItems(prev => {
-        const idx = prev.findIndex(it => it.id === p.id);
-        const next = [...prev];
-        next.splice(idx + 1, 0, copy);
-        return next;
-      });
-      toast.success("Duplicated!", {
-        action: { label: "Edit →", onClick: () => { window.location.href = `/admin/products/${copy.id}/edit`; } },
-      });
-    } catch {
-      toast.error("Couldn't duplicate");
-    } finally {
-      setRowBusy(p.id, false);
-    }
-  };
 
   // ── Single-product PATCH with optimistic update + rollback ──
   const patchItem = async (id: number, patch: Partial<Product>, payload: Record<string, unknown>) => {
@@ -197,36 +148,6 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
     return { total: items.length, out, low, units, value };
   }, [items]);
 
-  // Group variants together for display
-  type DisplayRow =
-    | { type: "header"; group: string; count: number }
-    | { type: "product"; product: Product; inGroup: boolean };
-
-  const displayRows = useMemo((): DisplayRow[] => {
-    const groupMap = new Map<string, Product[]>();
-    for (const p of filtered) {
-      if (p.variantGroup) {
-        const arr = groupMap.get(p.variantGroup) ?? [];
-        arr.push(p);
-        groupMap.set(p.variantGroup, arr);
-      }
-    }
-    const seen = new Set<string>();
-    const result: DisplayRow[] = [];
-    for (const p of filtered) {
-      if (p.variantGroup) {
-        if (seen.has(p.variantGroup)) continue;
-        seen.add(p.variantGroup);
-        const members = groupMap.get(p.variantGroup)!;
-        result.push({ type: "header", group: p.variantGroup, count: members.length });
-        for (const m of members) result.push({ type: "product", product: m, inGroup: true });
-      } else {
-        result.push({ type: "product", product: p, inGroup: false });
-      }
-    }
-    return result;
-  }, [filtered]);
-
   const allVisibleSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
   const toggleSelectAll = () =>
     setSelected((s) => {
@@ -321,21 +242,7 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {displayRows.map((row, i) => {
-              if (row.type === "header") {
-                return (
-                  <tr key={`grp-${row.group}`} className="bg-violet-50/50">
-                    <td colSpan={7} className="px-4 py-2">
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-violet-700">
-                        <Layers size={12} className="shrink-0" />
-                        <span className="uppercase tracking-wider">{row.group}</span>
-                        <span className="font-normal text-violet-400">· {row.count} variants</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
-              const { product: p, inGroup } = row;
+            {filtered.map((p) => {
               const saving = busy.has(p.id);
               const draft = stockDraft[p.id];
               return (
@@ -344,41 +251,53 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
                     <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-4 h-4 accent-green-600 align-middle" />
                   </td>
                   <td className="px-3 py-3">
-                    <div className={`flex items-center gap-3 ${inGroup ? "pl-4" : ""}`}>
+                    <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                         {p.image
                           ? <Image src={p.image} alt={p.name} width={40} height={40} className="w-full h-full object-cover" />
                           : <div className="w-full h-full flex items-center justify-center text-lg">📦</div>}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.unit}{!p.active && <span className="ml-1 text-gray-400">· hidden</span>}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-gray-900 truncate">{p.name}</p>
+                          {p.variantCount > 1 && (
+                            <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full">
+                              <Layers size={9} />{p.variantCount}
+                            </span>
+                          )}
+                        </div>
+                        {!p.active && <p className="text-xs text-gray-400">hidden</p>}
                       </div>
                     </div>
                   </td>
                   <td className="px-3 py-3 text-gray-600">{p.categoryName ?? <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-3 text-right font-medium whitespace-nowrap">{formatPrice(p.price)}</td>
+                  <td className="px-3 py-3 text-right font-medium whitespace-nowrap">
+                    {p.variantCount > 1 ? <span className="text-xs text-gray-400">varies</span> : formatPrice(p.price)}
+                  </td>
                   <td className="px-3 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <button onClick={() => setStock(p.id, p.stock - 1)} disabled={saving || p.stock === 0}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30">
-                        <Minus size={13} />
-                      </button>
-                      <input
-                        type="number" min={0}
-                        value={draft ?? String(p.stock)}
-                        onChange={(e) => setStockDraft((d) => ({ ...d, [p.id]: e.target.value }))}
-                        onBlur={() => draft !== undefined && setStock(p.id, parseInt(draft) || 0)}
-                        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                        className={`w-14 h-7 text-center text-sm font-semibold rounded-lg border focus:outline-none focus:border-green-500
-                          ${p.stock === 0 ? "border-red-200 text-red-600 bg-red-50" : p.stock <= LOW_STOCK ? "border-amber-200 text-amber-700 bg-amber-50" : "border-gray-200 text-gray-900"}`}
-                      />
-                      <button onClick={() => setStock(p.id, p.stock + 1)} disabled={saving}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30">
-                        <Plus size={13} />
-                      </button>
-                      {saving && <Loader2 size={13} className="animate-spin text-gray-400 ml-0.5" />}
-                    </div>
+                    {p.variantCount > 1 ? (
+                      <div className="text-center text-xs text-gray-400">in variants</div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => setStock(p.id, p.stock - 1)} disabled={saving || p.stock === 0}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30">
+                          <Minus size={13} />
+                        </button>
+                        <input type="number" min={0}
+                          value={draft ?? String(p.stock)}
+                          onChange={(e) => setStockDraft((d) => ({ ...d, [p.id]: e.target.value }))}
+                          onBlur={() => draft !== undefined && setStock(p.id, parseInt(draft) || 0)}
+                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                          className={`w-14 h-7 text-center text-sm font-semibold rounded-lg border focus:outline-none focus:border-green-500
+                            ${p.stock === 0 ? "border-red-200 text-red-600 bg-red-50" : p.stock <= LOW_STOCK ? "border-amber-200 text-amber-700 bg-amber-50" : "border-gray-200 text-gray-900"}`}
+                        />
+                        <button onClick={() => setStock(p.id, p.stock + 1)} disabled={saving}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30">
+                          <Plus size={13} />
+                        </button>
+                        {saving && <Loader2 size={13} className="animate-spin text-gray-400 ml-0.5" />}
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-center">
                     <button onClick={() => toggleActive(p)} disabled={saving}
@@ -388,7 +307,6 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleDuplicate(p)} disabled={saving} className="text-gray-300 hover:text-violet-500 transition-colors disabled:opacity-30" title="Duplicate as variant"><Copy size={15} /></button>
                       <Link href={`/admin/products/${p.id}/edit`} className="text-gray-400 hover:text-indigo-600" title="Edit"><Pencil size={15} /></Link>
                       <button onClick={() => removeItem(p)} className="text-red-300 hover:text-red-600" title="Delete"><Trash2 size={15} /></button>
                     </div>
@@ -405,7 +323,7 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
         </table>
       </div>
 
-      <p className="text-xs text-gray-400 px-1">Showing {filtered.length} of {items.length} · edit stock inline · <Copy size={10} className="inline" /> duplicates as variant</p>
+      <p className="text-xs text-gray-400 px-1">Showing {filtered.length} of {items.length} · edit stock inline · variant badge = embedded sizes</p>
     </div>
   );
 }

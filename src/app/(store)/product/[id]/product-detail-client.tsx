@@ -45,7 +45,7 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
   const { toggle, has }   = useWishlist();
   const { add: addRecent } = useRecentlyViewed();
 
-  const cartItem = items.find(i => i.id === id);
+  const cartItem = items.find(i => i.id === id && i.variantIdx === 0);
   const qty      = cartItem?.quantity ?? 0;
   const cartCount = items.reduce((n, i) => n + i.quantity, 0);
   const cartTotal = useCart(s => s.total());
@@ -81,7 +81,7 @@ export function ProductDetailClient({ id, name, price, mrp, unit, stock, images,
 
   const handleAdd = () => {
     if (stock === 0) return;
-    addItem({ id, name, price, mrp: mrp ?? undefined, unit: unit ?? undefined, image: images[0] });
+    addItem({ id, variantIdx: 0, name, price, mrp: mrp ?? undefined, unit: unit ?? undefined, image: images[0] });
     setFlash(true);
     setTimeout(() => setFlash(false), 600);
   };

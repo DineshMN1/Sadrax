@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 
-type VariantItem = { id: number; unit: string; price: number; mrp?: number | null; stock: number };
+type VariantItem = { unit: string; price: number; mrp?: number | null; stock: number };
 
 interface ProductCardProps {
   id: number;
@@ -30,19 +30,20 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const thumb = images?.[0];
   const wished = has(id);
 
-  const [selectedId, setSelectedId] = useState(id);
+  const [selectedIdx, setSelectedIdx] = useState(0);
   const [flash, setFlash]             = useState<"idle" | "added" | "inc" | "dec">("idle");
   const [notifyState, setNotifyState] = useState<"idle" | "loading" | "done">("idle");
 
-  // Derive active variant data
-  const active = useMemo((): VariantItem => {
-    if (variants && variants.length > 0) {
-      return variants.find(v => v.id === selectedId) ?? variants[0];
-    }
-    return { id, price, mrp: mrp ?? null, stock, unit: unit ?? "" };
-  }, [variants, selectedId, id, price, mrp, stock, unit]);
+  const hasVariants = variants && variants.length > 1;
 
-  const cartItem  = items.find(i => i.id === active.id);
+  // Active variant data
+  const active = useMemo((): VariantItem => {
+    if (hasVariants) return variants![selectedIdx] ?? variants![0];
+    return { price, mrp: mrp ?? null, stock, unit: unit ?? "" };
+  }, [hasVariants, variants, selectedIdx, price, mrp, stock, unit]);
+
+  const variantIdx = hasVariants ? selectedIdx : 0;
+  const cartItem  = items.find(i => i.id === id && i.variantIdx === variantIdx);
   const qty       = cartItem?.quantity ?? 0;
   const discount  = active.mrp && active.mrp > active.price ? Math.round(((active.mrp - active.price) / active.mrp) * 100) : null;
   const outOfStock = active.stock === 0;
@@ -57,12 +58,12 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     if (outOfStock) return;
-    addItem({ id: active.id, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: thumb });
+    addItem({ id, variantIdx, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: thumb });
     fireFlash("added");
   };
 
-  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(active.id, qty + 1); fireFlash("inc"); };
-  const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(active.id) : updateQuantity(active.id, qty - 1); fireFlash("dec"); };
+  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, qty + 1, variantIdx); fireFlash("inc"); };
+  const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(id, variantIdx) : updateQuantity(id, qty - 1, variantIdx); fireFlash("dec"); };
   const handleWish = (e: React.MouseEvent) => { e.preventDefault(); toggle(id); };
 
   const handleNotify = async (e: React.MouseEvent) => {
@@ -73,10 +74,10 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
       const res = await fetch("/api/stock-alert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: active.id }),
+        body: JSON.stringify({ productId: id }),
       });
       if (res.status === 401) {
-        window.location.href = `/login?redirect=/product/${active.id}`;
+        window.location.href = `/login?redirect=/product/${id}`;
         return;
       }
       setNotifyState("done");
@@ -85,11 +86,9 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     }
   };
 
-  const hasVariants = variants && variants.length > 1;
-
   return (
     <Link
-      href={`/product/${selectedId}`}
+      href={`/product/${id}`}
       className={cn(
         "group relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-200",
         "hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5",
@@ -200,13 +199,13 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
         {/* Variant pills */}
         {hasVariants && (
           <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-0.5 px-0.5 mt-0.5">
-            {variants!.map(v => (
+            {variants!.map((v, i) => (
               <button
-                key={v.id}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedId(v.id); }}
+                key={i}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedIdx(i); }}
                 className={cn(
                   "shrink-0 h-6 px-2 rounded-lg text-[10px] font-bold border transition-all whitespace-nowrap",
-                  v.id === selectedId
+                  i === selectedIdx
                     ? "bg-green-500 border-green-500 text-white"
                     : v.stock === 0
                     ? "bg-gray-50 border-gray-200 text-gray-300 line-through"
