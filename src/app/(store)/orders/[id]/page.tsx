@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { OrderActions } from "./order-actions";
 import { InvoiceButton } from "./invoice-button";
 import { FreeDeliveryPopper } from "@/components/store/free-delivery-popper";
+import { FreeOrderBanner } from "@/components/store/free-order-banner";
 import { RepeatOrder } from "./repeat-order";
 import { ReturnRequest } from "./return-request";
 import { canRequestReturn } from "@/lib/returns";
@@ -96,6 +97,9 @@ export default async function OrderDetailPage({
       <OrderStatusWatcher orderId={order.id} orderNumber={order.orderNumber} status={order.status} />
 
       <div className="px-4 py-4 space-y-4">
+        {/* Free order celebration (store made it free) */}
+        {order.freeNote && <FreeOrderBanner note={order.freeNote} />}
+
         {/* ETA chip (active orders) */}
         {!isTerminal && order.status !== "delivered" && (
           <div className="flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-2.5">
@@ -245,8 +249,8 @@ export default async function OrderDetailPage({
           </div>
         </div>
 
-        {/* Free delivery celebration */}
-        {order.deliveryFee === 0 && <FreeDeliveryPopper />}
+        {/* Free delivery celebration (only when it's not a fully-free order) */}
+        {order.deliveryFee === 0 && !order.freeNote && <FreeDeliveryPopper />}
 
         {/* Bill */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">

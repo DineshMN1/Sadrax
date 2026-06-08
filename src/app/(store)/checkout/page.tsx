@@ -11,6 +11,9 @@ import { useStoreConfig } from "@/store/config";
 import { track } from "@/lib/analytics";
 import { requestCoords, getCachedCoords } from "@/lib/geo";
 import { authClient } from "@/lib/auth-client";
+import { LottiePlayer } from "@/components/lottie-player";
+import loadingAnim from "@/lottie/loading.json";
+import successAnim from "@/lottie/success.json";
 import { toast } from "sonner";
 import loadDynamic from "next/dynamic";
 
@@ -41,6 +44,7 @@ export default function CheckoutPage() {
   const isDeliverable = (pc: string) => pincodes.includes(pc.trim());
   const placedRef = useRef(false);
   const [authChecked, setAuthChecked]         = useState(false);
+  const [justPlaced, setJustPlaced]           = useState(false);
   const [addresses, setAddresses]             = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod]     = useState<PaymentMethod>("cod");
@@ -210,9 +214,9 @@ export default function CheckoutPage() {
         payment_method: paymentMethod,
       });
       placedRef.current = true;       // so the empty-cart guard below doesn't hijack the redirect
-      router.push("/orders");
-      toast.success("Order placed!", { description: `#${data.orderNumber}` });
+      setJustPlaced(true);            // show the success animation before redirecting
       clearCart();
+      setTimeout(() => router.push("/orders"), 1900);
     } catch {
       toast.error("Couldn't place your order — please check your connection and try again.");
     } finally {
@@ -225,13 +229,25 @@ export default function CheckoutPage() {
     if (items.length === 0 && !placedRef.current) router.replace("/cart");
   }, [items.length, router]);
 
+  // Order-placed success celebration (renders before the empty-cart guard since
+  // we clear the cart on success)
+  if (justPlaced) {
+    return (
+      <div className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-white gap-2 px-8 text-center">
+        <div className="w-44 h-44"><LottiePlayer animationData={successAnim} loop={false} /></div>
+        <p className="text-xl font-extrabold text-gray-900">Order placed!</p>
+        <p className="text-sm text-gray-500">Taking you to your orders…</p>
+      </div>
+    );
+  }
+
   if (items.length === 0) return null;
 
   // Verifying login before showing checkout
   if (!authChecked) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-gray-400">
-        <Loader2 size={28} className="animate-spin text-green-600" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2 text-gray-400">
+        <div className="w-24 h-24"><LottiePlayer animationData={loadingAnim} loop className="w-full h-full" /></div>
         <p className="text-sm">Getting your checkout ready…</p>
       </div>
     );
