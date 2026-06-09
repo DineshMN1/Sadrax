@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { products, categories } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { toSlug } from "@/lib/utils";
+import { createProductSchema } from "@/lib/validations/product";
 
 function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
   return session && ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
@@ -30,10 +31,13 @@ export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!isAdmin(session)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await req.json();
+  const rawBody = await req.json();
+  const parsed = createProductSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload", details: parsed.error.format() }, { status: 400 });
+  }
+  const body = parsed.data;
   const { name, price, description, mrp, unit, stock, categoryId, images, active, featured, brand, veg, variantGroup, variants } = body;
-
-  if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
 
   const shared = {
     description, mrp: mrp ?? null, categoryId: categoryId ?? null,
