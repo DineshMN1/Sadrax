@@ -52,10 +52,15 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (res.status === 403) throw new Error("FORBIDDEN");
       if (!res.ok) throw new Error();
-    } catch {
+    } catch (err: any) {
       setItems(prev);
-      toast.error("Couldn't save change");
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Couldn't save change");
+      }
     } finally {
       setRowBusy(id, false);
     }
@@ -77,11 +82,16 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
     setItems((s) => s.filter((it) => it.id !== p.id));
     try {
       const res = await fetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
+      if (res.status === 403) throw new Error("FORBIDDEN");
       if (!res.ok) throw new Error();
       toast.success("Product deleted");
-    } catch {
+    } catch (err: any) {
       setItems(prev);
-      toast.error("Couldn't delete");
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Couldn't delete");
+      }
     }
   };
 
@@ -95,12 +105,19 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
     try {
       await Promise.all(ids.map((id) =>
         fetch(`/api/admin/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-          .then((r) => { if (!r.ok) throw new Error(); })
+          .then((r) => { 
+            if (r.status === 403) throw new Error("FORBIDDEN");
+            if (!r.ok) throw new Error(); 
+          })
       ));
       toast.success(`${label} ${ids.length} product${ids.length === 1 ? "" : "s"}`);
-    } catch {
+    } catch (err: any) {
       setItems(prev);
-      toast.error("Some changes failed to save");
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Some changes failed to save");
+      }
     }
   };
 
@@ -118,11 +135,20 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
     setItems((s) => s.filter((it) => !selected.has(it.id)));
     setSelected(new Set());
     try {
-      await Promise.all(ids.map((id) => fetch(`/api/admin/products/${id}`, { method: "DELETE" }).then((r) => { if (!r.ok) throw new Error(); })));
+      await Promise.all(ids.map((id) => 
+        fetch(`/api/admin/products/${id}`, { method: "DELETE" }).then((r) => { 
+          if (r.status === 403) throw new Error("FORBIDDEN");
+          if (!r.ok) throw new Error(); 
+        })
+      ));
       toast.success(`Deleted ${ids.length} product${ids.length === 1 ? "" : "s"}`);
-    } catch {
+    } catch (err: any) {
       setItems(prev);
-      toast.error("Some deletions failed");
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Some deletions failed");
+      }
     }
   };
 

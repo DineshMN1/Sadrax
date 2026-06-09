@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -118,7 +119,7 @@ export default function AdminLoginPage() {
 
         <p className="text-center text-xs text-gray-400 mt-4">
           Customer app?{" "}
-          <a href="/" className="text-green-600 font-semibold">Go to store →</a>
+          <Link href="/" className="text-green-600 font-semibold">Go to store →</Link>
         </p>
       </div>
     </div>

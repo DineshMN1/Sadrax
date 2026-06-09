@@ -28,6 +28,8 @@ if (phToken) {
     capture_pageview: "history_change", // auto-captures SPA navigations
     capture_pageleave: true,
     persistence: "localStorage",
+    secure_cookie: true,
+    cross_subdomain_cookie: false,
     session_recording: {
       maskAllInputs: false,
       maskInputOptions: { password: true },
