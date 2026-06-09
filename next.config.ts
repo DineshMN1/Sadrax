@@ -73,7 +73,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-auth", "@better-auth/kysely-adapter", "sharp"],
+  serverExternalPackages: ["@better-auth/kysely-adapter", "sharp"],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

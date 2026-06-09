@@ -43,8 +43,10 @@ export const auth = betterAuth({
   ],
   advanced: {
     cookiePrefix: "sadrax",
+    useSecureCookies: true,
     defaultCookieAttributes: {
       sameSite: "strict",
+      secure: true,
     },
   },
   session: {
