@@ -1,9 +1,8 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
-import { Phone } from "lucide-react";
-
-const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
+import { LottiePlayer } from "@/components/lottie-player";
+import deliveryBikeAnim from "@/lottie/delivery-bike.json";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -19,10 +18,6 @@ export function GreetingInner() {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="relative w-2 h-2">
-          <span className="absolute inset-0 bg-green-500 rounded-full animate-pulse-ring" />
-          <span className="absolute inset-0 bg-green-500 rounded-full" />
-        </div>
         <div>
           {firstName ? (
             <>
@@ -41,14 +36,9 @@ export function GreetingInner() {
           )}
         </div>
       </div>
-      <a
-        href={`tel:+91${STORE_PHONE}`}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 rounded-xl transition-colors"
-        aria-label="Call store"
-      >
-        <Phone size={14} className="text-green-600" />
-        <span className="text-xs font-bold text-green-700">Support</span>
-      </a>
+      <div className="w-14 h-14 shrink-0">
+        <LottiePlayer animationData={deliveryBikeAnim} loop className="w-full h-full" />
+      </div>
     </div>
   );
 }

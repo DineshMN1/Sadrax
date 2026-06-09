@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid3X3, Tag, ClipboardList, User, ShoppingCart, MapPin, Zap } from "lucide-react";
+import { Grid3X3, Tag, ClipboardList, User, ShoppingCart, MapPin } from "lucide-react";
 import { Suspense, useSyncExternalStore } from "react";
 import { useCart } from "@/store/cart";
 import { useStoreConfig } from "@/store/config";
 import { useSession } from "@/lib/auth-client";
 import { cn, formatPrice } from "@/lib/utils";
 import { SearchBar } from "@/components/store/search-bar";
+import { LottiePlayer } from "@/components/lottie-player";
+import deliveryBikeAnim from "@/lottie/delivery-bike.json";
 
 const navItems = [
   { href: "/categories", icon: Grid3X3,       label: "Categories" },
@@ -33,16 +35,13 @@ export function DesktopHeader() {
     <header className="hidden md:block sticky top-0 z-40 h-16 bg-white border-b border-gray-100">
       <div className="max-w-360 mx-auto h-full flex items-center gap-4 px-6 lg:px-8">
       {/* Brand */}
-      <Link href="/" className="flex items-center gap-2.5 shrink-0">
-        <div className="w-9 h-9 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-base shadow-sm shadow-green-500/30">
-          S
+      <Link href="/" className="flex items-center gap-1 shrink-0">
+        <div className="w-12 h-12 shrink-0 -ml-1">
+          <LottiePlayer animationData={deliveryBikeAnim} loop className="w-full h-full" />
         </div>
-        <div className="hidden lg:block">
+        <div className="hidden lg:block -ml-0.5">
           <p className="font-extrabold text-gray-900 text-sm leading-none">Sadrax</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <Zap size={9} className="text-green-500" fill="currentColor" />
-            <p className="text-[10px] text-green-600 font-semibold leading-none">Fast delivery</p>
-          </div>
+          <p className="text-[10px] text-gray-400 font-semibold leading-none mt-0.5">Fast delivery</p>
         </div>
       </Link>
 

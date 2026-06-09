@@ -1,7 +1,7 @@
 "use client";
 
 import { LottiePlayer } from "@/components/lottie-player";
-import deliveryAnim from "@/lottie/delivery.json";
+import deliveryAnim from "@/lottie/delivery-bike.json";
 
 export function ActiveOrderIcon({ status, emoji }: { status: string; emoji: string }) {
   if (status === "out_for_delivery") {
