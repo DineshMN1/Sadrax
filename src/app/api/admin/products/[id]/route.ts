@@ -6,6 +6,7 @@ import { products } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { logAudit, diffSummary } from "@/lib/audit";
 import { notifyBackInStock } from "@/lib/stock-alerts";
+import { updateProductSchema } from "@/lib/validations/product";
 
 function isAdmin(session: Awaited<ReturnType<typeof auth.api.getSession>>) {
   return session && ["admin", "staff"].includes((session.user as { role?: string }).role ?? "");
@@ -26,7 +27,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!isAdmin(session)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const body = await req.json();
+  const rawBody = await req.json();
+
+  const parsed = updateProductSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload", details: parsed.error.format() }, { status: 400 });
+  }
+  const body = parsed.data;
 
   const [before] = await db.select().from(products).where(eq(products.id, Number(id))).limit(1);
 
