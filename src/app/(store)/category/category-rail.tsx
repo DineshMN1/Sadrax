@@ -31,7 +31,7 @@ export function CategoryRail({ cats, countMap }: { cats: Cat[]; countMap: Record
   }, []);
 
   return (
-    <aside className="w-16 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto [scroll-behavior:smooth] sticky top-0 self-start max-h-[100dvh] pb-28">
+    <aside className="w-16 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto [scroll-behavior:smooth] sticky top-0 md:top-16 self-start max-h-[100dvh] md:max-h-[calc(100dvh-4rem)] pb-28">
       <p className="hidden md:block text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 pt-3 pb-1">
         Categories
       </p>

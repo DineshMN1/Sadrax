@@ -22,7 +22,7 @@ export function FrequentlyBought({ productId }: { productId: number }) {
   return (
     <section className="px-4 py-4">
       <h2 className="text-base font-extrabold text-gray-900 mb-3">Frequently bought together</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {items.map((p) => (
           <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} />
         ))}

@@ -54,7 +54,7 @@ export default async function CategoriesPage() {
             <p className="text-sm text-gray-400 mt-1">Add categories from the admin panel</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {cats.map(cat => (
               <Link
                 key={cat.id}

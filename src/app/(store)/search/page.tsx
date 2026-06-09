@@ -45,7 +45,7 @@ async function SearchResults({ query }: { query: string }) {
       <p className="text-xs font-semibold text-gray-400 mb-3">
         {results.length} result{results.length !== 1 ? "s" : ""} for &quot;<span className="text-gray-700">{query}</span>&quot;
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {results.map(p => (
           <ProductCard
             key={p.id}
@@ -77,7 +77,7 @@ export default async function SearchPage({
       </div>
       <div className="px-4 py-4">
         <Suspense fallback={
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {Array(6).fill(0).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="aspect-square skeleton" />

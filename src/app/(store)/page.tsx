@@ -59,7 +59,7 @@ async function getHomeData() {
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, allProducts, isOpen, pincodes, promoBanners, storeClosedMessage, openTime, closeTime } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen, promoBanners, storeClosedMessage, openTime, closeTime } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -73,19 +73,6 @@ export default async function HomePage() {
           <GreetingHeader />
         </Suspense>
         <Suspense><SearchBar /></Suspense>
-      </div>
-
-      {/* ── Desktop header ────────────────────────────────────────────────── */}
-      <div className="hidden md:flex sticky top-0 z-20 glass border-b border-gray-100/80 px-6 py-3.5 items-center gap-4">
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative w-2.5 h-2.5">
-            <span className="absolute inset-0 bg-green-500 rounded-full animate-pulse-ring" />
-            <span className="absolute inset-0 bg-green-500 rounded-full" />
-          </div>
-          <span className="text-sm font-bold text-gray-900">Delivering to {pincodes.join(", ")}</span>
-        </div>
-        <Suspense><SearchBar className="flex-1 max-w-lg" /></Suspense>
-        <Suspense fallback={null}><GreetingHeader /></Suspense>
       </div>
 
       {/* Location banner — client component, outside px padding */}
@@ -206,7 +193,7 @@ export default async function HomePage() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {featured.map(p => (
                 <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
@@ -225,7 +212,7 @@ export default async function HomePage() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {topOrdered.map(p => (
                 <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
@@ -245,7 +232,7 @@ export default async function HomePage() {
                 Browse all <ChevronRight size={13} strokeWidth={3} />
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
               {allProducts.map(p => (
                 <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
