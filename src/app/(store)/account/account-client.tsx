@@ -71,7 +71,7 @@ export default function AccountClient() {
   const initials = getInitials(session.user.name);
 
   return (
-    <div>
+    <div className="md:max-w-2xl md:mx-auto">
       {/* Profile header */}
       <div className="bg-linear-to-br from-green-600 to-emerald-700 px-4 pt-6 pb-8">
         <div className="flex items-center gap-4">

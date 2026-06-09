@@ -30,7 +30,8 @@ export function DesktopHeader() {
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
 
   return (
-    <header className="hidden md:flex sticky top-0 z-40 h-16 bg-white border-b border-gray-100 items-center gap-4 px-5 lg:px-6">
+    <header className="hidden md:block sticky top-0 z-40 h-16 bg-white border-b border-gray-100">
+      <div className="max-w-360 mx-auto h-full flex items-center gap-4 px-6 lg:px-8">
       {/* Brand */}
       <Link href="/" className="flex items-center gap-2.5 shrink-0">
         <div className="w-9 h-9 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-base shadow-sm shadow-green-500/30">
@@ -108,6 +109,7 @@ export function DesktopHeader() {
           {mounted && itemCount > 0 ? formatPrice(total) : "Cart"}
         </span>
       </Link>
+      </div>
     </header>
   );
 }

@@ -78,7 +78,29 @@ export default async function HomePage() {
       {/* Location banner — client component, outside px padding */}
       <LocationBanner />
 
-      <div className="px-4 md:px-6 py-4 space-y-7">
+      <div className="md:flex md:items-start">
+
+        {/* Desktop category sidebar — hidden on mobile */}
+        <aside className="hidden md:block w-56 lg:w-64 shrink-0 sticky top-16 self-start max-h-[calc(100dvh-4rem)] overflow-y-auto border-r border-gray-100 py-4">
+          <p className="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Categories</p>
+          {cats.map(cat => (
+            <Link
+              key={cat.id}
+              href={`/category/${cat.slug}`}
+              className="flex items-center gap-2.5 px-4 py-2 mx-1 rounded-xl hover:bg-gray-50 transition-colors group"
+            >
+              <span className="w-7 h-7 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                {cat.image
+                  ? <Image src={cat.image} alt={cat.name} width={28} height={28} className="w-full h-full object-cover" />
+                  : <span className="text-sm">{getCategoryEmoji(cat.slug)}</span>}
+              </span>
+              <span className="text-sm font-medium text-gray-700 truncate group-hover:text-green-700 transition-colors">{cat.name}</span>
+            </Link>
+          ))}
+        </aside>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 px-4 md:px-6 py-4 space-y-7">
         {/* Active order tracker — server rendered, no extra client fetch */}
         <Suspense fallback={null}>
           <ActiveOrderBanner />
@@ -142,8 +164,8 @@ export default async function HomePage() {
           </a>
         </div>
 
-        {/* ── Categories ────────────────────────────────────────────────── */}
-        <section>
+        {/* ── Categories — hidden on desktop (shown in sidebar) ────────── */}
+        <section className="md:hidden">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-extrabold text-gray-900">Shop by Category</h2>
             <Link href="/categories" className="flex items-center gap-0.5 text-xs font-bold text-green-600 hover:text-green-700 transition-colors">
@@ -251,7 +273,8 @@ export default async function HomePage() {
         )}
 
         <div className="h-2" />
-      </div>
+        </div>{/* end main content */}
+      </div>{/* end md:flex wrapper */}
     </div>
   );
 }

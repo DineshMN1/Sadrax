@@ -57,7 +57,7 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
   }
 
   return (
-    <div>
+    <div className="md:max-w-2xl md:mx-auto">
       {/* Header */}
       <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-3.5 pb-0">
         <div className="flex items-center justify-between mb-3">
