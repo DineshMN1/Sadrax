@@ -104,10 +104,15 @@ export default function EditProductPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variants }),
       });
+      if (res.status === 403) throw new Error("FORBIDDEN");
       if (!res.ok) throw new Error();
       toast.success("Variants saved");
-    } catch {
-      toast.error("Failed to save variants");
+    } catch (err: any) {
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Failed to save variants");
+      }
     } finally { setSaving(false); }
   };
 
@@ -167,9 +172,16 @@ export default function EditProductPage() {
           ...(hasVariants ? { variants: buildVariantsPayload() } : {}),
         }),
       });
+      if (res.status === 403) throw new Error("FORBIDDEN");
       const data = await res.json();
       if (res.ok) { toast.success("Saved!"); router.push("/admin/products"); }
       else toast.error(data.error ?? "Failed to save");
+    } catch (err: any) { 
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Failed to save");
+      }
     } finally { setSaving(false); }
   };
 
@@ -177,8 +189,15 @@ export default function EditProductPage() {
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+      if (res.status === 403) throw new Error("FORBIDDEN");
       if (res.ok) { toast.success("Product deleted"); router.push("/admin/products"); }
       else toast.error("Failed to delete");
+    } catch (err: any) {
+      if (err.message === "FORBIDDEN") {
+        toast.error("You do not have permission to perform this action.");
+      } else {
+        toast.error("Failed to delete");
+      }
     } finally { setDeleting(false); setConfirmDelete(false); }
   };
 
