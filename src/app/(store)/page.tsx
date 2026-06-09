@@ -63,15 +63,19 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col">
-      {/* ── Mobile header ─────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-4 pb-3 space-y-3 md:hidden">
+      {/* ── Mobile greeting — scrolls away ───────────────────────────────── */}
+      <div className="px-4 pt-4 pb-2 md:hidden">
         <Suspense fallback={
           <div className="flex items-center justify-between">
-            <span className="text-sm font-extrabold text-gray-900">Sadras</span>
+            <span className="text-sm font-extrabold text-gray-900">Sadrax</span>
           </div>
         }>
           <GreetingHeader />
         </Suspense>
+      </div>
+
+      {/* ── Mobile search bar — stays sticky ──────────────────────────────── */}
+      <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 py-2 md:hidden">
         <Suspense><SearchBar /></Suspense>
       </div>
 
