@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, ChevronRight, Zap, Sparkles, TrendingUp, Phone, Headphones } from "lucide-react";
+import { ChevronRight, Zap, Sparkles, TrendingUp, Phone, Headphones } from "lucide-react";
 import { Suspense } from "react";
 
 const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
@@ -30,6 +30,7 @@ import { BuyAgainSection } from "@/components/store/buy-again-section";
 import { BannerCarousel } from "@/components/store/banner-carousel";
 import { getCategoryEmoji } from "@/lib/category-emoji";
 import { getStoreSettings, isStoreOpen } from "@/lib/settings";
+import { productHasVariants } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { products, categories, banners } from "@/lib/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -207,7 +208,7 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {featured.map(p => (
-                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} />
+                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
             </div>
           </section>
@@ -226,7 +227,7 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {topOrdered.map(p => (
-                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} />
+                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
             </div>
           </section>
@@ -246,7 +247,7 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {allProducts.map(p => (
-                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} />
+                <ProductCard key={p.id} id={p.id} name={p.name} price={p.price} mrp={p.mrp} unit={p.unit} images={p.images as string[]} stock={p.stock} veg={p.veg} variants={productHasVariants(p.variants) ? p.variants : undefined} />
               ))}
             </div>
           </section>
