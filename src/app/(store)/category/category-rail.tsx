@@ -13,13 +13,25 @@ export function CategoryRail({ cats, countMap }: { cats: Cat[]; countMap: Record
   const pathname = usePathname();
   const activeSlug = pathname.split("/category/")[1]?.split("/")[0] ?? "";
 
-  // Scroll the active item into view whenever it changes
+  // Bring the active item into view by scrolling ONLY the rail container — never
+  // the window. (scrollIntoView walks up and scrolls every scrollable ancestor,
+  // which nudged the whole page down and left a gap above the sticky rail.)
   const activeRef = useCallback((node: HTMLAnchorElement | null) => {
-    if (node) node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (!node) return;
+    const container = node.closest("aside");
+    if (!container) return;
+    const n = node.getBoundingClientRect();
+    const c = container.getBoundingClientRect();
+    const pad = 8;
+    if (n.top < c.top + pad) {
+      container.scrollBy({ top: n.top - c.top - pad, behavior: "smooth" });
+    } else if (n.bottom > c.bottom - pad) {
+      container.scrollBy({ top: n.bottom - c.bottom + pad, behavior: "smooth" });
+    }
   }, []);
 
   return (
-    <aside className="w-16 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto [scroll-behavior:smooth] sticky top-28 self-start max-h-[calc(100dvh-7rem)] pb-28">
+    <aside className="w-16 md:w-52 shrink-0 border-r border-gray-100 bg-white overflow-y-auto [scroll-behavior:smooth] sticky top-0 self-start max-h-[100dvh] pb-28">
       <p className="hidden md:block text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 pt-3 pb-1">
         Categories
       </p>
