@@ -66,6 +66,7 @@ export function isServiceable(pincode: string, s: StoreSettings): boolean {
 }
 
 // Customer-safe subset exposed to the storefront client.
+// storeOpen reflects the actual time-based check, not just the manual toggle.
 export function publicSettings(s: StoreSettings) {
   return {
     deliveryFee: s.deliveryFee,
@@ -73,7 +74,7 @@ export function publicSettings(s: StoreSettings) {
     minOrderValue: s.minOrderValue,
     deliveryEta: s.deliveryEta,
     pincodes: s.pincodes,
-    storeOpen: s.storeOpen,
+    storeOpen: isStoreOpen(s),
     storeName: s.storeName,
     storePhone: s.storePhone,
     storeClosedMessage: s.storeClosedMessage,

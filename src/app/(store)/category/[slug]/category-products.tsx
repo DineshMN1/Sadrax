@@ -102,9 +102,9 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
     <div>
       {/* Sort + Filter bar */}
       <div className="mb-3">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+        <div className="flex items-center gap-2">
 
-          {/* Sort */}
+          {/* Sort — outside the scroll container so the dropdown isn't clipped */}
           <div className="relative shrink-0">
             <button
               onClick={() => setShowSort(v => !v)}
@@ -121,7 +121,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               )}
             </button>
             {showSort && (
-              <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 w-44 animate-slide-up">
+              <div className="absolute top-11 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-30 w-44 animate-slide-up">
                 {SORT_OPTIONS.map(o => (
                   <button
                     key={o.value}
@@ -138,6 +138,9 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               </div>
             )}
           </div>
+
+          {/* Scrollable filter pills */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5">
 
           {/* Divider */}
           <div className="w-px h-5 bg-gray-200 shrink-0" />
@@ -188,6 +191,7 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
               ))}
             </>
           )}
+          </div>{/* end scrollable pills */}
         </div>
 
         <div className="flex items-center justify-between mt-2 px-0.5">
