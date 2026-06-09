@@ -65,7 +65,7 @@ export default function PrivacyPage() {
             <li><strong>Google (Gmail SMTP)</strong> — your email address is used to send OTPs and order notifications</li>
             <li><strong>Razorpay</strong> — for online payment processing (they handle card/UPI data; we never see it)</li>
             <li><strong>PostHog</strong> — anonymised usage analytics to improve the app (no personally identifiable data)</li>
-            <li><strong>Neon (database)</strong> — your data is stored securely on Neon's encrypted servers</li>
+            <li><strong>Neon (database)</strong> — your data is stored securely on Neon&apos;s encrypted servers</li>
             <li><strong>MinIO</strong> — product and category images are stored on our MinIO object storage</li>
             <li><strong>Legal authorities</strong> — if required by law or court order</li>
           </ul>

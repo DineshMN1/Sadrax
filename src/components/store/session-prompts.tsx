@@ -176,8 +176,8 @@ export function SessionPrompts() {
               <div className="space-y-3">
                 {[
                   { icon: <Share size={16} className="text-blue-500" />, bg: "bg-blue-50", text: <>Tap <strong>Share ↑</strong> at the bottom of Safari</> },
-                  { icon: <MoreVertical size={16} className="text-gray-600" />, bg: "bg-gray-100", text: <>Scroll and tap <strong>"Add to Home Screen"</strong></> },
-                  { icon: <CheckCircle2 size={16} className="text-green-600" />, bg: "bg-green-50", text: <>Tap <strong>"Add"</strong> — Sadrax appears on your home screen</> },
+                  { icon: <MoreVertical size={16} className="text-gray-600" />, bg: "bg-gray-100", text: <>Scroll and tap <strong>&quot;Add to Home Screen&quot;</strong></> },
+                  { icon: <CheckCircle2 size={16} className="text-green-600" />, bg: "bg-green-50", text: <>Tap <strong>&quot;Add&quot;</strong> — Sadrax appears on your home screen</> },
                 ].map((s, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className={`w-8 h-8 ${s.bg} rounded-xl flex items-center justify-center shrink-0`}>{s.icon}</div>

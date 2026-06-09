@@ -26,6 +26,18 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
   const [ready, setReady] = useState(false);
   const [moving, setMoving] = useState(false);
 
+  async function reverseGeocode(lat: number, lng: number) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+      const data = await res.json();
+      setDisplayAddr(data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    } catch {
+      setDisplayAddr(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    }
+  }
+
   useEffect(() => {
     let destroyed = false;
 
@@ -81,18 +93,6 @@ export function LocationPicker({ defaultCenter, onConfirm, onClose }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const reverseGeocode = async (lat: number, lng: number) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-      const data = await res.json();
-      setDisplayAddr(data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-    } catch {
-      setDisplayAddr(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-    }
-  };
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) { alert("Geolocation not supported on this device"); return; }
