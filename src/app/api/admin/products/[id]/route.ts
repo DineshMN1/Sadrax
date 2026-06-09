@@ -30,9 +30,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const [before] = await db.select().from(products).where(eq(products.id, Number(id))).limit(1);
 
+  // Mirror top-level price/mrp/unit/stock to the first embedded variant whenever
+  // variants are saved. Surfaces that render top-level fields (home, product
+  // page) then always show — and the checkout charges — the same value as
+  // variants[0], so the price shown can never diverge from the price charged.
+  const patch: Record<string, unknown> = { ...body, updatedAt: new Date() };
+  if (Array.isArray(body.variants) && body.variants.length > 0) {
+    const v0 = body.variants[0] as { unit?: string; price?: number; mrp?: number | null; stock?: number };
+    patch.price = Math.round(Number(v0.price) || 0);
+    patch.mrp = v0.mrp ?? null;
+    patch.unit = v0.unit ?? null;
+    patch.stock = Math.max(0, Math.round(Number(v0.stock) || 0));
+  }
+
   const [product] = await db
     .update(products)
-    .set({ ...body, updatedAt: new Date() })
+    .set(patch)
     .where(eq(products.id, Number(id)))
     .returning();
 

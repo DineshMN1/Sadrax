@@ -9,6 +9,26 @@ export function formatPrice(paise: number): string {
   return `₹${(paise / 100).toFixed(paise % 100 === 0 ? 0 : 2)}`;
 }
 
+// ── Embedded variants ────────────────────────────────────────────────────────
+// A product is "variant-driven" only when it carries 2+ embedded variants. A
+// single (or zero) embedded variant is treated as a flat product whose
+// top-level price/stock are authoritative. This is the SINGLE source of truth
+// for the threshold — UI, checkout, and inventory must all agree, otherwise the
+// price shown can differ from the price charged.
+export interface EmbeddedVariant {
+  unit: string;
+  price: number;
+  mrp?: number | null;
+  stock: number;
+  image?: string | null;
+}
+
+export function productHasVariants(
+  variants: unknown,
+): variants is EmbeddedVariant[] {
+  return Array.isArray(variants) && variants.length > 1;
+}
+
 export function toSlug(str: string): string {
   return str
     .toLowerCase()

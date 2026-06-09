@@ -191,6 +191,10 @@ export const orderItems = pgTable("order_items", {
     .notNull()
     .references(() => orders.id, { onDelete: "cascade" }),
   productId: integer("product_id").references(() => products.id),
+  // Index into products.variants[] for embedded-variant products; null = flat
+  // product (top-level price/stock). Needed so stock is released against the
+  // exact variant on cancel/reject/edit.
+  variantIdx: integer("variant_idx"),
   productName: varchar("product_name", { length: 200 }).notNull(),
   productImage: text("product_image"),
   productUnit: varchar("product_unit", { length: 50 }),

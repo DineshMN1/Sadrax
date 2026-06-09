@@ -39,17 +39,21 @@ export async function restockItems(items: StockLine[]): Promise<void> {
  * Restore stock for every line item of an order. Skips lines whose product
  * has since been deleted (productId is null). Safe to call once per
  * stock-releasing transition (caller must guard against double-restock).
- * Note: order items don't store variantIdx, so only flat-stock is restored here.
- * Variant stock for order items is managed separately if needed.
+ * Lines carry variantIdx, so embedded-variant stock is released against the
+ * exact variant that was reserved (flat stock when variantIdx is null).
  */
 export async function restockOrder(orderId: number): Promise<void> {
   const lines = await db
-    .select({ productId: orderItems.productId, quantity: orderItems.quantity })
+    .select({ productId: orderItems.productId, quantity: orderItems.quantity, variantIdx: orderItems.variantIdx })
     .from(orderItems)
     .where(eq(orderItems.orderId, orderId));
 
-  const valid = lines.filter(
-    (l): l is StockLine => l.productId !== null
-  );
+  const valid: StockLine[] = lines
+    .filter((l): l is { productId: number; quantity: number; variantIdx: number | null } => l.productId !== null)
+    .map((l) => ({
+      productId: l.productId,
+      quantity: l.quantity,
+      variantIdx: l.variantIdx ?? undefined,
+    }));
   await restockItems(valid);
 }
