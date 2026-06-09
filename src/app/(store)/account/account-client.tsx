@@ -63,6 +63,21 @@ export default function AccountClient() {
 
   const handleSignOut = async () => {
     await signOut();
+    
+    // Aggressive storage cleanup for PWA security
+    localStorage.clear();
+    sessionStorage.clear();
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if (window.indexedDB && window.indexedDB.databases) {
+      try {
+        const dbs = await window.indexedDB.databases();
+        dbs.forEach(db => { if (db.name) window.indexedDB.deleteDatabase(db.name); });
+      } catch (e) { /* Ignore unsupported */ }
+    }
+
     toast.success("Signed out successfully");
     router.push("/");
     router.refresh();
