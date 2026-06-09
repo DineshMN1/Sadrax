@@ -66,12 +66,19 @@ export function CategoryProducts({ initialItems }: { initialItems: Product[] }) 
     if (filters.has("has_discount")) list = list.filter(hasDiscount);
     if (brand !== "all")             list = list.filter(p => p.brand === brand);
 
+    const effectivePrice = (p: Product) =>
+      p.variants && p.variants.length > 0 ? (p.variants[0]?.price ?? p.price) : p.price;
+    const effectiveMrp = (p: Product) =>
+      p.variants && p.variants.length > 0 ? (p.variants[0]?.mrp ?? p.mrp) : p.mrp;
+
     switch (sort) {
-      case "price_asc":  list.sort((a, b) => a.price - b.price); break;
-      case "price_desc": list.sort((a, b) => b.price - a.price); break;
+      case "price_asc":  list.sort((a, b) => effectivePrice(a) - effectivePrice(b)); break;
+      case "price_desc": list.sort((a, b) => effectivePrice(b) - effectivePrice(a)); break;
       case "discount":   list.sort((a, b) => {
-        const da = a.mrp && a.mrp > a.price ? (a.mrp - a.price) / a.mrp : 0;
-        const db = b.mrp && b.mrp > b.price ? (b.mrp - b.price) / b.mrp : 0;
+        const ep = (p: Product) => effectivePrice(p);
+        const em = (p: Product) => effectiveMrp(p);
+        const da = em(a) && em(a)! > ep(a) ? (em(a)! - ep(a)) / em(a)! : 0;
+        const db = em(b) && em(b)! > ep(b) ? (em(b)! - ep(b)) / em(b)! : 0;
         return db - da;
       }); break;
       default: list.sort((a, b) => b.orderCount - a.orderCount);

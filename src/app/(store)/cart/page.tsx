@@ -163,22 +163,31 @@ export default function CartPage() {
                   </span>
                 ) : null}
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              {out ? (
                 <button
-                  onClick={() => item.quantity === 1 ? removeItem(item.id, item.variantIdx) : updateQuantity(item.id, item.quantity - 1, item.variantIdx)}
-                  className="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-200 text-gray-600 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 active:scale-90 transition-all"
+                  onClick={() => removeItem(item.id, item.variantIdx)}
+                  className="flex items-center gap-1 h-8 px-3 bg-red-50 border border-red-200 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 active:scale-95 transition-all shrink-0"
                 >
-                  {item.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} strokeWidth={3} />}
+                  <Trash2 size={12} /> Remove
                 </button>
-                <span className="w-7 text-center text-sm font-extrabold tabular-nums">{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1, item.variantIdx)}
-                  disabled={atMax}
-                  className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all shadow-sm shadow-green-500/30 disabled:opacity-40 disabled:pointer-events-none"
-                >
-                  <Plus size={12} strokeWidth={3} />
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => item.quantity === 1 ? removeItem(item.id, item.variantIdx) : updateQuantity(item.id, item.quantity - 1, item.variantIdx)}
+                    className="w-8 h-8 flex items-center justify-center bg-gray-50 border border-gray-200 text-gray-600 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-500 active:scale-90 transition-all"
+                  >
+                    {item.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} strokeWidth={3} />}
+                  </button>
+                  <span className="w-7 text-center text-sm font-extrabold tabular-nums">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity + 1, item.variantIdx)}
+                    disabled={atMax}
+                    className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-90 transition-all shadow-sm shadow-green-500/30 disabled:opacity-40 disabled:pointer-events-none"
+                  >
+                    <Plus size={12} strokeWidth={3} />
+                  </button>
+                </div>
+              )}
             </div>
             );
           })}
