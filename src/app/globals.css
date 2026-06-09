@@ -92,3 +92,13 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* On desktop the store has a 64px sticky top header (DesktopHeader, bg-white —
+   not .glass). Every page's own sticky sub-header uses `.glass.sticky`, so it
+   must pin BELOW the header (top: 4rem) instead of behind it. The two-class
+   selector outranks Tailwind's `top-0`. Mobile (< md) has no top header. */
+@media (min-width: 768px) {
+  .glass.sticky {
+    top: 4rem;
+  }
+}

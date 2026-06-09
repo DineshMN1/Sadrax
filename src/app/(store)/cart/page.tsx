@@ -11,7 +11,7 @@ import emptyBoxAnim from "@/lottie/empty-box.json";
 import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, productHasVariants } from "@/lib/utils";
 import { useStoreConfig } from "@/store/config";
 import { primeCoords } from "@/lib/geo";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export default function CartPage() {
   );
 
   useEffect(() => {
-    if (!idsKey) { setStockProducts([]); setStockLoaded(true); return; }
+    if (!idsKey) return;
     let cancelled = false;
     fetch(`/api/products?ids=${idsKey}`)
       .then(r => r.json())
@@ -49,7 +49,7 @@ export default function CartPage() {
     if (!stockLoaded) return undefined;
     const p = stockProducts.find(sp => sp.id === item.id);
     if (!p) return 0;
-    if (p.variants && p.variants.length > 0) return p.variants[item.variantIdx ?? 0]?.stock ?? 0;
+    if (productHasVariants(p.variants)) return p.variants[item.variantIdx ?? 0]?.stock ?? 0;
     return p.stock;
   };
 

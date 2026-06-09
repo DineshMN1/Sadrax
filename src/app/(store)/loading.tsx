@@ -1,8 +1,8 @@
 export default function StoreLoading() {
   return (
     <div className="flex flex-col">
-      {/* Header skeleton */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 pt-4 pb-3 space-y-3">
+      {/* Header skeleton (mobile only — desktop has the persistent DesktopHeader) */}
+      <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-100 px-4 pt-4 pb-3 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 skeleton rounded-full" />

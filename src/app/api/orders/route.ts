@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { orders, orderItems, products, coupons, addresses, users, offers } from "@/lib/db/schema";
 import { bestOfferDiscount } from "@/lib/offers";
 import { eq, and, inArray, gte, ne } from "drizzle-orm";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber, productHasVariants } from "@/lib/utils";
 import { getStoreSettings, computeDeliveryFee, isStoreOpen } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { restockItems, type StockLine } from "@/lib/inventory";
@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid item quantity" }, { status: 400 });
     }
     const p = dbProducts.find((p) => p.id === item.productId);
-    const variants = p?.variants as { unit: string; price: number; mrp: number | null; stock: number }[] | null;
-    const hasVariants = variants && variants.length > 0;
+    const variants = p?.variants;
+    const hasVariants = productHasVariants(variants);
 
     if (hasVariants) {
       const vi = item.variantIdx ?? 0;
@@ -83,15 +83,16 @@ export async function POST(req: NextRequest) {
   // Calculate totals — use variant price when applicable
   const orderItemsData = (cartItems as CartItem[]).map(item => {
     const p = dbProducts.find((p) => p.id === item.productId)!;
-    const variants = p.variants as { unit: string; price: number; mrp: number | null; stock: number }[] | null;
-    const hasVariants = variants && variants.length > 0;
-    const v = hasVariants ? variants[item.variantIdx ?? 0] : null;
+    const hasVariants = productHasVariants(p.variants);
+    const vi = item.variantIdx ?? 0;
+    const v = hasVariants ? p.variants[vi] : null;
     const price = v ? v.price : p.price;
     const unit = v ? v.unit : p.unit;
     return {
       productId: p.id,
+      variantIdx: hasVariants ? vi : null,
       productName: p.name,
-      productImage: (p.images as string[])[0] ?? null,
+      productImage: (v?.image) ?? (p.images as string[])[0] ?? null,
       productUnit: unit,
       price,
       quantity: item.quantity,
@@ -165,8 +166,7 @@ export async function POST(req: NextRequest) {
   const reserved: StockLine[] = [];
   for (const item of cartItems as CartItem[]) {
     const p = dbProducts.find((p) => p.id === item.productId)!;
-    const variants = p.variants as { stock: number }[] | null;
-    const hasVariants = variants && variants.length > 0;
+    const hasVariants = productHasVariants(p.variants);
     const vi = item.variantIdx ?? 0;
 
     let ok: { id: number }[];

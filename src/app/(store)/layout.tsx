@@ -1,6 +1,11 @@
+// The global DesktopHeader renders SearchBar (useSearchParams) + session on
+// every store page, which can't be statically prerendered. The store is a
+// live commerce/PWA surface anyway, so render the whole segment dynamically.
+export const dynamic = "force-dynamic";
+
 import { BottomNav } from "@/components/store/bottom-nav";
 import { StickyCartBar } from "@/components/store/sticky-cart-bar";
-import { DesktopSidebar } from "@/components/store/desktop-sidebar";
+import { DesktopHeader } from "@/components/store/desktop-header";
 import { SplashScreen } from "@/components/store/splash-screen";
 import { SessionPrompts } from "@/components/store/session-prompts";
 import { FeedbackPrompt } from "@/components/store/feedback-prompt";
@@ -17,13 +22,11 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <SWRegister />
       <StoreConfigLoader />
       <PostHogIdentify />
-      <DesktopSidebar />
+      <DesktopHeader />
 
-      <div className="md:ml-56 lg:ml-64">
-        <main className="max-w-xl mx-auto md:mx-0 md:max-w-3xl lg:max-w-4xl xl:max-w-5xl pb-28 md:pb-8 min-h-screen">
-          {children}
-        </main>
-      </div>
+      <main className="max-w-xl mx-auto md:max-w-5xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[88rem] pb-28 md:pb-8 min-h-screen">
+        {children}
+      </main>
 
       <StickyCartBar className="md:hidden" />
       <BottomNav />

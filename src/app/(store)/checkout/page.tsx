@@ -24,7 +24,7 @@ const ALL_SLOTS = [
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin, Plus, Banknote, Check, Navigation, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useCart } from "@/store/cart";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, productHasVariants } from "@/lib/utils";
 import { useStoreConfig } from "@/store/config";
 import { track } from "@/lib/analytics";
 import { requestCoords, getCachedCoords } from "@/lib/geo";
@@ -74,7 +74,6 @@ export default function CheckoutPage() {
   const [slot, setSlot]                       = useState("Now (15–25 min)");
   const availableSlots = useMemo(
     () => ALL_SLOTS.filter(s => getISTHour() < s.cutoff).map(s => s.label),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const [loadingAddr, setLoadingAddr]         = useState(true);
@@ -100,30 +99,37 @@ export default function CheckoutPage() {
   }, [router]);
 
   // Live stock re-check (cart is persisted and can go stale; also guards
-  // against deep-linking straight to /checkout past the cart's block)
-  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  // against deep-linking straight to /checkout past the cart's block).
+  // Variant-aware: an embedded-variant line is checked against its own variant.
+  type StockProduct = { id: number; stock: number; variants?: { stock: number }[] | null };
+  const [stockProducts, setStockProducts] = useState<StockProduct[]>([]);
   const [stockLoaded, setStockLoaded] = useState(false);
   const idsKey = useMemo(
     () => [...new Set(items.map(i => i.id))].sort((a, b) => a - b).join(","),
     [items]
   );
   useEffect(() => {
-    if (!idsKey) { setStockLoaded(true); return; }
+    if (!idsKey) return;
     let cancelled = false;
     fetch(`/api/products?ids=${idsKey}`)
       .then(r => r.json())
-      .then((d: { products?: { id: number; stock: number }[] }) => {
+      .then((d: { products?: StockProduct[] }) => {
         if (cancelled) return;
-        const m: Record<number, number> = {};
-        for (const p of d.products ?? []) m[p.id] = p.stock;
-        setStockMap(m);
+        setStockProducts(d.products ?? []);
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setStockLoaded(true); });
     return () => { cancelled = true; };
   }, [idsKey]);
 
-  const stockIssues = stockLoaded ? items.filter(i => i.quantity > (stockMap[i.id] ?? 0)) : [];
+  const stockOf = (item: { id: number; variantIdx?: number }): number => {
+    const p = stockProducts.find(sp => sp.id === item.id);
+    if (!p) return 0;
+    if (productHasVariants(p.variants)) return p.variants[item.variantIdx ?? 0]?.stock ?? 0;
+    return p.stock;
+  };
+
+  const stockIssues = stockLoaded ? items.filter(i => i.quantity > stockOf(i)) : [];
   const hasStockIssue = stockIssues.length > 0;
 
   const sub = subtotal();
@@ -528,8 +534,8 @@ export default function CheckoutPage() {
               <p>Some items aren&apos;t available in the quantity you chose:</p>
               <ul className="mt-1 space-y-0.5 font-medium">
                 {stockIssues.map(i => {
-                  const s = stockMap[i.id] ?? 0;
-                  return <li key={i.id}>• {i.name} — {s === 0 ? "out of stock" : `only ${s} left`}</li>;
+                  const s = stockOf(i);
+                  return <li key={`${i.id}-${i.variantIdx}`}>• {i.name} — {s === 0 ? "out of stock" : `only ${s} left`}</li>;
                 })}
               </ul>
               <a href="/cart" className="inline-block mt-1.5 underline font-bold">Update cart →</a>

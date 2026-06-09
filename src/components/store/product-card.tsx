@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Flame, Check, Heart, Bell, BellRing, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Minus, ShoppingCart, Flame, Check, Heart, Bell, BellRing, Loader2, X, ChevronDown } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useWishlist } from "@/store/wishlist";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type VariantItem = { unit: string; price: number; mrp?: number | null; stock: number; image?: string | null };
 
@@ -30,42 +31,60 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
   const thumb = images?.[0];
   const wished = has(id);
 
-  const [selectedIdx, setSelectedIdx] = useState(0);
   const [flash, setFlash]             = useState<"idle" | "added" | "inc" | "dec">("idle");
   const [notifyState, setNotifyState] = useState<"idle" | "loading" | "done">("idle");
+  const [sheetOpen, setSheetOpen]     = useState(false);
 
-  const hasVariants = variants && variants.length > 1;
+  const hasVariants = !!variants && variants.length > 1;
 
-  // Active variant data
-  const active = useMemo((): VariantItem => {
-    if (hasVariants) return variants![selectedIdx] ?? variants![0];
+  // Headline shown on the card. For variant products this is the first variant
+  // (kept in sync with the product's top-level fields server-side), so the price
+  // shown always matches what's charged.
+  const headline = useMemo((): VariantItem => {
+    if (hasVariants) return variants![0];
     return { price, mrp: mrp ?? null, stock, unit: unit ?? "" };
-  }, [hasVariants, variants, selectedIdx, price, mrp, stock, unit]);
+  }, [hasVariants, variants, price, mrp, stock, unit]);
 
-  const variantIdx    = hasVariants ? selectedIdx : 0;
-  const displayThumb  = (active as VariantItem).image || thumb;
-  const cartItem      = items.find(i => i.id === id && i.variantIdx === variantIdx);
-  const qty       = cartItem?.quantity ?? 0;
-  const discount  = active.mrp && active.mrp > active.price ? Math.round(((active.mrp - active.price) / active.mrp) * 100) : null;
-  const outOfStock = active.stock === 0;
-  const atMax     = qty >= active.stock;
+  const headThumb = headline.image || thumb;
+  const discount  = headline.mrp && headline.mrp > headline.price ? Math.round(((headline.mrp - headline.price) / headline.mrp) * 100) : null;
   const isHot     = discount && discount >= 20;
+
+  // Flat product: a single cart line at variantIdx 0.
+  const flatItem  = items.find(i => i.id === id && i.variantIdx === 0);
+  const flatQty   = flatItem?.quantity ?? 0;
+
+  // Variant product: total units in cart across all of its variants.
+  const variantQty = useMemo(
+    () => (hasVariants ? items.filter(i => i.id === id).reduce((n, i) => n + i.quantity, 0) : 0),
+    [hasVariants, items, id],
+  );
+
+  const anyVariantStock = hasVariants && variants!.some(v => v.stock > 0);
+  const outOfStock = hasVariants ? !anyVariantStock : stock === 0;
+  const atMax      = !hasVariants && flatQty >= stock;
 
   const fireFlash = (type: "added" | "inc" | "dec") => {
     setFlash(type);
     setTimeout(() => setFlash("idle"), 500);
   };
 
+  // ── Flat product handlers (variantIdx 0) ──
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     if (outOfStock) return;
-    addItem({ id, variantIdx, name, price: active.price, mrp: active.mrp ?? undefined, unit: active.unit ?? undefined, image: displayThumb });
+    addItem({ id, variantIdx: 0, name, price: headline.price, mrp: headline.mrp ?? undefined, unit: headline.unit ?? undefined, image: headThumb });
     fireFlash("added");
   };
+  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, flatQty + 1, 0); fireFlash("inc"); };
+  const handleDec = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (flatQty === 1) removeItem(id, 0); else updateQuantity(id, flatQty - 1, 0);
+    fireFlash("dec");
+  };
 
-  const handleInc = (e: React.MouseEvent) => { e.preventDefault(); if (atMax) return; updateQuantity(id, qty + 1, variantIdx); fireFlash("inc"); };
-  const handleDec = (e: React.MouseEvent) => { e.preventDefault(); qty === 1 ? removeItem(id, variantIdx) : updateQuantity(id, qty - 1, variantIdx); fireFlash("dec"); };
   const handleWish = (e: React.MouseEvent) => { e.preventDefault(); toggle(id); };
+
+  const openSheet = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setSheetOpen(true); };
 
   const handleNotify = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -87,6 +106,8 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     }
   };
 
+  const qtyBadge = hasVariants ? variantQty : flatQty;
+
   return (
     <Link
       href={`/product/${id}`}
@@ -100,9 +121,9 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
     >
       {/* Image */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {displayThumb ? (
+        {headThumb ? (
           <Image
-            src={displayThumb}
+            src={headThumb}
             alt={name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
@@ -139,21 +160,21 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
           <Heart size={12} className={cn(wished ? "text-white fill-white" : "text-gray-400")} />
         </button>
 
-        {/* Low stock badge */}
-        {active.stock > 0 && active.stock <= 5 && (
+        {/* Low stock badge (flat products only) */}
+        {!hasVariants && stock > 0 && stock <= 5 && (
           <div className="absolute bottom-2 left-2 bg-orange-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-            Only {active.stock} left!
+            Only {stock} left!
           </div>
         )}
 
         {/* Qty badge */}
-        {qty > 0 && (
+        {qtyBadge > 0 && (
           <div className={cn(
             "absolute top-2 right-2 w-5 h-5 bg-green-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-sm shadow-green-500/40 transition-all duration-200",
             (flash === "inc" || flash === "added") && "scale-125 bg-emerald-500",
             wished && "hidden"
           )}>
-            {qty}
+            {qtyBadge}
           </div>
         )}
 
@@ -184,48 +205,26 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
               <span className={`w-1.5 h-1.5 rounded-full ${veg === "veg" ? "bg-green-600" : "bg-red-600"}`} />
             </span>
           )}
-          {!hasVariants && active.unit && (
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{active.unit}</p>
+          {headline.unit && (
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{headline.unit}</p>
           )}
         </div>
         <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">{name}</p>
 
         <div className="flex items-baseline gap-1.5 mt-0.5">
-          <span className="text-sm font-extrabold text-gray-900">{formatPrice(active.price)}</span>
-          {active.mrp && active.mrp > active.price && (
-            <span className="text-[11px] text-gray-400 line-through">{formatPrice(active.mrp)}</span>
+          <span className="text-sm font-extrabold text-gray-900">{formatPrice(headline.price)}</span>
+          {headline.mrp && headline.mrp > headline.price && (
+            <span className="text-[11px] text-gray-400 line-through">{formatPrice(headline.mrp)}</span>
           )}
         </div>
 
-        {/* Variant pills */}
-        {hasVariants && (
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-0.5 px-0.5 mt-0.5">
-            {variants!.map((v, i) => (
-              <button
-                key={i}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedIdx(i); }}
-                className={cn(
-                  "shrink-0 h-6 px-2 rounded-lg text-[10px] font-bold border transition-all whitespace-nowrap",
-                  i === selectedIdx
-                    ? "bg-green-500 border-green-500 text-white"
-                    : v.stock === 0
-                    ? "bg-gray-50 border-gray-200 text-gray-300 line-through"
-                    : "bg-gray-50 border-gray-200 text-gray-600 hover:border-green-300"
-                )}
-              >
-                {v.unit}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Stepper / Add / Notify */}
+        {/* Stepper / Add / Notify / Options */}
         <div className="mt-1.5">
           {outOfStock ? (
             <button
               onClick={handleNotify}
               className={cn(
-                "w-full h-8 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all active:scale-90",
+                "w-full h-9 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all active:scale-90",
                 notifyState === "done"
                   ? "bg-violet-100 border border-violet-300 text-violet-700"
                   : "bg-violet-50 border border-violet-200 text-violet-600 hover:bg-violet-100 hover:border-violet-300"
@@ -239,7 +238,22 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
                 <><Bell size={11} /> Notify me</>
               )}
             </button>
-          ) : qty === 0 ? (
+          ) : hasVariants ? (
+            /* Multi-option product — open the size picker */
+            <button
+              onClick={openSheet}
+              className={cn(
+                "w-full h-9 flex flex-col items-center justify-center rounded-xl leading-none transition-all active:scale-90",
+                "bg-green-50 border border-green-300 text-green-700",
+                "hover:bg-green-500 hover:text-white hover:border-green-500 hover:shadow-md hover:shadow-green-500/25",
+              )}
+            >
+              <span className="flex items-center gap-1 text-sm font-bold"><Plus size={12} strokeWidth={3} /> ADD</span>
+              <span className="flex items-center gap-0.5 text-[9px] font-bold opacity-70 mt-0.5">
+                {variants!.length} options <ChevronDown size={8} />
+              </span>
+            </button>
+          ) : flatQty === 0 ? (
             <button
               onClick={handleAdd}
               className={cn(
@@ -260,7 +274,7 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
               <button onClick={handleDec} className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/20 rounded-lg transition-colors active:scale-90">
                 <Minus size={13} strokeWidth={3} />
               </button>
-              <span className="text-white text-sm font-extrabold min-w-6 text-center tabular-nums">{qty}</span>
+              <span className="text-white text-sm font-extrabold min-w-6 text-center tabular-nums">{flatQty}</span>
               <button onClick={handleInc} disabled={atMax} className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/20 rounded-lg transition-colors active:scale-90 disabled:opacity-40 disabled:pointer-events-none">
                 <Plus size={13} strokeWidth={3} />
               </button>
@@ -268,7 +282,150 @@ export function ProductCard({ id, name, price, mrp, unit, images, stock, veg, cl
           )}
         </div>
       </div>
+
+      {/* Variant picker bottom sheet */}
+      {hasVariants && sheetOpen && (
+        <VariantSheet
+          productId={id}
+          name={name}
+          fallbackImage={thumb}
+          variants={variants!}
+          onClose={() => setSheetOpen(false)}
+        />
+      )}
     </Link>
+  );
+}
+
+// ─── Variant picker sheet (Blinkit/Zepto pattern) ─────────────────────────────
+function VariantSheet({
+  productId, name, fallbackImage, variants, onClose,
+}: {
+  productId: number;
+  name: string;
+  fallbackImage?: string;
+  variants: VariantItem[];
+  onClose: () => void;
+}) {
+  // The sheet only ever mounts after a client-side click, so document is always
+  // available here — no SSR guard needed.
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex flex-col justify-end sm:items-center sm:justify-center bg-black/40 sm:p-4"
+      onClick={(e) => { stop(e); onClose(); }}
+    >
+      <div
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[75vh] sm:max-h-[80vh] flex flex-col animate-slide-up sm:shadow-2xl"
+        onClick={stop}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100">
+          <h3 className="text-base font-extrabold text-gray-900 leading-snug pr-3 line-clamp-2">{name}</h3>
+          <button onClick={(e) => { stop(e); onClose(); }} className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+            <X size={16} className="text-gray-500" />
+          </button>
+        </div>
+
+        {/* Variant rows */}
+        <div className="overflow-y-auto px-4 py-3 space-y-2.5">
+          {variants.map((v, idx) => (
+            <VariantRow
+              key={idx}
+              productId={productId}
+              name={name}
+              variantIdx={idx}
+              variant={v}
+              fallbackImage={fallbackImage}
+            />
+          ))}
+        </div>
+        <div className="h-3" />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function VariantRow({
+  productId, name, variantIdx, variant, fallbackImage,
+}: {
+  productId: number;
+  name: string;
+  variantIdx: number;
+  variant: VariantItem;
+  fallbackImage?: string;
+}) {
+  const { items, addItem, updateQuantity, removeItem } = useCart();
+  const img = variant.image || fallbackImage;
+  const cartItem = items.find(i => i.id === productId && i.variantIdx === variantIdx);
+  const qty = cartItem?.quantity ?? 0;
+  const out = variant.stock === 0;
+  const atMax = qty >= variant.stock;
+  const discount = variant.mrp && variant.mrp > variant.price ? Math.round(((variant.mrp - variant.price) / variant.mrp) * 100) : null;
+
+  const add = () => addItem({ id: productId, variantIdx, name, price: variant.price, mrp: variant.mrp ?? undefined, unit: variant.unit, image: img });
+  const inc = () => { if (!atMax) updateQuantity(productId, qty + 1, variantIdx); };
+  const dec = () => { if (qty === 1) removeItem(productId, variantIdx); else updateQuantity(productId, qty - 1, variantIdx); };
+
+  return (
+    <div className={cn("flex items-center gap-3 rounded-2xl border p-2.5", out ? "border-gray-100 bg-gray-50/60" : "border-gray-100 bg-white")}>
+      {/* Thumb */}
+      <div className="relative w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100">
+        {img
+          ? <Image src={img} alt={variant.unit} fill sizes="56px" className="object-cover" />
+          : <div className="w-full h-full flex items-center justify-center"><ShoppingCart size={18} className="text-gray-200" /></div>}
+        {discount && !out && (
+          <div className="absolute top-0 left-0 bg-blue-600 text-white text-[8px] font-extrabold px-1 py-0.5 rounded-br-md leading-none">
+            {discount}%<br />OFF
+          </div>
+        )}
+      </div>
+
+      {/* Size + price */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-gray-900">{variant.unit}</p>
+        <div className="flex items-baseline gap-1.5 mt-0.5">
+          <span className="text-sm font-extrabold text-gray-900">{formatPrice(variant.price)}</span>
+          {variant.mrp && variant.mrp > variant.price && (
+            <span className="text-[11px] text-gray-400 line-through">{formatPrice(variant.mrp)}</span>
+          )}
+        </div>
+        {!out && variant.stock <= 5 && (
+          <p className="text-[10px] font-bold text-orange-600 mt-0.5">Only {variant.stock} left</p>
+        )}
+      </div>
+
+      {/* Action */}
+      <div className="shrink-0">
+        {out ? (
+          <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-3 py-2 rounded-xl">Out of stock</span>
+        ) : qty === 0 ? (
+          <button
+            onClick={add}
+            className="h-9 px-5 flex items-center justify-center gap-1 rounded-xl text-sm font-bold bg-green-50 border border-green-300 text-green-700 hover:bg-green-500 hover:text-white hover:border-green-500 transition-all active:scale-90"
+          >
+            ADD
+          </button>
+        ) : (
+          <div className="flex items-center justify-between h-9 w-24 bg-linear-to-r from-green-500 to-emerald-500 rounded-xl px-1 shadow-sm shadow-green-500/30">
+            <button onClick={dec} className="w-7 h-7 flex items-center justify-center text-white hover:bg-white/20 rounded-lg active:scale-90 transition-colors">
+              <Minus size={14} strokeWidth={3} />
+            </button>
+            <span className="text-white text-sm font-extrabold tabular-nums">{qty}</span>
+            <button onClick={inc} disabled={atMax} className="w-7 h-7 flex items-center justify-center text-white hover:bg-white/20 rounded-lg active:scale-90 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+              <Plus size={14} strokeWidth={3} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

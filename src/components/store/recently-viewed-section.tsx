@@ -7,7 +7,7 @@ import { Clock } from "lucide-react";
 
 export function RecentlyViewedSection() {
   const { items, clear } = useRecentlyViewed();
-  const shown = items.slice(0, 4);
+  const shown = items.slice(0, 6);
 
   // Recently-viewed is persisted in localStorage, so its stock is frozen at
   // view time. Re-fetch live stock so a now-out-of-stock item shows correctly
@@ -17,7 +17,7 @@ export function RecentlyViewedSection() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!idsKey) { setLoaded(true); return; }
+    if (!idsKey) return;
     let active = true;
     fetch(`/api/products?ids=${idsKey}`)
       .then(r => r.json())
@@ -47,7 +47,7 @@ export function RecentlyViewedSection() {
           Clear
         </button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {shown.map(p => (
           <ProductCard
             key={p.id}
