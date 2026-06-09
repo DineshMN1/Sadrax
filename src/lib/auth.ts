@@ -41,6 +41,12 @@ export const auth = betterAuth({
       expiresIn: 300,
     }),
   ],
+  advanced: {
+    cookiePrefix: "sadrax",
+    defaultCookieAttributes: {
+      sameSite: "strict",
+    },
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
     updateAge: 60 * 60 * 24, // refresh if older than 1 day
