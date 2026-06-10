@@ -5,10 +5,11 @@ import { useState } from "react";
 import { formatPrice, STATUS_LABELS, STATUS_COLORS, type OrderStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ChevronRight, ShoppingBag, Clock } from "lucide-react";
+import { ReorderButton } from "@/components/store/reorder-button";
 import { LottiePlayer } from "@/components/lottie-player";
 import emptyBoxAnim from "@/lottie/empty-box.json";
-import deliveryAnim from "@/lottie/delivery.json";
 import { cn } from "@/lib/utils";
+import { ProductRequestCard } from "@/components/store/product-request-card";
 
 type Tab = "all" | "active" | "delivered" | "cancelled";
 
@@ -106,10 +107,9 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
           filtered.map(order => {
             const isActive = ACTIVE_STATUSES.includes(order.status);
             return (
-              <Link key={order.id} href={`/orders/${order.id}`}
-                className="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md active:scale-[0.99] transition-all overflow-hidden group">
+              <div key={order.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
                 <div className={`h-1 w-full ${isActive ? "bg-linear-to-r from-green-500 to-emerald-400" : "bg-gray-100"}`} />
-                <div className="p-4">
+                <Link href={`/orders/${order.id}`} className="block px-4 pt-4 pb-3">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <div className="flex items-center gap-2">
@@ -130,20 +130,24 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
                       {STATUS_LABELS[order.status as OrderStatus]}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-base font-extrabold text-gray-900">{formatPrice(order.total)}</span>
-                      <span className="text-xs text-gray-400 uppercase font-semibold">{order.paymentMethod}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-green-600 transition-colors">
-                      View <ChevronRight size={14} />
-                    </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-base font-extrabold text-gray-900">{formatPrice(order.total)}</span>
+                    <span className="text-xs text-gray-400 uppercase font-semibold">{order.paymentMethod}</span>
                   </div>
+                </Link>
+                <div className="px-4 pb-3 flex items-center justify-between gap-2">
+                  <ReorderButton orderId={order.id} />
+                  <Link href={`/orders/${order.id}`} className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-green-600 transition-colors">
+                    View details <ChevronRight size={14} />
+                  </Link>
                 </div>
-              </Link>
+              </div>
             );
           })
         )}
+
+        {/* Product request nudge — always shown when orders exist */}
+        <ProductRequestCard />
       </div>
     </div>
   );

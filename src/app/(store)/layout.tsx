@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 import { BottomNav } from "@/components/store/bottom-nav";
 import { StickyCartBar } from "@/components/store/sticky-cart-bar";
+import { StickyProductRequestBar } from "@/components/store/sticky-product-request-bar";
 import { DesktopHeader } from "@/components/store/desktop-header";
 import { SplashScreen } from "@/components/store/splash-screen";
 import { SessionPrompts } from "@/components/store/session-prompts";
@@ -29,6 +30,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       </main>
 
       <StickyCartBar className="md:hidden" />
+      <StickyProductRequestBar />
       <BottomNav />
       <SessionPrompts />
       <FeedbackPrompt />
