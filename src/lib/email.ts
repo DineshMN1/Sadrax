@@ -1,9 +1,11 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.resend.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.GMAIL_USER!,
+    user: "resend",
     pass: process.env.GMAIL_APP_PASSWORD!,
   },
 });
@@ -13,21 +15,27 @@ const TAGLINE = process.env.NEXT_PUBLIC_STORE_TAGLINE ?? "by Malik Stores";
 const PHONE   = process.env.NEXT_PUBLIC_STORE_PHONE ?? "";
 const ADDRESS = process.env.NEXT_PUBLIC_STORE_ADDRESS ?? "Sadras, Kalpakam, Tamil Nadu — 603102";
 
-// OTP digits in minimal, thin-bordered boxes — clean and premium.
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// OTP rendered as a single unified box so it can be easily copied with a double-click.
 function digitBoxes(otp: string): string {
-  const cells = otp
-    .split("")
-    .map(
-      (d) =>
-        `<td style="width:44px;height:54px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;text-align:center;vertical-align:middle;font-size:26px;font-weight:700;color:#15803d;font-variant-numeric:tabular-nums;">${d}</td>`,
-    );
-  return cells.join(`<td style="width:8px;"></td>`);
+  return `<td style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 24px 14px 36px;text-align:center;">
+    <span style="font-size:32px;font-weight:700;color:#15803d;letter-spacing:12px;font-variant-numeric:tabular-nums;">${otp}</span>
+  </td>`;
 }
 
 // Builds the OTP email — reused by the sender and the dev preview route.
 export function buildOtpEmail(otp: string, name?: string): { subject: string; html: string } {
   const firstName = name?.trim().split(" ")[0];
-  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const safeFirstName = firstName ? escapeHtml(firstName) : undefined;
+  const greeting = safeFirstName ? `Hi ${safeFirstName},` : "Hi,";
 
   const html = `<!DOCTYPE html>
 <html lang="en"><head>
