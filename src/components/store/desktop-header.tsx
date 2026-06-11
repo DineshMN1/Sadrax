@@ -20,6 +20,7 @@ const navItems = [
 export function DesktopHeader() {
   const pathname  = usePathname();
   const pincodes  = useStoreConfig(s => s.pincodes);
+  const eta       = useStoreConfig(s => s.deliveryEta);
   const itemCount = useCart(s => s.itemCount());
   const total     = useCart(s => s.total());
   const { data: session } = useSession();
@@ -41,7 +42,7 @@ export function DesktopHeader() {
           <p className="font-extrabold text-gray-900 text-sm leading-none">Sadrax</p>
           <div className="flex items-center gap-1 mt-0.5">
             <Zap size={9} className="text-green-500" fill="currentColor" />
-            <p className="text-[10px] text-green-600 font-semibold leading-none">Fast delivery</p>
+            <p className="text-[10px] text-green-600 font-semibold leading-none">{eta}</p>
           </div>
         </div>
       </Link>
@@ -50,7 +51,7 @@ export function DesktopHeader() {
       <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-100">
         <MapPin size={14} className="text-green-600 shrink-0" />
         <div className="leading-none">
-          <p className="text-[10px] text-gray-400 font-semibold">Delivering to</p>
+          <p className="text-[10px] text-gray-400 font-semibold">Only in Sadras</p>
           <p className="text-xs font-bold text-gray-900 mt-0.5">{pincodes[0] ?? "603102"}</p>
         </div>
       </div>

@@ -411,6 +411,25 @@ export const banners = pgTable(
   (t) => [index("banners_order_idx").on(t.order)]
 );
 
+// Product requests — customers ask for products not yet in the store.
+export const productRequests = pgTable(
+  "product_requests",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    productName: varchar("product_name", { length: 200 }).notNull(),
+    note: text("note"),
+    // pending | added | declined
+    status: varchar("status", { length: 20 }).default("pending").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("product_requests_user_idx").on(t.userId),
+    index("product_requests_status_idx").on(t.status),
+    index("product_requests_created_idx").on(t.createdAt),
+  ]
+);
+
 // ─── Type exports ──────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -431,3 +450,4 @@ export type Offer             = typeof offers.$inferSelect;
 export type Supplier          = typeof suppliers.$inferSelect;
 export type Purchase          = typeof purchases.$inferSelect;
 export type Subscription      = typeof subscriptions.$inferSelect;
+export type ProductRequest    = typeof productRequests.$inferSelect;

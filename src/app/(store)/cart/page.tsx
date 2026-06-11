@@ -10,6 +10,7 @@ import { LottiePlayer } from "@/components/lottie-player";
 import emptyBoxAnim from "@/lottie/empty-box.json";
 import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/store/cart";
+import { ProductRequestCard } from "@/components/store/product-request-card";
 import { FreeDeliveryBar } from "@/components/store/free-delivery-bar";
 import { formatPrice, productHasVariants } from "@/lib/utils";
 import { useStoreConfig } from "@/store/config";
@@ -107,6 +108,9 @@ export default function CartPage() {
         >
           <ShoppingBag size={16} /> Start Shopping
         </Link>
+        <div className="w-full max-w-xs mt-2">
+          <ProductRequestCard />
+        </div>
       </div>
     );
   }

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Zap, Sparkles, TrendingUp, Phone, Headphones } from "lucide-react";
+import { ChevronRight, Zap, Sparkles, TrendingUp, Phone, Headphones, MapPin } from "lucide-react";
 import { Suspense } from "react";
 
 const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
@@ -59,7 +59,7 @@ async function getHomeData() {
 }
 
 export default async function HomePage() {
-  const { cats, featured, topOrdered, allProducts, isOpen, promoBanners, storeClosedMessage, openTime, closeTime } = await getHomeData();
+  const { cats, featured, topOrdered, allProducts, isOpen, promoBanners, storeClosedMessage, openTime, closeTime, pincodes } = await getHomeData();
 
   return (
     <div className="flex flex-col">
@@ -74,9 +74,16 @@ export default async function HomePage() {
         </Suspense>
       </div>
 
-      {/* ── Mobile search bar — stays sticky ──────────────────────────────── */}
-      <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 py-2 md:hidden">
+      {/* ── Mobile search bar + delivery area — stays sticky ─────────────── */}
+      <div className="sticky top-0 z-20 glass border-b border-gray-100/80 px-4 pt-2 pb-2.5 md:hidden">
         <Suspense><SearchBar /></Suspense>
+        <div className="flex items-center gap-1.5 mt-2">
+          <MapPin size={11} className="text-amber-500 shrink-0" />
+          <p className="text-[11px] font-semibold text-amber-700">
+            Delivering only in Sadras &amp; Kalpakkam Township
+            <span className="ml-1 font-bold text-amber-800">{pincodes.slice(0, 2).join(", ")}</span>
+          </p>
+        </div>
       </div>
 
       {/* Location banner — client component, outside px padding */}
@@ -105,6 +112,16 @@ export default async function HomePage() {
 
         {/* Main content */}
         <div className="flex-1 min-w-0 px-4 md:px-6 py-4 space-y-7">
+
+        {/* Delivery area note — desktop only (mobile has it in sticky search bar) */}
+        <div className="hidden md:flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2">
+          <MapPin size={12} className="text-amber-500 shrink-0" />
+          <p className="text-xs font-semibold text-amber-700">
+            Delivering only in Sadras &amp; Kalpakkam Township
+            <span className="ml-1 font-bold text-amber-800">{pincodes.slice(0, 2).join(", ")}</span>
+          </p>
+        </div>
+
         {/* Active order tracker — server rendered, no extra client fetch */}
         <Suspense fallback={null}>
           <ActiveOrderBanner />

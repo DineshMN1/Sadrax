@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
-import { Phone } from "lucide-react";
+import { useStoreConfig } from "@/store/config";
+import { Phone, Zap } from "lucide-react";
 
 const STORE_PHONE = process.env.NEXT_PUBLIC_STORE_PHONE ?? "9876543210";
 
@@ -14,7 +15,9 @@ function getGreeting() {
 
 export function GreetingInner() {
   const { data: session } = useSession();
-  const firstName = session?.user?.name?.split(" ")[0];
+  const firstName  = session?.user?.name?.split(" ")[0];
+  const eta        = useStoreConfig(s => s.deliveryEta);
+  const storeOpen  = useStoreConfig(s => s.storeOpen);
 
   return (
     <div className="flex items-center justify-between">
@@ -38,6 +41,12 @@ export function GreetingInner() {
               <p className="text-sm font-extrabold text-gray-900 leading-none">Sadrax</p>
               <p className="text-[10px] font-semibold text-gray-400 leading-none mt-1">by Malik Stores</p>
             </>
+          )}
+          {storeOpen && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <Zap size={9} className="text-green-500" fill="currentColor" />
+              <span className="text-[10px] font-bold text-green-600">{eta}</span>
+            </div>
           )}
         </div>
       </div>

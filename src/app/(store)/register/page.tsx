@@ -546,6 +546,12 @@ function RegisterContent() {
                 <p className="text-center text-xs text-gray-400">
                   Enter the 6-digit code from your email
                 </p>
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                  <span className="text-base shrink-0">📬</span>
+                  <p className="text-xs font-semibold text-amber-800">
+                    Didn&apos;t receive the OTP? Check your <span className="underline underline-offset-2">spam / junk</span> folder.
+                  </p>
+                </div>
               </div>
 
               <button
