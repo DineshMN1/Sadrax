@@ -19,7 +19,7 @@ export async function restockItems(items: StockLine[]): Promise<void> {
       await db
         .update(products)
         .set({
-          variants: sql`jsonb_set(${products.variants}::jsonb, ARRAY[${vi}::text, 'stock'], to_jsonb((${products.variants}::jsonb->${vi}->>'stock')::integer + ${it.quantity}))::json`,
+          variants: sql`jsonb_set(${products.variants}::jsonb, ARRAY[${vi}::text, 'stock'], to_jsonb((${products.variants}::jsonb->(${vi})::int->>'stock')::integer + ${it.quantity}))::json`,
           // Mirror first-variant restock to flat stock to stay in sync with orders
           ...(vi === 0 ? { stock: sql`${products.stock} + ${it.quantity}` } : {}),
           orderCount: sql`GREATEST(${products.orderCount} - ${it.quantity}, 0)`,
