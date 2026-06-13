@@ -20,11 +20,18 @@ export async function PATCH(req: NextRequest) {
   }
 
   await Promise.all(
-    updates.map(({ id, stock }) =>
-      db.update(products)
-        .set({ stock: Math.max(0, stock), updatedAt: new Date() })
-        .where(eq(products.id, id))
-    )
+    updates.map(({ id, stock }) => {
+      const s = Math.max(0, stock);
+      return db.update(products)
+        .set({
+          stock: s,
+          // Sync variants[0].stock for embedded-variant products so ordering stock
+          // stays accurate when this route is used to bulk-set inventory levels.
+          variants: sql`CASE WHEN jsonb_array_length(${products.variants}::jsonb) > 0 THEN jsonb_set(${products.variants}::jsonb, ARRAY['0', 'stock'], to_jsonb(${s}))::json ELSE ${products.variants} END`,
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, id));
+    })
   );
 
   return NextResponse.json({ updated: updates.length });

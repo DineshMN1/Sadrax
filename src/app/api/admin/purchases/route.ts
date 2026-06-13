@@ -50,7 +50,16 @@ export async function POST(req: NextRequest) {
     note: note ?? null,
   }).returning();
 
-  await db.update(products).set({ stock: sql`${products.stock} + ${qty}`, updatedAt: new Date() }).where(eq(products.id, Number(productId)));
+  await db.update(products)
+    .set({
+      stock: sql`${products.stock} + ${qty}`,
+      // Also increment variants[0].stock when the product has embedded variants so
+      // both fields stay in sync (only flat stock was updated before, causing stale
+      // variant stock to block orders for single-variant products).
+      variants: sql`CASE WHEN jsonb_array_length(${products.variants}::jsonb) > 0 THEN jsonb_set(${products.variants}::jsonb, ARRAY['0', 'stock'], to_jsonb((${products.variants}::jsonb->0->>'stock')::integer + ${qty}))::json ELSE ${products.variants} END`,
+      updatedAt: new Date(),
+    })
+    .where(eq(products.id, Number(productId)));
 
   if (before.stock === 0 && qty > 0) notifyBackInStock(before.id, before.name).catch(() => {});
   logAudit(req, session, { action: "create", entity: "purchase", entityId: purchase.id, summary: `Stock-in ${before.name}: +${qty} (now ${before.stock + qty})` });
