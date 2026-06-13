@@ -175,6 +175,8 @@ export async function POST(req: NextRequest) {
         .update(products)
         .set({
           variants: sql`jsonb_set(${products.variants}::jsonb, ARRAY[${vi}::text, 'stock'], to_jsonb((${products.variants}::jsonb->${vi}->>'stock')::integer - ${item.quantity}))::json`,
+          // Mirror first-variant decrement to flat stock so product cards stay accurate
+          ...(vi === 0 ? { stock: sql`GREATEST(${products.stock} - ${item.quantity}, 0)` } : {}),
           orderCount: sql`${products.orderCount} + ${item.quantity}`,
         })
         .where(and(

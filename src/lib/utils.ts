@@ -26,7 +26,7 @@ export interface EmbeddedVariant {
 export function productHasVariants(
   variants: unknown,
 ): variants is EmbeddedVariant[] {
-  return Array.isArray(variants) && variants.length > 1;
+  return Array.isArray(variants) && variants.length >= 1;
 }
 
 export function toSlug(str: string): string {
